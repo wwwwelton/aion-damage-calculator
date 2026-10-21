@@ -2,5 +2,5 @@ node_modules/
 bin/
 obj/
 dist/
-assets/ai/models/Qwen/Qwen3-0.6B-ONNX/onnx/model_q4f16.onnx
-assets/ai/models/Qwen/Qwen3-0.6B-ONNX/onnx/model_q4f16.onnx.download
+assets/ai/models/**/onnx/model_q4f16.onnx
+assets/ai/models/**/onnx/model_q4f16.onnx.download

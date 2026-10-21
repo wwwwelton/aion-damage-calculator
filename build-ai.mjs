@@ -4,7 +4,7 @@ import { createReadStream, createWriteStream } from 'node:fs';
 import { copyFile, mkdir, rename, rm } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 
-const modelPath = 'assets/ai/models/Qwen/Qwen3-0.6B-ONNX/onnx/model_q4f16.onnx';
+const modelPath = 'assets/ai/models/onnx-community/Qwen3-0.6B-ONNX/onnx/model_q4f16.onnx';
 const modelSha256 = '9e33a5911974174761d0dfdcc0bec975d9c45af0eae5e9eb647b8ba9442a8f91';
 async function checksum(path) {
   const hash = createHash('sha256');
@@ -12,7 +12,7 @@ async function checksum(path) {
   return hash.digest('hex');
 }
 
-await mkdir('assets/ai/models/Qwen/Qwen3-0.6B-ONNX/onnx', { recursive: true });
+await mkdir('assets/ai/models/onnx-community/Qwen3-0.6B-ONNX/onnx', { recursive: true });
 let matches = false;
 try { matches = await checksum(modelPath) === modelSha256; } catch (error) {
   if (error.code !== 'ENOENT') throw error;
