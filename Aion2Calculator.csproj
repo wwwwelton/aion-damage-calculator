@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>AION2-Damage-Calculator</AssemblyName>
+    <ApplicationTitle>AION 2 Damage Calculator</ApplicationTitle>
+    <Version>1.0.0</Version>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3650.58" />
+    <EmbeddedResource Include="index.html" LogicalName="index.html" />
+    <EmbeddedResource Include="style.css" LogicalName="style.css" />
+    <EmbeddedResource Include="calculator.js" LogicalName="calculator.js" />
+    <EmbeddedResource Include="recommendations.js" LogicalName="recommendations.js" />
+    <EmbeddedResource Include="renderer.js" LogicalName="renderer.js" />
+    <EmbeddedResource Include="characters.js" LogicalName="characters.js" />
+  </ItemGroup>
+</Project>

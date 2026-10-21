@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <title>AION 2 — Damage Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="calculator.js"></script>
+  <script defer src="recommendations.js"></script>
+  <script defer src="renderer.js"></script>
+  <script defer src="characters.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">AION 2 · LOCAL CALCULATOR</p>
+      <h1>Damage Calculator</h1>
+      <p>Enter your character and target stats. Multipliers use 100% as neutral; additive damage bonuses use 0%.</p>
+    </header>
+    <nav class="tabs" role="tablist" aria-label="Application tabs">
+      <button type="button" id="calculator-tab" role="tab" aria-controls="calculator-view" class="tab active" data-tab="calculator-view" aria-selected="true">Damage Calculator</button>
+      <button type="button" id="character-tab" role="tab" aria-controls="character-view" class="tab" data-tab="character-view" aria-selected="false">Character Search</button>
+    </nav>
+    <div id="calculator-view" class="tab-panel" role="tabpanel" aria-labelledby="calculator-tab">
+    <section class="result" aria-live="polite">
+      <span>FINAL DAMAGE</span>
+      <strong id="result">0</strong>
+      <small id="status">Result of the supplied formula; in-game rounding is not included.</small>
+    </section>
+    <p id="import-warning" class="import-warning" role="status" hidden></p>
+    <section class="card advice" aria-labelledby="advice-title">
+      <h2 id="advice-title">Damage upgrade tips</h2>
+      <p>Estimated gain per +1 percentage point, using your current values and the supplied formula:</p>
+      <ol id="upgrade-list" aria-live="polite"></ol>
+      <p id="upgrade-context" class="advice-note"></p>
+      <small>Per-hit comparisons, not DPS or upgrade-cost rankings. Based on the AION 2 damage formula guide (Gameplay.tips) and Stats explained (Aion 2 Maps); results depend on the target, uptime and patch.</small>
+    </section>
+    <form id="calculator">
+      <section class="card">
+        <h2>Attack</h2>
+        <div class="grid">
+          <label>Pure Attack <span>derived value, not an in-game stat</span><input name="pureAttack" type="number" min="0" step="any" value="1000"></label>
+          <label>Weapon Damage Boost <span>multiplier (%)</span><input name="weaponDamageBoost" type="number" min="0" step="any" value="100"></label>
+          <label>Multi-Hit <span>multiplier (%)</span><input name="multiHit" type="number" min="0" step="any" value="100"></label>
+          <label>Power Shard <span>multiplier (%)</span><input name="powerShard" type="number" min="0" step="any" value="100"></label>
+          <label>Attack Bonus <input name="attackBonus" type="number" step="any" value="0"></label>
+          <label>Attack Increase <span>multiplier (%)</span><input name="attackIncrease" type="number" min="0" step="any" value="100"></label>
+          <label>PvE Attack Power <input name="pveAttackPower" type="number" step="any" value="0"></label>
+          <label>Boss Attack Power <input name="bossAttackPower" type="number" step="any" value="0"></label>
+          <label>Species Attack Power <input name="speciesAttackPower" type="number" step="any" value="0"></label>
+          <label>Front/Back Attack Power <input name="frontBackAttackPower" type="number" step="any" value="0"></label>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Skill and Defense</h2>
+        <div class="grid">
+          <label>Skill Coefficient <span>multiplier (%)</span><input name="skillCoefficient" type="number" min="0" step="any" value="100"></label>
+          <label>Skill Additional Damage <input name="skillAdditionalDamage" type="number" step="any" value="0"></label>
+          <label>Defense <input name="defense" type="number" min="0" step="any" value="0"></label>
+          <label>Penetration <input name="penetration" type="number" min="0" step="any" value="0"></label>
+          <label>Skill Specialty Enhancement <span>multiplier (%)</span><input name="skillSpecialtyEnhancement" type="number" min="0" step="any" value="100"></label>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Boosts and Conditions</h2>
+        <div class="grid">
+          <label>Damage Boost <span>additive (%)</span><input name="damageBoost" type="number" step="any" value="100"></label>
+          <label>PvE Damage Boost <span>additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label>
+          <label>Species Damage Boost <span>additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label>
+          <label>Critical Damage Boost <span>multiplier (%)</span><input name="criticalDamageBoost" type="number" min="0" step="any" value="150"></label>
+          <label>Critical Hit?<select id="critical"><option value="no">No</option><option value="yes">Yes</option></select></label>
+          <label>Double Chance proc?<select id="doubleEnabled"><option value="no">No</option><option value="yes">Yes</option></select></label>
+          <label>Double damage multiplier (%)<input name="double" type="number" min="0" step="any" value="200"></label>
+          <label>Attack position<select id="position"><option value="none">No positional boost</option><option value="front">Front</option><option value="back">Back</option></select></label>
+          <label>Front Damage Boost (%)<input name="frontBoost" type="number" min="0" step="any" value="100"></label>
+          <label>Back Damage Boost (%)<input name="backBoost" type="number" min="0" step="any" value="100"></label>
+        </div>
+      </section>
+    </form>
+    <footer>Prefilled values are examples, not official game stats. The supplied formatted formula omits Boss Damage Boost from the final sum.</footer>
+    </div>
+    <div id="character-view" class="tab-panel" role="tabpanel" aria-labelledby="character-tab" hidden>
+      <section class="card">
+        <h2>Find a character on NotMeter</h2>
+        <p>Search public character profiles by exact name. Select a region, then choose the right server if multiple characters match.</p>
+        <form id="character-search" class="search-form">
+          <label>Character name<input id="character-name" type="search" maxlength="20" required placeholder="Enter a character name"></label>
+          <label>Region<select id="character-region"><option value="ww">Global</option><option value="kr">Korea</option><option value="tw">Taiwan</option></select></label>
+          <label id="global-region-label">Global region<select id="global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
+          <button type="submit">Search</button>
+        </form>
+        <p id="search-status" role="status" aria-live="polite"></p>
+        <label id="character-choice-label" hidden>Matching characters<select id="character-choice"></select></label>
+      </section>
+      <section id="profile-panel" class="card" hidden>
+        <h2 id="profile-title"></h2>
+        <p id="profile-meta"></p>
+        <p id="profile-status" role="status" aria-live="polite"></p>
+        <button type="button" id="import-character" disabled>Load available stats into calculator</button>
+        <p class="import-note">Only explicit equipped-item bonuses are imported. Pure Attack, skill coefficients, target Defense and other unavailable values stay manual. Imported numbers are partial gear bonuses, not complete character sheet totals.</p>
+        <div class="profile-columns">
+          <section><h3>Character attributes</h3><ul id="profile-stats"></ul></section>
+          <section><h3>Equipped gear and options</h3><ul id="profile-gear"></ul></section>
+          <section><h3>Skills</h3><ul id="profile-skills"></ul></section>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
