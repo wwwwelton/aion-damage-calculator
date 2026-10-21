@@ -128,6 +128,7 @@ function update() {
     : creatureType
       ? `Community formula estimate; ${creatureType} creature matchup replaces generic Species values. In-game rounding is not included.`
       : 'Community formula estimate; in-game rounding is not included.';
+  scheduleAiTips();
 }
 form.addEventListener('input', update);
 form.addEventListener('focusout', (event) => {

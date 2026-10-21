@@ -1,6 +1,6 @@
 # AION 2 Damage Calculator
 
-Windows x64 damage calculator with a local WebView2 interface. HTML, CSS and JavaScript are embedded in the executable. Calculations and the mob/boss catalog work without a network connection. Character search requests public profiles from NotMeter and needs internet access.
+Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaScript, the inference runtime and SmolLM2 Q4F16 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from NotMeter; the assistant can fetch a current AION 2 guide by topic.
 
 ## Get started
 
@@ -10,35 +10,45 @@ Requirements: Windows x64 and the [Microsoft Edge WebView2 Runtime](https://deve
 
 ### Build from source
 
-Install the [.NET SDK 10](https://dotnet.microsoft.com/download/dotnet/10.0) on Windows. From the repository root, run:
+Install the [.NET SDK 10](https://dotnet.microsoft.com/download/dotnet/10.0) and [Node.js](https://nodejs.org/) on Windows. From the repository root, run:
 
 ```powershell
+npm ci
+npm run build:ai
 dotnet restore Aion2Calculator.csproj
 dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
 ```
 
-The first restore needs access to NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable. Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
+The first build downloads the pinned 118 MB Q4F16 model from Hugging Face and verifies its SHA-256 checksum; **users running the published executable do not download a model**. The ONNX weight file is excluded from Git because it exceeds GitHub's 100 MB file limit. The build requires NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable (about 250 MB). Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
 
 ### Development and checks
 
-Install [Node.js](https://nodejs.org/) for the JavaScript tests; no npm packages or `npm install` step are required. From the repository root:
+Node.js runs the JavaScript tests and builds the AI assets. From the repository root:
 
 ```bash
 node --test calculator.test.js numeric-input.test.js recommendations.test.js characters.test.js
 ```
 
-Node.js is only needed for these tests, not for the executable. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>), but character search uses a WebView2-to-.NET bridge and works only in the Windows app. Verify character imports and desktop behavior in the published executable.
+To change `ai-worker.js` or update Transformers.js, regenerate the bundled worker and local WebAssembly runtime before publishing:
+
+```bash
+npm ci
+npm run build:ai
+```
+
+`package-lock.json` pins the development dependencies; normal users do not need Node.js or npm. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>). Character search and online guide retrieval use the WebView2-to-.NET bridge and work only in the Windows app. Verify those interactions and desktop behavior in the published executable.
 
 ### Project layout
 
 | Path | Purpose |
 | --- | --- |
 | `Aion2Calculator.csproj`, `Program.cs` | Windows build, embedded files and WebView2 host |
-| `NotMeterClient.cs` | Public character lookup through the native host |
-| `index.html`, `style.css`, `renderer.js`, `profile-ui.js` | Interface and character dossier |
+| `NotMeterClient.cs`, `GuideResearch.cs` | Public character lookup and opt-in wiki-guide retrieval through the native host |
+| `index.html`, `style.css`, `renderer.js`, `profile-ui.js`, `ai-tips.js` | Interface, character dossier and contextual assistant |
 | `calculator.js`, `matchups.js`, `recommendations.js`, `numeric-input.js` | Damage calculation, matchup rules, tips and number parsing |
 | `characters.js`, `bosses.js`, `boss-data.js`, `mob-data.js` | Profile imports and offline NPC catalog |
 | `*.test.js` | Node.js regression tests |
+| `ai-worker.js`, `build-ai.mjs`, `ai-worker.bundle.js`, `assets/ai/` | Transformers.js worker source, build script, bundled worker and local inference runtime |
 
 ## Calculation scope
 
@@ -95,6 +105,14 @@ For Cogni, Fera, Natura or Varian, importing selects the corresponding **Creatur
 The tips recalculate after every input change. They rank a **+1 percentage-point** change to Weapon Damage Boost and Damage Boost; Critical Damage Boost is included only for a critical hit, and Front/Back Attack Damage Boost only for the selected position. Gains are calculated from the current damage formula and entered enemy tolerances rather than copied from a fixed stat tier list. They compare individual hit damage, **not** gear cost or expected DPS. Critical Hit rate, Double Chance proc rate, resistance-to-chance conversions, positional uptime and skill rotation are not modeled, so no DPS recommendation is made for those stats. For a non-positive damage baseline, percentage comparisons are omitted.
 
 Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.tips/guides/aion-2-how-stats-work-damage-formula-guide.html) and [Aion 2 Maps — Stats explained](https://aion2maps.com/guides/stats-explained/). Their published rankings depend on build, boss and patch; the displayed numbers are **this formula's what-if estimates**, not measured in-game gains.
+
+### Avatarnoia Flow Engine 2.0
+
+The assistant beneath the attacker and target names starts automatically and refreshes advice as the calculator or opponent changes. Questions are optional. It runs the bundled [HuggingFaceTB/SmolLM2-135M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct) Q4F16 model locally through Transformers.js. WebGPU with `shader-f16` support and a current WebView2 Runtime are required for generation; the deterministic damage ranking remains available if the GPU lacks that feature. No model weights are downloaded when the program runs.
+
+The Windows app may automatically request one whitelisted [Aion 2 Maps combat guide](https://aion2maps.com/guides/stats-explained/) by topic and display its URL. Only a guide category is sent to the guide website; character names, calculator values and questions stay on the device. If the internet is unavailable, local advice still runs. This is guided lookup, not unrestricted web search.
+
+**Apply suggested +1% upgrade** changes the highest-ranked applicable percentage field by one point and recalculates the result. It is an explicit what-if edit, not a claim that the character's equipment changed; imported character and enemy stats are never silently overwritten. The small model can be inaccurate or off-topic; the calculated comparisons and cited guide take precedence.
 
 ## Contributing
 

@@ -2,3 +2,5 @@ node_modules/
 bin/
 obj/
 dist/
+assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx/model_q4f16.onnx
+assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx/model_q4f16.onnx.download

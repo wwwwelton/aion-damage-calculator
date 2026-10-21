@@ -23,6 +23,11 @@
     <EmbeddedResource Include="recommendations.js" LogicalName="recommendations.js" />
     <EmbeddedResource Include="icons.js" LogicalName="icons.js" />
     <EmbeddedResource Include="profile-ui.js" LogicalName="profile-ui.js" />
+    <EmbeddedResource Include="ai-tips.js" LogicalName="ai-tips.js" />
+    <EmbeddedResource Include="ai-worker.bundle.js" LogicalName="ai-worker.bundle.js" />
+    <EmbeddedResource Include="assets/ai/*" LogicalName="assets/ai/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/*.json" LogicalName="assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx/model_q4f16.onnx" LogicalName="assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx/model_q4f16.onnx" />
     <EmbeddedResource Include="assets/classes/*.webp" LogicalName="assets/classes/%(Filename)%(Extension)" />
     <EmbeddedResource Include="matchups.js" LogicalName="matchups.js" />
     <EmbeddedResource Include="boss-data.js" LogicalName="boss-data.js" />
@@ -31,4 +36,7 @@
     <EmbeddedResource Include="renderer.js" LogicalName="renderer.js" />
     <EmbeddedResource Include="characters.js" LogicalName="characters.js" />
   </ItemGroup>
+  <Target Name="CheckLocalModel" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx/model_q4f16.onnx')" Text="Run npm ci and npm run build:ai to bundle SmolLM2 Q4F16 before publishing." />
+  </Target>
 </Project>

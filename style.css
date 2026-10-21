@@ -70,7 +70,6 @@ footer { font-size: 12px; margin-top: 20px; }
   main { padding: 24px; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .search-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .profile-columns { grid-template-columns: minmax(0, 1fr); }
   .matchup-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
@@ -83,6 +82,13 @@ footer { font-size: 12px; margin-top: 20px; }
   .tab { flex: 1; padding: 10px 6px; }
   .result strong { font-size: 38px; }
 }
+.ai-assistant { border-top: 1px solid #40516a; margin-top: 18px; padding-top: 18px; }
+.ai-assistant h2 { font-size: 17px; margin: 0; }
+#ai-apply { padding: 8px 12px; border: 1px solid #69d8cc; border-radius: 8px; background: #23515b; color: #fff; font: inherit; cursor: pointer; }
+.ai-assistant .reference-note { margin: 10px 0; font-size: 13px; }
+.ai-assistant label { margin: 12px 0 6px; }
+#ai-answer { min-height: 45px; padding: 12px; background: #152537; border-radius: 8px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+#ai-source { overflow-wrap: anywhere; }
 .boss-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
 .boss-filters label:last-child { grid-column: 1 / -1; }
 #import-boss { min-height: 40px; max-width: 100%; padding: 8px 15px; border: 1px solid #69d8cc; border-radius: 8px; background: #23515b; color: #fff; font: inherit; cursor: pointer; }

@@ -27,6 +27,15 @@ internal sealed class CalculatorWindow : Form
         ["recommendations.js"] = "text/javascript; charset=utf-8",
         ["icons.js"] = "text/javascript; charset=utf-8",
         ["matchups.js"] = "text/javascript; charset=utf-8",
+        ["ai-tips.js"] = "text/javascript; charset=utf-8",
+        ["ai-worker.bundle.js"] = "text/javascript; charset=utf-8",
+        ["assets/ai/ort-wasm-simd-threaded.jsep.mjs"] = "text/javascript; charset=utf-8",
+        ["assets/ai/ort-wasm-simd-threaded.jsep.wasm"] = "application/wasm",
+        ["assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/config.json"] = "application/json",
+        ["assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/tokenizer_config.json"] = "application/json",
+        ["assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/tokenizer.json"] = "application/json",
+        ["assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/generation_config.json"] = "application/json",
+        ["assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx/model_q4f16.onnx"] = "application/octet-stream",
         ["profile-ui.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
         ["characters.js"] = "text/javascript; charset=utf-8",
@@ -37,6 +46,7 @@ internal sealed class CalculatorWindow : Form
 
     private readonly WebView2 view = new() { Dock = DockStyle.Fill };
     private readonly NotMeterClient notMeter = new();
+    private readonly GuideResearch guides = new();
 
     public CalculatorWindow()
     {
@@ -46,7 +56,7 @@ internal sealed class CalculatorWindow : Form
         MinimumSize = new Size(760, 600);
         Controls.Add(view);
         Shown += async (_, _) => await InitializeViewAsync();
-        FormClosed += (_, _) => notMeter.Dispose();
+        FormClosed += (_, _) => { notMeter.Dispose(); guides.Dispose(); };
     }
 
     private async Task InitializeViewAsync()
@@ -91,13 +101,14 @@ internal sealed class CalculatorWindow : Form
             var request = message.RootElement;
             id = request.GetProperty("id").GetInt32();
             var kind = request.GetProperty("kind").GetString();
-            var region = request.GetProperty("region").GetString() ?? "";
-            var globalRegion = request.GetProperty("globalRegion").GetString() ?? "";
+            var region = request.TryGetProperty("region", out var requestedRegion) ? requestedRegion.GetString() ?? "" : "";
+            var globalRegion = request.TryGetProperty("globalRegion", out var requestedGlobal) ? requestedGlobal.GetString() ?? "" : "";
             JsonElement data = kind switch
             {
                 "search" => await notMeter.SearchAsync(request.GetProperty("name").GetString() ?? "", region, globalRegion),
                 "profile" => await notMeter.ProfileAsync(request.GetProperty("serverId").GetInt32(),
                     request.GetProperty("characterId").GetString() ?? "", region, globalRegion),
+                "research" => await guides.FetchAsync(request.GetProperty("topic").GetString() ?? ""),
                 _ => throw new ArgumentException("Unknown character request.")
             };
             if (!view.IsDisposed) view.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { id, data }));

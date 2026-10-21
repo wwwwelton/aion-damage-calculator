@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://assets.playnccdn.com https://profileimg.plaync.com https://fizz-download.playnccdn.com">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; style-src 'self'; img-src 'self' https://assets.playnccdn.com https://profileimg.plaync.com https://fizz-download.playnccdn.com">
   <title>AION 2 — Damage Calculator</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="calculator.js"></script>
@@ -16,6 +16,7 @@
   <script defer src="mob-data.js"></script>
   <script defer src="bosses.js"></script>
   <script defer src="characters.js"></script>
+  <script defer src="ai-tips.js"></script>
   <script defer src="renderer.js"></script>
 </head>
 <body>
@@ -38,6 +39,15 @@
         <div><h2>Attacker <span id="attacker-icon" class="actor-icon" hidden></span></h2><label>Character name<input id="attacker-name" type="text" placeholder="Your character"></label><label>Class<input id="attacker-class" type="text" placeholder="Class"></label></div>
         <div><h2>Target <span id="target-icon" class="actor-icon"></span></h2><label>Name<input id="target-name" type="text" placeholder="Select a boss or enter a name"></label><label id="target-kind-label">Creature type<select id="creature-type-header"><option value="">Unknown / manual</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option><option value="special">Special</option></select></label><label id="target-class-label" hidden>Class<input id="target-class" type="text" placeholder="Target class"></label></div>
       </div>
+      <section class="ai-assistant" aria-labelledby="ai-title">
+        <h2 id="ai-title">Avatarnoia Flow Engine 2.0</h2>
+        <p class="reference-note">Bundled SmolLM2 135M Instruct (Q4F16); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. WebGPU with shader-f16 is required. Calculated comparisons take precedence over AI text.</p>
+        <label for="ai-question">Optional AION 2 question</label>
+        <input id="ai-question" type="text" maxlength="250" placeholder="Ask about your damage setup">
+        <p id="ai-answer" role="status" aria-live="polite">Preparing local damage advice…</p>
+        <button type="button" id="ai-apply" hidden>Apply suggested +1% upgrade</button>
+        <p id="ai-source" class="reference-note"></p>
+      </section>
       <p id="mode-note" class="reference-note"></p>
     </section>
     <section class="result" aria-live="polite">
