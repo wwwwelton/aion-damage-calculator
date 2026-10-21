@@ -8,7 +8,8 @@ internal sealed class NotMeterClient : IDisposable
     private readonly HttpClient http = new(new HttpClientHandler { AllowAutoRedirect = false })
     {
         BaseAddress = new Uri("https://notmeter.59-27-108-81.sslip.io/character/v1/"),
-        Timeout = TimeSpan.FromSeconds(45)
+        // Fail fast: a healthy NotMeter response arrives in ~1–3 s; only a stalled endpoint exceeds 20 s.
+        Timeout = TimeSpan.FromSeconds(20)
     };
 
     public async Task<JsonElement> SearchAsync(string name, string region, string globalRegion)

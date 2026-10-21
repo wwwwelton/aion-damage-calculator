@@ -223,7 +223,7 @@ if (typeof document !== 'undefined') {
     choiceLabel.hidden = true;
     panel.hidden = true;
     importButton.disabled = true;
-    searchStatus.textContent = 'Searching public NotMeter profiles…';
+    searchStatus.textContent = 'Searching public NotMeter profiles… (can take several seconds)';
     try {
       const queryRegion = region.value;
       const queryGlobalRegion = globalRegion.value;
@@ -259,7 +259,7 @@ if (typeof document !== 'undefined') {
     document.querySelector('#profile-title').textContent = `${item.name} · ${item.serverName}`;
     document.querySelector('#profile-meta').textContent = `${item.className} · Level ${item.level} · ${item.raceName || ''} · CP ${item.combatPower ?? '—'}`;
     setDisplayIcon(document.querySelector('#profile-class-icon'), 'class', item.className);
-    profileStatus.textContent = 'Loading attributes, gear and skills…';
+    profileStatus.textContent = 'Loading attributes, gear and skills from NotMeter… (can take several seconds)';
     document.querySelector('#profile-dossier').replaceChildren();
     try {
       const data = await request('profile', { serverId: item.serverId, characterId: item.characterId,
@@ -361,7 +361,7 @@ if (typeof document !== 'undefined') {
     enemyChoiceLabel.hidden = true;
     enemyPanel.hidden = true;
     enemyImportButton.disabled = true;
-    enemySearchStatus.textContent = 'Searching public character profiles…';
+    enemySearchStatus.textContent = 'Searching public character profiles on NotMeter… (can take several seconds)';
     try {
       const queryRegion = enemyRegion.value;
       const queryGlobalRegion = enemyGlobalRegion.value;
@@ -397,7 +397,7 @@ if (typeof document !== 'undefined') {
     document.querySelector('#enemy-title').textContent = `${item.name} · ${item.serverName}`;
     document.querySelector('#enemy-meta').textContent = `${item.className} · Level ${item.level} · CP ${item.combatPower ?? '—'}`;
     setDisplayIcon(document.querySelector('#enemy-class-icon'), 'class', item.className);
-    enemyProfileStatus.textContent = 'Loading defensive attributes…';
+    enemyProfileStatus.textContent = 'Loading defensive attributes from NotMeter… (can take several seconds)';
     document.querySelector('#enemy-dossier').replaceChildren();
     document.querySelector('#enemy-stats').replaceChildren();
     try {
