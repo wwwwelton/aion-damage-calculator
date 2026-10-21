@@ -1,6 +1,6 @@
 import { pipeline, env } from '@huggingface/transformers';
 
-const MODEL = 'HuggingFaceTB/SmolLM2-135M-Instruct';
+const MODEL = 'onnx-community/Qwen3-0.6B-ONNX';
 env.allowLocalModels = true;
 env.allowRemoteModels = false;
 env.localModelPath = new URL('assets/ai/models/', self.location.href).href;

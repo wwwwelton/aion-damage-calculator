@@ -1,6 +1,6 @@
 # AION 2 Damage Calculator
 
-Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaScript, the inference runtime and SmolLM2 Q4F16 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from NotMeter; the assistant can fetch a current AION 2 guide by topic.
+Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaScript, the inference runtime and Qwen3-0.6B Q4F16 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from NotMeter; the assistant can fetch a current AION 2 guide by topic.
 
 ## Get started
 
@@ -19,7 +19,7 @@ dotnet restore Aion2Calculator.csproj
 dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
 ```
 
-The first build downloads the pinned 118 MB Q4F16 model from Hugging Face and verifies its SHA-256 checksum; **users running the published executable do not download a model**. The ONNX weight file is excluded from Git because it exceeds GitHub's 100 MB file limit. The build requires NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable (about 250 MB). Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
+The first build downloads the pinned Qwen3-0.6B ONNX model from Hugging Face and verifies its SHA-256 checksum; **users running the published executable do not download a model**. The ONNX weight file is excluded from Git because it exceeds GitHub's 100 MB file limit. The build requires NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable (about 250 MB). Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
 
 ### Development and checks
 
@@ -108,7 +108,7 @@ Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.
 
 ### Avatarnoia Flow Engine 2.0
 
-The assistant beneath the attacker and target names starts automatically and refreshes advice as the calculator or opponent changes. Questions are optional. It runs the bundled [HuggingFaceTB/SmolLM2-135M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct) Q4F16 model locally through Transformers.js. WebGPU with `shader-f16` support and a current WebView2 Runtime are required for generation; the deterministic damage ranking remains available if the GPU lacks that feature. No model weights are downloaded when the program runs.
+The assistant beneath the attacker and target names starts automatically and refreshes advice as the calculator or opponent changes. Questions are optional. It runs the bundled [onnx-community/Qwen3-0.6B-ONNX](https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX) Q4F16 model locally through Transformers.js. WebGPU with `shader-f16` support and a current WebView2 Runtime are required for generation; the deterministic damage ranking remains available if the GPU lacks that feature. No model weights are downloaded when the program runs.
 
 The Windows app may automatically request one whitelisted [Aion 2 Maps combat guide](https://aion2maps.com/guides/stats-explained/) by topic and display its URL. Only a guide category is sent to the guide website; character names, calculator values and questions stay on the device. If the internet is unavailable, local advice still runs. This is guided lookup, not unrestricted web search.
 

@@ -47955,7 +47955,7 @@ var __webpack_exports__zeros = __webpack_exports__.zeros;
 var __webpack_exports__zeros_like = __webpack_exports__.zeros_like;
 
 // ai-worker.js
-var MODEL = "HuggingFaceTB/SmolLM2-135M-Instruct";
+var MODEL = "onnx-community/Qwen3-0.6B-ONNX";
 __webpack_exports__env.allowLocalModels = true;
 __webpack_exports__env.allowRemoteModels = false;
 __webpack_exports__env.localModelPath = new URL("assets/ai/models/", self.location.href).href;

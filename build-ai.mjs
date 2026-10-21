@@ -4,27 +4,27 @@ import { createReadStream, createWriteStream } from 'node:fs';
 import { copyFile, mkdir, rename, rm } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 
-const modelPath = 'assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx/model_q4f16.onnx';
-const modelSha256 = '9358cd4ce037c304621f8c194a525607ae7c5ea73239fcae4c21bd02f2e34ff7';
+const modelPath = 'assets/ai/models/Qwen/Qwen3-0.6B-ONNX/onnx/model_q4f16.onnx';
+const modelSha256 = '9e33a5911974174761d0dfdcc0bec975d9c45af0eae5e9eb647b8ba9442a8f91';
 async function checksum(path) {
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(path)) hash.update(chunk);
   return hash.digest('hex');
 }
 
-await mkdir('assets/ai/models/HuggingFaceTB/SmolLM2-135M-Instruct/onnx', { recursive: true });
+await mkdir('assets/ai/models/Qwen/Qwen3-0.6B-ONNX/onnx', { recursive: true });
 let matches = false;
 try { matches = await checksum(modelPath) === modelSha256; } catch (error) {
   if (error.code !== 'ENOENT') throw error;
 }
 if (!matches) {
-  const url = 'https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct/resolve/a91318be21aeaf0879874faa161dcb40c68847e9/onnx/model_q4f16.onnx';
+  const url = 'https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX/resolve/main/onnx/model_q4f16.onnx';
   const response = await fetch(url);
   if (!response.ok || !response.body) throw new Error(`Model download failed: HTTP ${response.status}`);
   const temporary = `${modelPath}.download`;
   try {
     await pipeline(response.body, createWriteStream(temporary));
-    if (await checksum(temporary) !== modelSha256) throw new Error('Q4F16 model checksum mismatch.');
+    if (await checksum(temporary) !== modelSha256) throw new Error('Qwen3 Q4F16 model checksum mismatch.');
     await rename(temporary, modelPath);
   } finally {
     await rm(temporary, { force: true });
