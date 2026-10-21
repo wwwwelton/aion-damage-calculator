@@ -58,7 +58,87 @@ function extractCharacter(data) {
     combatPower: profile.combatPower || '', stats, gear, skills };
 }
 
-if (typeof module !== 'undefined') module.exports = { extractCharacter, equipmentBonuses };
+const referenceRows = (typeof module !== 'undefined' ? require('./matchups').referenceGroups : referenceGroups)
+  .flatMap(group => group.rows);
+const referenceFields = Object.fromEntries(referenceRows.map(([label, field]) => [label, field]));
+referenceFields['PvE Accuracy'] = 'pveAccuracy';
+const referencePercentFields = new Set(referenceRows.filter(row => row[4]).map(row => row[1]));
+
+const enemyFields = {
+  'Defense': 'defense',
+  'Weapon Damage Tolerance': 'weaponDamageTolerance',
+  'Damage Tolerance': 'damageTolerance',
+  'PvE Damage Tolerance': 'pveDamageTolerance',
+  'Species Damage Tolerance': 'speciesDamageTolerance',
+  'Boss Damage Tolerance': 'bossDamageTolerance',
+  'Critical Damage Tolerance': 'criticalDamageTolerance',
+  'Front Attack Damage Tolerance': 'frontDamageTolerance',
+  'Back Attack Damage Tolerance': 'backDamageTolerance',
+  'Block': 'block',
+  'Evasion': 'evasion',
+  'Critical Hit Resist': 'criticalHitResist',
+  'Double Resist': 'doubleResist',
+  'Perfect Resist': 'perfectResist',
+  'Multi-hit Resist': 'multiHitResist',
+  'Endurance': 'endurance',
+  'Elemental Resistance': 'elementalResistance',
+  'Critical Damage Defense': 'criticalDamageDefense',
+  'Front Defense': 'frontDefense',
+  'Back Defense': 'backDefense'
+};
+Object.assign(enemyFields, Object.fromEntries(referenceRows.map(([, , label, field]) => [label, field])));
+const enemyLabels = Object.fromEntries(Object.entries(enemyFields).map(([label, field]) => [field, label]));
+
+const enemyPercentFields = new Set([
+  'weaponDamageTolerance', 'damageTolerance', 'pveDamageTolerance', 'speciesDamageTolerance',
+  'bossDamageTolerance', 'criticalDamageTolerance', 'frontDamageTolerance', 'backDamageTolerance',
+  'doubleResist', 'perfectResist', 'multiHitResist', 'endurance'
+]);
+for (const [, , , field, percentage] of referenceRows) {
+  if (percentage) enemyPercentFields.add(field);
+}
+
+
+function sheetFields(profile, mappings, percentFields) {
+  const values = {};
+  for (const stat of profile?.info?.stat?.statList || []) {
+    const field = mappings[stat.name];
+    if (!field) continue;
+    const text = String(stat.value ?? '').trim();
+    if (!(percentFields.has(field) ? /^\d+(?:\.\d+)?%?$/ : /^\d+(?:\.\d+)?$/).test(text)) continue;
+    values[field] = Number.parseFloat(text);
+  }
+  return values;
+}
+
+function gearFields(profile, mappings, percentFields) {
+  const values = {};
+  for (const { detail } of equippedDetails(profile)) {
+    for (const stat of [...(detail.mainStats || []), ...(detail.subStats || [])]) {
+      const field = mappings[stat.name];
+      if (!field) continue;
+      const text = String(stat.value ?? '').trim();
+      if (!(percentFields.has(field) ? /^\d+(?:\.\d+)?%$/ : /^\d+(?:\.\d+)?$/).test(text)) continue;
+      values[field] = (values[field] ?? 0) + Number.parseFloat(text);
+    }
+  }
+  return values;
+}
+
+function enemySheetDefenses(profile) {
+  return sheetFields(profile, enemyFields, enemyPercentFields);
+}
+
+function enemyDefenses(profile) {
+  return { ...gearFields(profile, enemyFields, enemyPercentFields), ...enemySheetDefenses(profile) };
+}
+
+function offensiveReferences(profile) {
+  return { ...gearFields(profile, referenceFields, referencePercentFields),
+    ...sheetFields(profile, referenceFields, referencePercentFields) };
+}
+
+if (typeof module !== 'undefined') module.exports = { extractCharacter, equipmentBonuses, enemyDefenses, offensiveReferences };
 
 if (typeof document !== 'undefined') {
   const tabs = document.querySelectorAll('.tab');
@@ -88,6 +168,7 @@ if (typeof document !== 'undefined') {
   let results = [];
   let loaded = null;
   let previousImport = {};
+  let previousReferenceImport = {};
 
   if (window.chrome?.webview) {
     window.chrome.webview.addEventListener('message', event => {
@@ -99,13 +180,13 @@ if (typeof document !== 'undefined') {
       else request.resolve(data);
     });
   }
-  function request(kind, parameters) {
+  function request(kind, parameters, queryRegion = region.value, queryGlobalRegion = globalRegion.value) {
     if (!window.chrome?.webview) return Promise.reject(new Error('Character search requires the Windows app.'));
     const id = ++nextRequest;
     return new Promise((resolve, reject) => {
       requests.set(id, { resolve, reject });
-      window.chrome.webview.postMessage({ id, kind, region: region.value,
-        globalRegion: globalRegion.value, ...parameters });
+      window.chrome.webview.postMessage({ id, kind, region: queryRegion,
+        globalRegion: queryGlobalRegion, ...parameters });
     });
   }
   function resetSearch() {
@@ -184,7 +265,7 @@ if (typeof document !== 'undefined') {
           return row;
         }));
       }
-      importButton.disabled = !Object.keys(equipmentBonuses(data)).length;
+      importButton.disabled = !Object.keys(equipmentBonuses(data)).length && !Object.keys(offensiveReferences(data)).length;
       profileStatus.textContent = data.complete === false
         ? 'Partial public profile: some equipment details may still be loading.'
         : 'Public profile loaded. Stats shown here may lag behind the game.';
@@ -195,12 +276,26 @@ if (typeof document !== 'undefined') {
   importButton.addEventListener('click', () => {
     if (!loaded) return;
     const bonuses = equipmentBonuses(loaded);
+    const references = offensiveReferences(loaded);
     const form = document.querySelector('#calculator');
     for (const [field, previous] of Object.entries(previousImport)) {
       if (field in bonuses) continue;
       const input = form.elements.namedItem(field);
       if (input && Number(input.value) === previous) {
         input.value = String(Object.values(bonusFields).find(([name]) => name === field)[1]);
+      }
+    }
+    for (const [field, previous] of Object.entries(previousReferenceImport)) {
+      if (field in references) continue;
+      const input = form.elements.namedItem(field);
+      if (input && parseNumericInput(input.value) === previous) input.value = '0';
+    }
+    previousReferenceImport = {};
+    for (const [field, value] of Object.entries(references)) {
+      const input = form.elements.namedItem(field);
+      if (input) {
+        input.value = String(value);
+        previousReferenceImport[field] = value;
       }
     }
     previousImport = {};
@@ -212,10 +307,124 @@ if (typeof document !== 'undefined') {
       }
     }
     form.dispatchEvent(new Event('input', { bubbles: true }));
-    profileStatus.textContent = `Loaded ${Object.keys(bonuses).length} equipment bonus fields. All other values remain manual; these are not complete character totals.`;
+    profileStatus.textContent = `Loaded ${Object.keys(bonuses).length} formula bonuses and ${Object.keys(references).length} matchup stats. Equipment-only values are partial, not complete character totals.`;
     const warning = document.querySelector('#import-warning');
     warning.hidden = false;
-    warning.textContent = `Imported ${Object.keys(bonuses).length} equipment bonuses for ${extractCharacter(loaded).name}. Pure Attack, target Defense and other missing inputs are still manual or example values; verify them before relying on Final Damage.`;
+    warning.textContent = `Imported ${Object.keys(bonuses).length} formula bonuses and ${Object.keys(references).length} offensive matchup stats for ${extractCharacter(loaded).name}. Pure Attack and unavailable totals remain manual; reference-only matchups do not alter Final Damage.`;
+    showTab('calculator-view');
+    document.querySelector('#result').scrollIntoView({ block: 'start' });
+  });
+  const enemyRegion = document.querySelector('#enemy-region');
+  const enemyGlobalRegion = document.querySelector('#enemy-global-region');
+  const enemyChoice = document.querySelector('#enemy-choice');
+  const enemyChoiceLabel = document.querySelector('#enemy-choice-label');
+  const enemyPanel = document.querySelector('#enemy-panel');
+  const enemySearchStatus = document.querySelector('#enemy-search-status');
+  const enemyProfileStatus = document.querySelector('#enemy-profile-status');
+  const enemyImportButton = document.querySelector('#import-enemy');
+  let enemyResults = [];
+  let enemyLoaded = null;
+  let enemySearchId = 0;
+  let enemyProfileId = 0;
+
+  function resetEnemySearch() {
+    ++enemySearchId;
+    ++enemyProfileId;
+    enemyResults = [];
+    enemyLoaded = null;
+    enemyChoiceLabel.hidden = true;
+    enemyPanel.hidden = true;
+    enemyImportButton.disabled = true;
+    enemySearchStatus.textContent = 'Search again after changing the region.';
+  }
+  enemyRegion.addEventListener('change', () => {
+    document.querySelector('#enemy-global-region-label').hidden = enemyRegion.value !== 'ww';
+    resetEnemySearch();
+  });
+  enemyGlobalRegion.addEventListener('change', resetEnemySearch);
+  document.querySelector('#enemy-search').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name = document.querySelector('#enemy-name').value.trim();
+    if (!name) return;
+    const searchId = ++enemySearchId;
+    ++enemyProfileId;
+    enemyResults = [];
+    enemyLoaded = null;
+    enemyChoiceLabel.hidden = true;
+    enemyPanel.hidden = true;
+    enemyImportButton.disabled = true;
+    enemySearchStatus.textContent = 'Searching public character profiles…';
+    try {
+      const queryRegion = enemyRegion.value;
+      const queryGlobalRegion = enemyGlobalRegion.value;
+      const data = await request('search', { name }, queryRegion, queryGlobalRegion);
+      if (searchId !== enemySearchId) return;
+      enemyResults = Array.isArray(data.results) ? data.results.map(item => ({
+        ...item, queryRegion, queryGlobalRegion
+      })) : [];
+      if (!enemyResults.length) {
+        enemySearchStatus.textContent = data.complete === false ? 'Search is still processing. Try again shortly.' : 'No characters found.';
+        return;
+      }
+      enemySearchStatus.textContent = `${enemyResults.length} matching character${enemyResults.length === 1 ? '' : 's'} found.`;
+      enemyChoice.replaceChildren(new Option('Select a character', ''));
+      enemyResults.forEach((item, index) => enemyChoice.add(new Option(
+        `${item.name} · ${item.serverName} · ${item.className} · CP ${item.combatPower ?? '—'}`, String(index))));
+      if (enemyResults.length === 1) await loadEnemy(0);
+      else enemyChoiceLabel.hidden = false;
+    } catch (error) {
+      if (searchId === enemySearchId) enemySearchStatus.textContent = `Search failed: ${error.message}`;
+    }
+  });
+  enemyChoice.addEventListener('change', () => {
+    if (enemyChoice.value !== '') void loadEnemy(Number(enemyChoice.value));
+  });
+  async function loadEnemy(index) {
+    const item = enemyResults[index];
+    if (!item) return;
+    const profileId = ++enemyProfileId;
+    enemyLoaded = null;
+    enemyPanel.hidden = false;
+    enemyImportButton.disabled = true;
+    document.querySelector('#enemy-title').textContent = `${item.name} · ${item.serverName}`;
+    document.querySelector('#enemy-meta').textContent = `${item.className} · Level ${item.level} · CP ${item.combatPower ?? '—'}`;
+    enemyProfileStatus.textContent = 'Loading defensive attributes…';
+    document.querySelector('#enemy-stats').replaceChildren();
+    try {
+      const data = await request('profile', { serverId: item.serverId, characterId: item.characterId },
+        item.queryRegion, item.queryGlobalRegion);
+      if (profileId !== enemyProfileId) return;
+      enemyLoaded = data;
+      const defenses = enemyDefenses(data);
+      const sheet = enemySheetDefenses(data);
+      const entries = Object.entries(defenses);
+      document.querySelector('#enemy-stats').replaceChildren(...(entries.length
+        ? entries.map(([field, value]) => `${enemyLabels[field]}: ${value}${field in sheet ? ' (character sheet)' : ' (equipment only; partial)'}`)
+        : ['No matching defensive attributes in this public profile.']).map(text => {
+        const row = document.createElement('li');
+        row.textContent = text;
+        return row;
+      }));
+      enemyImportButton.disabled = !entries.length;
+      enemyProfileStatus.textContent = data.complete === false
+        ? 'Partial profile: equipment-only values may be incomplete.'
+        : 'Public profile loaded. Equipment-only values are partial; NPC and boss defenses differ.';
+    } catch (error) {
+      if (profileId === enemyProfileId) enemyProfileStatus.textContent = `Profile failed: ${error.message}`;
+    }
+  }
+  enemyImportButton.addEventListener('click', () => {
+    if (!enemyLoaded) return;
+    const defenses = enemyDefenses(enemyLoaded);
+    const calculator = document.querySelector('#calculator');
+    for (const [field, value] of Object.entries(defenses)) {
+      const input = calculator.elements.namedItem(field);
+      if (input) input.value = String(value);
+    }
+    calculator.dispatchEvent(new Event('input', { bubbles: true }));
+    const warning = document.querySelector('#import-warning');
+    warning.hidden = false;
+    warning.textContent = `Imported ${Object.keys(defenses).length} available defenses from ${extractCharacter(enemyLoaded).name}. Equipment-only numbers are partial; missing values remain manual. This character is not an NPC or boss profile.`;
     showTab('calculator-view');
     document.querySelector('#result').scrollIntoView({ block: 'start' });
   });
