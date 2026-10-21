@@ -27,7 +27,9 @@ internal sealed class CalculatorWindow : Form
         ["recommendations.js"] = "text/javascript; charset=utf-8",
         ["matchups.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
-        ["characters.js"] = "text/javascript; charset=utf-8"
+        ["characters.js"] = "text/javascript; charset=utf-8",
+        ["boss-data.js"] = "text/javascript; charset=utf-8",
+        ["bosses.js"] = "text/javascript; charset=utf-8"
     };
 
     private readonly WebView2 view = new() { Dock = DockStyle.Fill };

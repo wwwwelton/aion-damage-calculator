@@ -10,6 +10,8 @@
   <script defer src="numeric-input.js"></script>
   <script defer src="recommendations.js"></script>
   <script defer src="matchups.js"></script>
+  <script defer src="boss-data.js"></script>
+  <script defer src="bosses.js"></script>
   <script defer src="characters.js"></script>
   <script defer src="renderer.js"></script>
 </head>
@@ -24,6 +26,7 @@
       <button type="button" id="calculator-tab" role="tab" aria-controls="calculator-view" class="tab active" data-tab="calculator-view" aria-selected="true">Damage Calculator</button>
       <button type="button" id="character-tab" role="tab" aria-controls="character-view" class="tab" data-tab="character-view" aria-selected="false">Character Search</button>
       <button type="button" id="enemy-tab" role="tab" aria-controls="enemy-view" class="tab" data-tab="enemy-view" aria-selected="false">Enemy Character</button>
+      <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false">Bosses</button>
     </nav>
     <div id="calculator-view" class="tab-panel" role="tabpanel" aria-labelledby="calculator-tab">
     <section class="result" aria-live="polite">
@@ -70,6 +73,7 @@
           <div class="matchup"><label>Damage Boost <span>additive (%)</span><input name="damageBoost" type="number" step="any" value="100"></label><label class="enemy">Enemy Damage Tolerance (%)<input name="damageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <div class="matchup"><label>PvE Damage Boost <span>additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy PvE Damage Tolerance (%)<input name="pveDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <div class="matchup"><label>Species Damage Boost <span>additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy Species Damage Tolerance (%)<input name="speciesDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <label>Creature-type matchups <span>Optional: use the selected type's damage boost and tolerance instead of generic Species values</span><select id="creature-type"><option value="">Manual Species values</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option></select></label>
           <div class="matchup"><label>Critical Damage Boost <span>multiplier (%)</span><input name="criticalDamageBoost" type="number" min="0" step="any" value="150"></label><label class="enemy">Enemy Critical Damage Tolerance (%)<input name="criticalDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <label>Critical Hit?<select id="critical"><option value="no">No</option><option value="yes">Yes</option></select></label>
           <label>Double Chance proc?<select id="doubleEnabled"><option value="no">No</option><option value="yes">Yes</option></select></label>
@@ -138,6 +142,25 @@
         <p class="import-note">Character-sheet defenses take priority. If absent, explicit equipped-item defenses are shown and imported as partial values, not complete character totals. Missing attributes stay unchanged; NPC/boss defenses are not available from player profiles. Hit/proc resistances remain reference-only in the damage formula.</p>
         <h3>Available enemy defenses</h3>
         <ul id="enemy-stats"></ul>
+      </section>
+    </div>
+    <div id="boss-view" class="tab-panel" role="tabpanel" aria-labelledby="boss-tab" hidden>
+      <section class="card">
+        <h2>Boss catalog</h2>
+        <p class="import-note">Offline snapshot of 521 field bosses and hero/legend monsters from the AION 2 global client. Names, levels, creature types and available locations/classifications are shown; verified boss Defense and damage tolerances are not published. Selecting a boss never invents these values.</p>
+        <div class="boss-filters">
+          <label>Search by name, location or classification<input id="boss-search" type="search" placeholder="Boss or location"></label>
+          <label>Encounter group<select id="boss-group"><option value="">All groups</option><option value="Field boss">Field bosses (79)</option><option value="Hero / legend">Hero / legend monsters (442)</option></select></label>
+          <label>Boss<select id="boss-choice"></select></label>
+        </div>
+        <p id="boss-count" role="status"></p>
+      </section>
+      <section class="card">
+        <h2 id="boss-title">Select a boss</h2>
+        <p id="boss-details" class="import-note"></p>
+        <p id="boss-source" class="import-note boss-source" hidden></p>
+        <p class="import-note">Creature-type matchups: Cogni, Fera, Natura and Varian select the matching player's Damage Boost and the enemy's Damage Tolerance in the calculator. Special has no matching creature stat. Other boss defenses remain manual; prior enemy-character values are cleared on import so they cannot masquerade as boss stats.</p>
+        <button type="button" id="import-boss" disabled>Load boss into calculator</button>
       </section>
     </div>
   </main>

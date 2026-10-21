@@ -26,6 +26,11 @@ function update() {
     const number = parseNumericInput(input.value, input.min === '' ? -Infinity : Number(input.min)) ?? 0;
     values[input.name] = percentFields.has(input.name) ? number / 100 : number;
   }
+  const creatureType = document.querySelector('#creature-type').value;
+  if (creatureType) {
+    values.speciesDamageBoost = values[`${creatureType}DamageBoost`] / 100;
+    values.speciesDamageTolerance = values[`${creatureType}DamageTolerance`] / 100;
+  }
   const critical = document.querySelector('#critical').value === 'yes';
   values.criticalDamageBoost = critical ? values.criticalDamageBoost : 1;
   values.double = document.querySelector('#doubleEnabled').value === 'yes' ? values.double : 1;
@@ -49,7 +54,9 @@ function update() {
   else notes.push('Positional gains apply only when attacks land from the selected side.');
   notes.push('Double Chance is a proc rate, not a guaranteed multiplier; proc chance and resistance are not modeled.');
   upgradeContext.textContent = notes.join(' ');
-  status.textContent = 'Result of the supplied formula; in-game rounding is not included.';
+  status.textContent = creatureType
+    ? `Result of the supplied formula; ${creatureType} creature matchup replaces generic Species values. In-game rounding is not included.`
+    : 'Result of the supplied formula; in-game rounding is not included.';
 }
 form.addEventListener('input', update);
 form.addEventListener('focusout', (event) => {
