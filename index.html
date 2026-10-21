@@ -7,6 +7,7 @@
   <title>AION 2 — Damage Calculator</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="calculator.js"></script>
+  <script defer src="numeric-input.js"></script>
   <script defer src="recommendations.js"></script>
   <script defer src="renderer.js"></script>
   <script defer src="characters.js"></script>
@@ -41,7 +42,7 @@
         <h2>Attack</h2>
         <div class="grid">
           <label>Pure Attack <span>derived value, not an in-game stat</span><input name="pureAttack" type="number" min="0" step="any" value="1000"></label>
-          <label>Weapon Damage Boost <span>multiplier (%)</span><input name="weaponDamageBoost" type="number" min="0" step="any" value="100"></label>
+          <div class="matchup"><label>Weapon Damage Boost <span>multiplier (%)</span><input name="weaponDamageBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Weapon Damage Tolerance (%)<input name="weaponDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <label>Multi-Hit <span>multiplier (%)</span><input name="multiHit" type="number" min="0" step="any" value="100"></label>
           <label>Power Shard <span>multiplier (%)</span><input name="powerShard" type="number" min="0" step="any" value="100"></label>
           <label>Attack Bonus <input name="attackBonus" type="number" step="any" value="0"></label>
@@ -57,24 +58,41 @@
         <div class="grid">
           <label>Skill Coefficient <span>multiplier (%)</span><input name="skillCoefficient" type="number" min="0" step="any" value="100"></label>
           <label>Skill Additional Damage <input name="skillAdditionalDamage" type="number" step="any" value="0"></label>
-          <label>Defense <input name="defense" type="number" min="0" step="any" value="0"></label>
-          <label>Penetration <input name="penetration" type="number" min="0" step="any" value="0"></label>
+          <div class="matchup"><label>Penetration<input name="penetration" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Defense<input name="defense" type="number" min="0" step="any" value="0"></label></div>
           <label>Skill Specialty Enhancement <span>multiplier (%)</span><input name="skillSpecialtyEnhancement" type="number" min="0" step="any" value="100"></label>
         </div>
       </section>
       <section class="card">
         <h2>Boosts and Conditions</h2>
         <div class="grid">
-          <label>Damage Boost <span>additive (%)</span><input name="damageBoost" type="number" step="any" value="100"></label>
-          <label>PvE Damage Boost <span>additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label>
-          <label>Species Damage Boost <span>additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label>
-          <label>Critical Damage Boost <span>multiplier (%)</span><input name="criticalDamageBoost" type="number" min="0" step="any" value="150"></label>
+          <div class="matchup"><label>Damage Boost <span>additive (%)</span><input name="damageBoost" type="number" step="any" value="100"></label><label class="enemy">Enemy Damage Tolerance (%)<input name="damageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>PvE Damage Boost <span>additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy PvE Damage Tolerance (%)<input name="pveDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Species Damage Boost <span>additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy Species Damage Tolerance (%)<input name="speciesDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Critical Damage Boost <span>multiplier (%)</span><input name="criticalDamageBoost" type="number" min="0" step="any" value="150"></label><label class="enemy">Enemy Critical Damage Tolerance (%)<input name="criticalDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <label>Critical Hit?<select id="critical"><option value="no">No</option><option value="yes">Yes</option></select></label>
           <label>Double Chance proc?<select id="doubleEnabled"><option value="no">No</option><option value="yes">Yes</option></select></label>
           <label>Double damage multiplier (%)<input name="double" type="number" min="0" step="any" value="200"></label>
           <label>Attack position<select id="position"><option value="none">No positional boost</option><option value="front">Front</option><option value="back">Back</option></select></label>
-          <label>Front Damage Boost (%)<input name="frontBoost" type="number" min="0" step="any" value="100"></label>
-          <label>Back Damage Boost (%)<input name="backBoost" type="number" min="0" step="any" value="100"></label>
+          <div class="matchup"><label>Front Damage Boost (%)<input name="frontBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Front Attack Damage Tolerance (%)<input name="frontDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Back Damage Boost (%)<input name="backBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Back Attack Damage Tolerance (%)<input name="backDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Other enemy defenses (reference only)</h2>
+        <p class="reference-note">Hit and proc stats affect activation rather than a landed hit. Flat critical/position defenses, boss tolerance and elemental resistance lack matching terms in the supplied formula, so they do not alter this result. Attacks from behind ignore Block; Endurance halves damage only when it activates.</p>
+        <div class="grid">
+          <div class="matchup"><label>Accuracy<input name="accuracy" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Evasion<input name="evasion" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Block Penetration<input name="blockPenetration" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Block<input name="block" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Critical Hit<input name="criticalHit" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Critical Hit Resist<input name="criticalHitResist" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Double Chance (%)<input name="doubleChance" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Double Resist (%)<input name="doubleResist" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Perfect Chance (%)<input name="perfectChance" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Perfect Resist (%)<input name="perfectResist" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Multi-hit Chance (%)<input name="multiHitChance" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Multi-hit Resist (%)<input name="multiHitResist" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label>Endurance Penetration (%)<input name="endurancePenetration" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Endurance (%)<input name="endurance" type="number" min="0" step="any" value="0"></label></div>
+          <label class="enemy">Enemy Boss Damage Tolerance (%)<input name="bossDamageTolerance" type="number" min="0" step="any" value="0"></label>
+          <label class="enemy">Enemy Elemental Resistance<input name="elementalResistance" type="number" min="0" step="any" value="0"></label>
+          <label class="enemy">Enemy Critical Damage Defense (flat)<input name="criticalDamageDefense" type="number" min="0" step="any" value="0"></label>
+          <label class="enemy">Enemy Front Defense (flat)<input name="frontDefense" type="number" min="0" step="any" value="0"></label>
+          <label class="enemy">Enemy Back Defense (flat)<input name="backDefense" type="number" min="0" step="any" value="0"></label>
         </div>
       </section>
     </form>

@@ -6,21 +6,24 @@ const upgradeContext = document.querySelector('#upgrade-context');
 const percentFields = new Set([
   'weaponDamageBoost', 'multiHit', 'powerShard', 'attackIncrease', 'skillCoefficient',
   'damageBoost', 'pveDamageBoost', 'speciesDamageBoost', 'criticalDamageBoost',
+  'weaponDamageTolerance', 'damageTolerance', 'pveDamageTolerance',
+  'speciesDamageTolerance', 'criticalDamageTolerance', 'frontDamageTolerance',
+  'backDamageTolerance', 'doubleChance', 'doubleResist', 'perfectChance',
+  'perfectResist', 'multiHitChance', 'multiHitResist', 'endurancePenetration', 'endurance',
   'double', 'frontBoost', 'backBoost', 'skillSpecialtyEnhancement'
 ]);
 const formatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const numericInputs = form.querySelectorAll('input[type="number"]');
+for (const input of numericInputs) {
+  input.type = 'text';
+  input.inputMode = 'decimal';
+  input.autocomplete = 'off';
+}
 
 function update() {
   const values = {};
   for (const input of form.querySelectorAll('input')) {
-    if (input.value === '' || !input.validity.valid) {
-      result.textContent = '—';
-      status.textContent = 'Enter valid numbers in every field.';
-      upgradeList.replaceChildren();
-      upgradeContext.textContent = 'Tips appear when all values are valid.';
-      return;
-    }
-    const number = Number(input.value);
+    const number = parseNumericInput(input.value, input.min === '' ? -Infinity : Number(input.min)) ?? 0;
     values[input.name] = percentFields.has(input.name) ? number / 100 : number;
   }
   const critical = document.querySelector('#critical').value === 'yes';
@@ -29,6 +32,8 @@ function update() {
   const position = document.querySelector('#position').value;
   values.frontBackDamageBoost = position === 'front' ? values.frontBoost
     : position === 'back' ? values.backBoost : 1;
+  values.frontBackDamageTolerance = position === 'front' ? values.frontDamageTolerance
+    : position === 'back' ? values.backDamageTolerance : 0;
   const damage = calculateDamage(values);
   result.textContent = formatter.format(damage);
   const upgrades = rankDamageUpgrades(values, { critical, position });
@@ -47,5 +52,12 @@ function update() {
   status.textContent = 'Result of the supplied formula; in-game rounding is not included.';
 }
 form.addEventListener('input', update);
+form.addEventListener('focusout', (event) => {
+  const input = event.target;
+  if (!input.matches('input')) return;
+  const number = parseNumericInput(input.value, input.min === '' ? -Infinity : Number(input.min));
+  input.value = number === null ? '0' : formatNumericInput(input.value, number);
+  update();
+});
 form.addEventListener('change', update);
 update();

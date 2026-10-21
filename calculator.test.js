@@ -30,3 +30,18 @@ test('combina ataque, bônus aditivos, habilidade, mitigação e multiplicadores
 test('penetração acima da defesa mantém o sinal da subtração especificada', () => {
   assert.equal(calculateDamage({ ...base, defense: 50, penetration: 150 }), 1010);
 });
+
+test('enemy tolerances reduce their matching damage stages without changing neutral defaults', () => {
+  const v = { ...base, weaponDamageBoost: 1.5, criticalDamageBoost: 1.5,
+    frontBackDamageBoost: 1.2, pveDamageBoost: 0.3, speciesDamageBoost: 0.2,
+    weaponDamageTolerance: 0.1, damageTolerance: 0.1, pveDamageTolerance: 0.05,
+    speciesDamageTolerance: 0.05, criticalDamageTolerance: 0.2,
+    frontBackDamageTolerance: 0.1 };
+  assert.ok(Math.abs(calculateDamage(v) - 1400 * 1.3 * 1.3 * 1.1) < 1e-9);
+  assert.equal(calculateDamage(base), 1000);
+});
+
+test('hit and proc resistances do not pretend to change a landed hit', () => {
+  assert.equal(calculateDamage({ ...base, block: 1000, evasion: 1000,
+    criticalHitResist: 50, doubleResist: 0.5, endurance: 0.5 }), 1000);
+});

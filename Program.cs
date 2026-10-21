@@ -23,6 +23,7 @@ internal sealed class CalculatorWindow : Form
         ["index.html"] = "text/html; charset=utf-8",
         ["style.css"] = "text/css; charset=utf-8",
         ["calculator.js"] = "text/javascript; charset=utf-8",
+        ["numeric-input.js"] = "text/javascript; charset=utf-8",
         ["recommendations.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
         ["characters.js"] = "text/javascript; charset=utf-8"

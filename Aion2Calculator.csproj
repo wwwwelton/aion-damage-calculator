@@ -19,6 +19,7 @@
     <EmbeddedResource Include="index.html" LogicalName="index.html" />
     <EmbeddedResource Include="style.css" LogicalName="style.css" />
     <EmbeddedResource Include="calculator.js" LogicalName="calculator.js" />
+    <EmbeddedResource Include="numeric-input.js" LogicalName="numeric-input.js" />
     <EmbeddedResource Include="recommendations.js" LogicalName="recommendations.js" />
     <EmbeddedResource Include="renderer.js" LogicalName="renderer.js" />
     <EmbeddedResource Include="characters.js" LogicalName="characters.js" />
