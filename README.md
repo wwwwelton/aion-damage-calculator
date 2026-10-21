@@ -1,14 +1,46 @@
 # AION 2 Damage Calculator
 
-Windows calculator with a local WebView2 interface. HTML, CSS and JavaScript are embedded in the executable. Damage calculations run locally; character search makes user-initiated requests to NotMeter's public character service and needs internet access. The [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) must be installed on Windows. The app displays an error if the runtime is missing.
+Windows x64 damage calculator with a local WebView2 interface. HTML, CSS and JavaScript are embedded in the executable. Calculations and the mob/boss catalog work without a network connection. Character search requests public profiles from NotMeter and needs internet access.
 
-## Run
+## Get started
 
-Open `dist/webview2/AION2-Damage-Calculator.exe` on Windows x64. This is a single self-contained executable; installing .NET is not required. It is not digitally signed.
+### Run the Windows app
 
-## Build
+Requirements: Windows x64 and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/). Run `dist/webview2/AION2-Damage-Calculator.exe` after publishing, or use a distributed executable. The app reports an error if WebView2 is unavailable. The executable includes the .NET runtime, so users do not need to install the .NET SDK. It is not digitally signed.
 
-On Windows with .NET SDK 10: `dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2`. With Node.js, check the calculations using `node --test calculator.test.js recommendations.test.js characters.test.js`. Build requires access to NuGet for `Microsoft.Web.WebView2`.
+### Build from source
+
+Install the [.NET SDK 10](https://dotnet.microsoft.com/download/dotnet/10.0) on Windows. From the repository root, run:
+
+```powershell
+dotnet restore Aion2Calculator.csproj
+dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
+```
+
+The first restore needs access to NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable. Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
+
+### Development and checks
+
+Install [Node.js](https://nodejs.org/) for the JavaScript tests; no npm packages or `npm install` step are required. From the repository root:
+
+```bash
+node --test calculator.test.js numeric-input.test.js recommendations.test.js characters.test.js
+```
+
+Node.js is only needed for these tests, not for the executable. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>), but character search uses a WebView2-to-.NET bridge and works only in the Windows app. Verify character imports and desktop behavior in the published executable.
+
+### Project layout
+
+| Path | Purpose |
+| --- | --- |
+| `Aion2Calculator.csproj`, `Program.cs` | Windows build, embedded files and WebView2 host |
+| `NotMeterClient.cs` | Public character lookup through the native host |
+| `index.html`, `style.css`, `renderer.js`, `profile-ui.js` | Interface and character dossier |
+| `calculator.js`, `matchups.js`, `recommendations.js`, `numeric-input.js` | Damage calculation, matchup rules, tips and number parsing |
+| `characters.js`, `bosses.js`, `boss-data.js`, `mob-data.js` | Profile imports and offline NPC catalog |
+| `*.test.js` | Node.js regression tests |
+
+## Calculation scope
 
 Multipliers are entered as percentages: 100% = ×1, 150% = ×1.5. The additive Damage Boost bucket starts at 100%; PvE, Boss and Species bonuses start at zero. Critical Hit, Double Chance procs and attack position apply only when selected. Presets are illustrative, not official values. Pure Attack is a derived formula term. This community-derived model adds Boss Damage Boost to the bucket (unlike the originally supplied formula), caps effective Defense at zero after Penetration, uses Defense ×0.1 in PvE and ×0.01 in PvP, and uses a ×2 Double proc in PvE versus ×1.5 in PvP. Other damage floors and game rounding are not modeled.
 
@@ -63,3 +95,13 @@ For Cogni, Fera, Natura or Varian, importing selects the corresponding **Creatur
 The tips recalculate after every input change. They rank a **+1 percentage-point** change to Weapon Damage Boost and Damage Boost; Critical Damage Boost is included only for a critical hit, and Front/Back Attack Damage Boost only for the selected position. Gains are calculated from the current damage formula and entered enemy tolerances rather than copied from a fixed stat tier list. They compare individual hit damage, **not** gear cost or expected DPS. Critical Hit rate, Double Chance proc rate, resistance-to-chance conversions, positional uptime and skill rotation are not modeled, so no DPS recommendation is made for those stats. For a non-positive damage baseline, percentage comparisons are omitted.
 
 Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.tips/guides/aion-2-how-stats-work-damage-formula-guide.html) and [Aion 2 Maps — Stats explained](https://aion2maps.com/guides/stats-explained/). Their published rankings depend on build, boss and patch; the displayed numbers are **this formula's what-if estimates**, not measured in-game gains.
+
+## Contributing
+
+Contributions are welcome. Create a working branch, keep changes focused and update the relevant tests and documentation. For calculation changes, state the formula assumption and cite the game data or guide used; do not treat unknown NPC defenses or HP as verified values. For profile changes, distinguish published character-sheet totals from partial equipment options.
+
+Run the Node.js checks in [Development and checks](#development-and-checks), publish the Windows executable and exercise the affected UI. In a pull request, explain the behavior changed, the evidence for game-data changes and the checks you ran. Include a screenshot for visible UI changes when possible.
+
+## License
+
+No license file is present in this repository. Do not assume the GPL license from the reference README applies to this project.
