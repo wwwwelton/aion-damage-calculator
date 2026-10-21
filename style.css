@@ -23,6 +23,16 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .profile-columns h3 { font-size: 15px; }
 .profile-columns ul { max-height: 450px; overflow: auto; padding-left: 18px; overflow-wrap: anywhere; }
 .profile-columns li { padding-bottom: 8px; line-height: 1.4; }
+.icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.icon { flex: none; width: 20px; height: 20px; fill: currentColor; color: #91e6dc; }
+.icon-class { width: 36px; height: 36px; object-fit: contain; }
+.actor-icon { display: inline-flex; align-items: center; vertical-align: middle; margin-left: 6px; }
+.icon-heading { display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
+.icon-heading .actor-icon { margin: 0; }
+.profile-columns li, #enemy-stats li { display: flex; align-items: flex-start; gap: 8px; }
+.profile-columns li .icon, #enemy-stats li .icon { margin-top: 1px; }
+#calculator label { position: relative; }
+#calculator label > .icon { position: absolute; right: 0; top: 0; width: 16px; height: 16px; opacity: .8; }
 .result { padding: 23px 28px; border: 1px solid #346f79; border-radius: 16px; background: linear-gradient(110deg, #183b48, #172738); margin-bottom: 22px; display: flex; flex-direction: column; gap: 4px; }
 .result span { font-size: 12px; letter-spacing: .15em; color: #91e6dc; font-weight: 800; }
 .result strong { font-size: 48px; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -36,6 +46,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .advice li { padding: 3px 0; color: #91e6dc; font-variant-numeric: tabular-nums; }
 .advice .advice-note { font-size: 13px; }
 .advice small { color: #9daec5; line-height: 1.5; }
+.estimate .reference-note { margin: 0 0 16px; }
+.estimate-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+.estimate-results > div { padding: 16px; border: 1px solid #346f79; border-radius: 10px; background: #172738; }
+.estimate-results span { display: block; color: #91e6dc; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.estimate-results strong { display: block; margin-top: 8px; font-size: 27px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.estimate #estimate-note { margin: 14px 0 0; }
 .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .matchup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .enemy { color: #ffbbb7; }
@@ -75,6 +91,22 @@ footer { font-size: 12px; margin-top: 20px; }
 .boss-filters label:last-child { grid-column: 1 / -1; }
 #import-boss { min-height: 40px; max-width: 100%; padding: 8px 15px; border: 1px solid #69d8cc; border-radius: 8px; background: #23515b; color: #fff; font: inherit; cursor: pointer; }
 .boss-source { overflow-wrap: anywhere; user-select: text; }
+.encounter { border-color: #346f79; }
+.encounter > label { max-width: 340px; margin-bottom: 18px; }
+.combatants { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.combatants > div { display: grid; gap: 12px; padding: 16px; border: 1px solid #40516a; border-radius: 10px; }
+.combatants h2 { margin: 0; color: #91e6dc; }
+.encounter .reference-note { margin: 18px 0 0; }
+#calculator-view[data-mode="player"] .pve-only,
+#calculator-view[data-mode="player"] .boss-only,
+#calculator-view[data-mode="monster"] .boss-only,
+#calculator-view[data-mode="boss"] .player-only,
+#calculator-view[data-mode="monster"] .player-only { display: none; }
+.creature-select { max-width: 350px; margin-bottom: 18px; }
+@media (max-width: 560px) {
+  .combatants { grid-template-columns: minmax(0, 1fr); }
+  .estimate-results { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 560px) {
   .tabs { flex-wrap: wrap; }
   .tab { flex: 1 1 45%; }

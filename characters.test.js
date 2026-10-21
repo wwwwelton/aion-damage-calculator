@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { extractCharacter, equipmentBonuses, enemyDefenses, offensiveReferences } = require('./characters');
+const { extractCharacter, equipmentBonuses, enemyDefenses, offensiveReferences, characterHp } = require('./characters');
 
 const profile = {
   info: { profile: { characterName: 'Kanon', serverName: 'Siel', className: 'Cleric', characterLevel: 45, combatPower: 90000 },
@@ -87,4 +87,13 @@ test('first character supplies comparable offensive stats from sheet, then expli
     accuracy: 1200, criticalHit: 475, blockPenetration: 28,
     doubleChance: 3.5, cogniDamageBoost: 4, fireBoost: 2.5
   });
+});
+
+test('imports only explicit positive character-sheet HP, never item or missing HP', () => {
+  assert.equal(characterHp(profile), null);
+  const player = structuredClone(profile);
+  player.info.stat.statList.push({ name: 'HP', value: 12500 });
+  assert.equal(characterHp(player), 12500);
+  player.info.stat.statList.at(-1).value = 'unknown';
+  assert.equal(characterHp(player), null);
 });

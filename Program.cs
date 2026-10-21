@@ -25,10 +25,12 @@ internal sealed class CalculatorWindow : Form
         ["calculator.js"] = "text/javascript; charset=utf-8",
         ["numeric-input.js"] = "text/javascript; charset=utf-8",
         ["recommendations.js"] = "text/javascript; charset=utf-8",
+        ["icons.js"] = "text/javascript; charset=utf-8",
         ["matchups.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
         ["characters.js"] = "text/javascript; charset=utf-8",
         ["boss-data.js"] = "text/javascript; charset=utf-8",
+        ["mob-data.js"] = "text/javascript; charset=utf-8",
         ["bosses.js"] = "text/javascript; charset=utf-8"
     };
 
@@ -117,6 +119,23 @@ internal sealed class CalculatorWindow : Form
     {
         var uri = new Uri(e.Request.Uri);
         var name = uri.AbsolutePath.TrimStart('/');
+        if (name.StartsWith("assets/classes/", StringComparison.Ordinal)
+            && name.EndsWith(".webp", StringComparison.Ordinal)
+            && name.Count(c => c == '/') == 2)
+        {
+            var className = name["assets/classes/".Length..^".webp".Length];
+            if (className is "gladiator" or "templar" or "assassin" or "ranger" or "sorcerer"
+                or "spiritmaster" or "cleric" or "chanter")
+            {
+                var image = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
+                if (image is not null)
+                {
+                    e.Response = view.CoreWebView2.Environment.CreateWebResourceResponse(
+                        image, 200, "OK", "Content-Type: image/webp\r\nCache-Control: no-store");
+                    return;
+                }
+            }
+        }
         if (ContentTypes.TryGetValue(name, out var type))
         {
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);

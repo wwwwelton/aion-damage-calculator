@@ -21,8 +21,11 @@
     <EmbeddedResource Include="calculator.js" LogicalName="calculator.js" />
     <EmbeddedResource Include="numeric-input.js" LogicalName="numeric-input.js" />
     <EmbeddedResource Include="recommendations.js" LogicalName="recommendations.js" />
+    <EmbeddedResource Include="icons.js" LogicalName="icons.js" />
+    <EmbeddedResource Include="assets/classes/*.webp" LogicalName="assets/classes/%(Filename)%(Extension)" />
     <EmbeddedResource Include="matchups.js" LogicalName="matchups.js" />
     <EmbeddedResource Include="boss-data.js" LogicalName="boss-data.js" />
+    <EmbeddedResource Include="mob-data.js" LogicalName="mob-data.js" />
     <EmbeddedResource Include="bosses.js" LogicalName="bosses.js" />
     <EmbeddedResource Include="renderer.js" LogicalName="renderer.js" />
     <EmbeddedResource Include="characters.js" LogicalName="characters.js" />

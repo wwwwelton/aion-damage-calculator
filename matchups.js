@@ -22,16 +22,17 @@ const referenceGroups = [
     ['Endurance Penetration', 'endurancePenetration', 'Endurance', 'endurance', true],
     ['Regeneration Penetration', 'regenerationPenetration', 'Regeneration', 'regeneration', true]
   ] },
-  { title: 'Situational damage and elements', note: 'These stats require the matching target type or elemental skill. Boss, PvP and elemental terms are not in the supplied final-damage formula.', open: false, rows: [
-    ['Boss Damage Boost', 'bossDamageBoost', 'Boss Damage Tolerance', 'bossDamageTolerance', true],
+  { title: 'PvP damage (reference only)', mode: 'player', note: 'Applies against players. PvP Attack, PvP Defense, PvP Damage Boost and PvP Damage Tolerance have no conversion in the supplied equation; the displayed hit is a shared-stat baseline, not final PvP damage.', open: false, rows: [
     ['PvP Damage Boost', 'pvpDamageBoost', 'PvP Damage Tolerance', 'pvpDamageTolerance', true],
-    ['PvP Attack', 'pvpAttack', 'PvP Defense', 'pvpDefense'],
+    ['PvP Attack', 'pvpAttack', 'PvP Defense', 'pvpDefense']
+  ] },
+  { title: 'Elemental damage (reference only)', note: 'Choose the element of the actual skill. Fire, Water, Wind and Earth stats are shown independently; elemental boosts and tolerances are not included in the supplied damage equation.', open: false, rows: [
     ['Fire Boost', 'fireBoost', 'Fire Tolerance', 'fireTolerance', true],
     ['Water Boost', 'waterBoost', 'Water Tolerance', 'waterTolerance', true],
     ['Wind Boost', 'windBoost', 'Wind Tolerance', 'windTolerance', true],
     ['Earth Boost', 'earthBoost', 'Earth Tolerance', 'earthTolerance', true]
   ] },
-  { title: 'Creature-type matchups', note: 'Cogni, Fera, Natura and Varian each have separate stats; the generic Species fields above are formula placeholders. These reference fields do not change the formula.', open: false, rows: ['Cogni', 'Fera', 'Natura', 'Varian'].flatMap((type) => [
+  { title: 'Edit type-specific stats', mode: 'pve', note: 'The selected type’s Damage Boost and Damage Tolerance replace generic Species terms in Final Damage. Attack, Defense, hit and block stats below are reference-only.', open: false, rows: ['Cogni', 'Fera', 'Natura', 'Varian'].flatMap((type) => [
     [`${type} Damage Boost`, `${type.toLowerCase()}DamageBoost`, `${type} Damage Tolerance`, `${type.toLowerCase()}DamageTolerance`, true],
     [`${type} Attack`, `${type.toLowerCase()}Attack`, `${type} Defense`, `${type.toLowerCase()}Defense`],
     [`${type} Accuracy`, `${type.toLowerCase()}Accuracy`, `${type} Evasion`, `${type.toLowerCase()}Evasion`],
@@ -46,7 +47,7 @@ if (typeof document !== 'undefined') {
   const container = document.querySelector('#reference-matchups');
   for (const group of referenceGroups) {
     const details = document.createElement('details');
-    details.className = 'reference-group';
+    details.className = `reference-group${group.mode ? ` ${group.mode === 'pve' ? 'pve-only' : group.mode + '-only'}` : ''}`;
     details.open = group.open;
     const summary = document.createElement('summary');
     summary.textContent = group.title;
@@ -73,6 +74,6 @@ if (typeof document !== 'undefined') {
       grid.append(pair);
     }
     details.append(summary, note, grid);
-    container.append(details);
+    (group.mode === 'pve' ? document.querySelector('#creature-matchups') : container).append(details);
   }
 }

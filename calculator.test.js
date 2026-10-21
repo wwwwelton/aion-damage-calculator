@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { calculateDamage } = require('./calculator');
+const { calculateDamage, applyTargetMode, estimateCombat } = require('./calculator');
 
 const base = {
   pureAttack: 1000, weaponDamageBoost: 1, multiHit: 1, powerShard: 1,
@@ -27,8 +27,8 @@ test('combina ataque, bônus aditivos, habilidade, mitigação e multiplicadores
   assert.ok(Math.abs(calculateDamage(values) - 1955 * 1.6 * 1.5 * 2 * 1.2 * 1.1) < 1e-9);
 });
 
-test('penetração acima da defesa mantém o sinal da subtração especificada', () => {
-  assert.equal(calculateDamage({ ...base, defense: 50, penetration: 150 }), 1010);
+test('penetration cannot reduce effective defense below zero', () => {
+  assert.equal(calculateDamage({ ...base, defense: 50, penetration: 150 }), 1000);
 });
 
 test('enemy tolerances reduce their matching damage stages without changing neutral defaults', () => {
@@ -44,4 +44,35 @@ test('enemy tolerances reduce their matching damage stages without changing neut
 test('hit and proc resistances do not pretend to change a landed hit', () => {
   assert.equal(calculateDamage({ ...base, block: 1000, evasion: 1000,
     criticalHitResist: 50, doubleResist: 0.5, endurance: 0.5 }), 1000);
+});
+
+test('switching between boss, monster and player excludes inapplicable damage terms without losing inputs', () => {
+  const values = { ...base, pveAttackPower: 100, bossAttackPower: 200,
+    speciesAttackPower: 300, pveDamageBoost: 0.1, speciesDamageBoost: 0.2,
+    pveDamageTolerance: 0.05, speciesDamageTolerance: 0.02 };
+  assert.ok(Math.abs(calculateDamage(applyTargetMode(values, 'boss')) - 1600 * 1.23) < 1e-9);
+  assert.ok(Math.abs(calculateDamage(applyTargetMode(values, 'monster')) - 1400 * 1.23) < 1e-9);
+  assert.equal(calculateDamage(applyTargetMode(values, 'player')), 1000);
+  assert.ok(Math.abs(calculateDamage(applyTargetMode(values, 'boss')) - 1600 * 1.23) < 1e-9);
+});
+
+test('boss boost and tolerance only apply to bosses and share the additive bucket', () => {
+  const values = { ...base, bossDamageBoost: 0.3, bossDamageTolerance: 0.1 };
+  assert.equal(calculateDamage(applyTargetMode(values, 'boss')), 1200);
+  assert.equal(calculateDamage(applyTargetMode(values, 'monster')), 1000);
+  assert.equal(calculateDamage(applyTargetMode(values, 'player')), 1000);
+});
+
+test('PvP defense scales by 1% and a Double proc has half the PvE bonus', () => {
+  const values = { ...base, defense: 100, double: 2 };
+  assert.equal(calculateDamage(applyTargetMode(values, 'boss')), 1980);
+  assert.equal(calculateDamage(applyTargetMode(values, 'player')), 1498.5);
+  assert.equal(calculateDamage(applyTargetMode({ ...values, penetration: 200 }, 'player')), 1500);
+});
+
+test('DPS and defeat time require a positive hit rate and actual target HP', () => {
+  assert.deepEqual(estimateCombat(1200, 2.5, 9000), { dps: 3000, secondsToDefeat: 3 });
+  assert.deepEqual(estimateCombat(1200, 2.5, 0), { dps: 3000, secondsToDefeat: null });
+  assert.deepEqual(estimateCombat(1200, 0, 9000), { dps: null, secondsToDefeat: null });
+  assert.deepEqual(estimateCombat(-100, 2, 9000), { dps: null, secondsToDefeat: null });
 });

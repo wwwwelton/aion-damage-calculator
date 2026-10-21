@@ -7,6 +7,7 @@ const bonusFields = {
   'Weapon Damage Boost': ['weaponDamageBoost', 100, true],
   'Damage Boost': ['damageBoost', 100, true],
   'PvE Damage Boost': ['pveDamageBoost', 0, true],
+  'Boss Damage Boost': ['bossDamageBoost', 0, true],
   'Critical Damage Boost': ['criticalDamageBoost', 150, true],
   'Front Attack Damage Boost': ['frontBoost', 100, true],
   'Back Attack Damage Boost': ['backBoost', 100, true]
@@ -37,6 +38,13 @@ function equipmentBonuses(profile) {
     values[name] = Math.round((baseline + amount) * 10000) / 10000;
   }
   return values;
+}
+
+const parseHp = typeof module !== 'undefined' ? require('./numeric-input').parseNumericInput : parseNumericInput;
+function characterHp(data) {
+  const entry = data?.info?.stat?.statList?.find(stat => stat.name === 'HP');
+  const hp = parseHp(String(entry?.value ?? ''), 0);
+  return hp > 0 ? hp : null;
 }
 
 function extractCharacter(data) {
@@ -138,7 +146,7 @@ function offensiveReferences(profile) {
     ...sheetFields(profile, referenceFields, referencePercentFields) };
 }
 
-if (typeof module !== 'undefined') module.exports = { extractCharacter, equipmentBonuses, enemyDefenses, offensiveReferences };
+if (typeof module !== 'undefined') module.exports = { extractCharacter, equipmentBonuses, enemyDefenses, offensiveReferences, characterHp };
 
 if (typeof document !== 'undefined') {
   const tabs = document.querySelectorAll('.tab');
@@ -249,6 +257,7 @@ if (typeof document !== 'undefined') {
     importButton.disabled = true;
     document.querySelector('#profile-title').textContent = `${item.name} · ${item.serverName}`;
     document.querySelector('#profile-meta').textContent = `${item.className} · Level ${item.level} · ${item.raceName || ''} · CP ${item.combatPower ?? '—'}`;
+    setDisplayIcon(document.querySelector('#profile-class-icon'), 'class', item.className);
     profileStatus.textContent = 'Loading attributes, gear and skills…';
     for (const id of ['profile-stats', 'profile-gear', 'profile-skills']) document.getElementById(id).replaceChildren();
     try {
@@ -261,11 +270,14 @@ if (typeof document !== 'undefined') {
         const list = document.getElementById(id);
         list.replaceChildren(...(entries.length ? entries : ['Not available in this public profile.']).map(text => {
           const row = document.createElement('li');
-          row.textContent = text;
+          const kind = id === 'profile-skills' ? 'skill'
+            : id === 'profile-gear' ? 'stat' : attributeIcon(text.split(':')[0]);
+          row.append(iconElement(kind), document.createTextNode(text));
           return row;
         }));
       }
-      importButton.disabled = !Object.keys(equipmentBonuses(data)).length && !Object.keys(offensiveReferences(data)).length;
+      importButton.disabled = !Object.keys(equipmentBonuses(data)).length
+        && !Object.keys(offensiveReferences(data)).length && characterHp(data) === null;
       profileStatus.textContent = data.complete === false
         ? 'Partial public profile: some equipment details may still be loading.'
         : 'Public profile loaded. Stats shown here may lag behind the game.';
@@ -306,13 +318,17 @@ if (typeof document !== 'undefined') {
         previousImport[field] = value;
       }
     }
+    const attacker = extractCharacter(loaded);
+    document.querySelector('#attacker-name').value = attacker.name || '';
+    document.querySelector('#attacker-class').value = document.querySelector('#profile-meta').textContent.split(' · ')[0];
+    form.elements.namedItem('playerHp').value = String(characterHp(loaded) ?? 0);
     form.dispatchEvent(new Event('input', { bubbles: true }));
     profileStatus.textContent = `Loaded ${Object.keys(bonuses).length} formula bonuses and ${Object.keys(references).length} matchup stats. Equipment-only values are partial, not complete character totals.`;
     const warning = document.querySelector('#import-warning');
     warning.hidden = false;
-    warning.textContent = `Imported ${Object.keys(bonuses).length} formula bonuses and ${Object.keys(references).length} offensive matchup stats for ${extractCharacter(loaded).name}. Pure Attack and unavailable totals remain manual; reference-only matchups do not alter Final Damage.`;
+    warning.textContent = `Imported ${Object.keys(bonuses).length} formula bonuses and ${Object.keys(references).length} offensive matchup stats for ${attacker.name}. ${characterHp(loaded) === null ? 'Character-sheet HP unavailable; Player HP is unknown.' : `Character-sheet HP: ${characterHp(loaded)}.`} Pure Attack and unavailable totals remain manual; reference-only matchups do not alter Final Damage.`;
     showTab('calculator-view');
-    document.querySelector('#result').scrollIntoView({ block: 'start' });
+    document.querySelector('.encounter').scrollIntoView({ block: 'start' });
   });
   const enemyRegion = document.querySelector('#enemy-region');
   const enemyGlobalRegion = document.querySelector('#enemy-global-region');
@@ -388,6 +404,7 @@ if (typeof document !== 'undefined') {
     enemyImportButton.disabled = true;
     document.querySelector('#enemy-title').textContent = `${item.name} · ${item.serverName}`;
     document.querySelector('#enemy-meta').textContent = `${item.className} · Level ${item.level} · CP ${item.combatPower ?? '—'}`;
+    setDisplayIcon(document.querySelector('#enemy-class-icon'), 'class', item.className);
     enemyProfileStatus.textContent = 'Loading defensive attributes…';
     document.querySelector('#enemy-stats').replaceChildren();
     try {
@@ -398,11 +415,13 @@ if (typeof document !== 'undefined') {
       const defenses = enemyDefenses(data);
       const sheet = enemySheetDefenses(data);
       const entries = Object.entries(defenses);
+      const hp = characterHp(data);
+      if (hp !== null) entries.push(['enemyHp', hp]);
       document.querySelector('#enemy-stats').replaceChildren(...(entries.length
-        ? entries.map(([field, value]) => `${enemyLabels[field]}: ${value}${field in sheet ? ' (character sheet)' : ' (equipment only; partial)'}`)
+        ? entries.map(([field, value]) => `${field === 'enemyHp' ? 'HP' : enemyLabels[field]}: ${value}${field === 'enemyHp' || field in sheet ? ' (character sheet)' : ' (equipment only; partial)'}`)
         : ['No matching defensive attributes in this public profile.']).map(text => {
         const row = document.createElement('li');
-        row.textContent = text;
+        row.append(iconElement(attributeIcon(text.split(':')[0])), document.createTextNode(text));
         return row;
       }));
       enemyImportButton.disabled = !entries.length;
@@ -417,15 +436,22 @@ if (typeof document !== 'undefined') {
     if (!enemyLoaded) return;
     const defenses = enemyDefenses(enemyLoaded);
     const calculator = document.querySelector('#calculator');
+    document.querySelector('#target-mode').value = 'player';
+    document.querySelector('#target-mode').dispatchEvent(new Event('change'));
+    for (const input of calculator.querySelectorAll('.enemy input')) input.value = '0';
     for (const [field, value] of Object.entries(defenses)) {
       const input = calculator.elements.namedItem(field);
       if (input) input.value = String(value);
     }
+    const hp = characterHp(enemyLoaded);
+    if (hp !== null) calculator.elements.namedItem('enemyHp').value = String(hp);
+    document.querySelector('#target-name').value = extractCharacter(enemyLoaded).name || '';
+    document.querySelector('#target-class').value = document.querySelector('#enemy-meta').textContent.split(' · ')[0];
     calculator.dispatchEvent(new Event('input', { bubbles: true }));
     const warning = document.querySelector('#import-warning');
     warning.hidden = false;
-    warning.textContent = `Imported ${Object.keys(defenses).length} available defenses from ${extractCharacter(enemyLoaded).name}. Equipment-only numbers are partial; missing values remain manual. This character is not an NPC or boss profile.`;
+    warning.textContent = `Imported ${Object.keys(defenses).length} available defenses from ${extractCharacter(enemyLoaded).name}. ${hp === null ? 'Enemy HP is unknown.' : `Enemy character-sheet HP: ${hp}.`} Equipment-only numbers are partial; missing values reset to zero (unknown). This character is not an NPC or boss profile.`;
     showTab('calculator-view');
-    document.querySelector('#result').scrollIntoView({ block: 'start' });
+    document.querySelector('.encounter').scrollIntoView({ block: 'start' });
   });
 }

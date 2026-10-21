@@ -10,7 +10,9 @@
   <script defer src="numeric-input.js"></script>
   <script defer src="recommendations.js"></script>
   <script defer src="matchups.js"></script>
+  <script defer src="icons.js"></script>
   <script defer src="boss-data.js"></script>
+  <script defer src="mob-data.js"></script>
   <script defer src="bosses.js"></script>
   <script defer src="characters.js"></script>
   <script defer src="renderer.js"></script>
@@ -20,17 +22,25 @@
     <header>
       <p class="eyebrow">AION 2 · LOCAL CALCULATOR</p>
       <h1>Damage Calculator</h1>
-      <p>Enter your character and target stats. Multipliers use 100% as neutral; additive damage bonuses use 0%.</p>
+      <p>Choose a target mode, then enter the attacker and target stats. Multipliers use 100% as neutral; additive damage bonuses use 0%.</p>
     </header>
     <nav class="tabs" role="tablist" aria-label="Application tabs">
       <button type="button" id="calculator-tab" role="tab" aria-controls="calculator-view" class="tab active" data-tab="calculator-view" aria-selected="true">Damage Calculator</button>
       <button type="button" id="character-tab" role="tab" aria-controls="character-view" class="tab" data-tab="character-view" aria-selected="false">Character Search</button>
       <button type="button" id="enemy-tab" role="tab" aria-controls="enemy-view" class="tab" data-tab="enemy-view" aria-selected="false">Enemy Character</button>
-      <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false">Bosses</button>
+      <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false">Mobs &amp; Bosses</button>
     </nav>
     <div id="calculator-view" class="tab-panel" role="tabpanel" aria-labelledby="calculator-tab">
+    <section class="card encounter" aria-label="Combat scenario">
+      <label>Target mode<select id="target-mode"><option value="boss">PvE · Boss</option><option value="monster">PvE · Other monster</option><option value="player">PvP · Player</option></select></label>
+      <div class="combatants">
+        <div><h2>Attacker <span id="attacker-icon" class="actor-icon" hidden></span></h2><label>Character name<input id="attacker-name" type="text" placeholder="Your character"></label><label>Class<input id="attacker-class" type="text" placeholder="Class"></label></div>
+        <div><h2>Target <span id="target-icon" class="actor-icon"></span></h2><label>Name<input id="target-name" type="text" placeholder="Select a boss or enter a name"></label><label id="target-kind-label">Creature type<select id="creature-type-header"><option value="">Unknown / manual</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option><option value="special">Special</option></select></label><label id="target-class-label" hidden>Class<input id="target-class" type="text" placeholder="Target class"></label></div>
+      </div>
+      <p id="mode-note" class="reference-note"></p>
+    </section>
     <section class="result" aria-live="polite">
-      <span>FINAL DAMAGE</span>
+      <span id="result-label">PVE · BOSS · ESTIMATED HIT</span>
       <strong id="result">0</strong>
       <small id="status">Result of the supplied formula; in-game rounding is not included.</small>
     </section>
@@ -43,6 +53,20 @@
       <small>Per-hit comparisons, not DPS or upgrade-cost rankings. Based on the AION 2 damage formula guide (Gameplay.tips) and Stats explained (Aion 2 Maps); results depend on the target, uptime and patch.</small>
     </section>
     <form id="calculator">
+      <section class="card estimate">
+        <h2>Estimated DPS &amp; target HP</h2>
+        <p class="reference-note">Set landed hits per second for this exact hit. This is sustained damage for an assumed constant hit, not a measured rotation or proc average. HP is not known for NPCs; enter a value only when you know it.</p>
+        <div class="grid">
+          <label>Player HP <span>attacker's character-sheet HP; does not affect outgoing damage</span><input name="playerHp" type="number" min="0" step="any" value="0"></label>
+          <label class="enemy"><span id="enemy-hp-label">Boss HP</span><span>0 = unknown; reset when changing targets</span><input name="enemyHp" type="number" min="0" step="any" value="0"></label>
+          <label>Landed hits per second <span>enter your observed or assumed rate</span><input name="hitsPerSecond" type="number" min="0" step="any" value="0"></label>
+        </div>
+        <div class="estimate-results">
+          <div><span>ESTIMATED DPS</span><strong id="estimated-dps">—</strong></div>
+          <div><span>TIME TO DEFEAT</span><strong id="estimated-time">—</strong></div>
+        </div>
+        <p id="estimate-note" class="reference-note" role="status"></p>
+      </section>
       <section class="card">
         <h2>Attack</h2>
         <div class="grid">
@@ -52,9 +76,9 @@
           <label>Power Shard <span>multiplier (%)</span><input name="powerShard" type="number" min="0" step="any" value="100"></label>
           <label>Attack Bonus <input name="attackBonus" type="number" step="any" value="0"></label>
           <label>Attack Increase <span>multiplier (%)</span><input name="attackIncrease" type="number" min="0" step="any" value="100"></label>
-          <label>PvE Attack Power <input name="pveAttackPower" type="number" step="any" value="0"></label>
-          <label>Boss Attack Power <input name="bossAttackPower" type="number" step="any" value="0"></label>
-          <label>Species Attack Power <input name="speciesAttackPower" type="number" step="any" value="0"></label>
+          <label class="pve-only">PvE Attack Power <input name="pveAttackPower" type="number" step="any" value="0"></label>
+          <label class="boss-only">Boss Attack Power <input name="bossAttackPower" type="number" step="any" value="0"></label>
+          <label class="pve-only">Species Attack Power <input name="speciesAttackPower" type="number" step="any" value="0"></label>
           <label>Front/Back Attack Power <input name="frontBackAttackPower" type="number" step="any" value="0"></label>
         </div>
       </section>
@@ -71,29 +95,36 @@
         <h2>Boosts and Conditions</h2>
         <div class="grid">
           <div class="matchup"><label>Damage Boost <span>additive (%)</span><input name="damageBoost" type="number" step="any" value="100"></label><label class="enemy">Enemy Damage Tolerance (%)<input name="damageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <div class="matchup"><label>PvE Damage Boost <span>additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy PvE Damage Tolerance (%)<input name="pveDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <div class="matchup"><label>Species Damage Boost <span>additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy Species Damage Tolerance (%)<input name="speciesDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <label>Creature-type matchups <span>Optional: use the selected type's damage boost and tolerance instead of generic Species values</span><select id="creature-type"><option value="">Manual Species values</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option></select></label>
+          <div class="matchup pve-only"><label>PvE Damage Boost <span>additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy PvE Damage Tolerance (%)<input name="pveDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup boss-only"><label>Boss Damage Boost <span>additive (%)</span><input name="bossDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy Boss Damage Tolerance (%)<input name="bossDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup pve-only"><label>Species Damage Boost <span>additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy Species Damage Tolerance (%)<input name="speciesDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <div class="matchup"><label>Critical Damage Boost <span>multiplier (%)</span><input name="criticalDamageBoost" type="number" min="0" step="any" value="150"></label><label class="enemy">Enemy Critical Damage Tolerance (%)<input name="criticalDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <label>Critical Hit?<select id="critical"><option value="no">No</option><option value="yes">Yes</option></select></label>
           <label>Double Chance proc?<select id="doubleEnabled"><option value="no">No</option><option value="yes">Yes</option></select></label>
-          <label>Double damage multiplier (%)<input name="double" type="number" min="0" step="any" value="200"></label>
+          <label>Double damage multiplier (%) <span>PvE value; PvP proc bonus is halved</span><input name="double" type="number" min="0" step="any" value="200"></label>
           <label>Attack position<select id="position"><option value="none">No positional boost</option><option value="front">Front</option><option value="back">Back</option></select></label>
           <div class="matchup"><label>Front Damage Boost (%)<input name="frontBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Front Attack Damage Tolerance (%)<input name="frontDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
           <div class="matchup"><label>Back Damage Boost (%)<input name="backBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Back Attack Damage Tolerance (%)<input name="backDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
         </div>
       </section>
+      <section class="card pve-only" id="pve-matchups">
+        <h2>PvE / Boss · Creature-type matchups</h2>
+        <p class="reference-note">Choose the target's type to apply its Damage Boost and Damage Tolerance instead of generic Species values. Unknown or Special targets use manual Species values. Other creature stats are reference-only.</p>
+        <label class="creature-select">Creature type for damage calculation<select id="creature-type"><option value="">Manual Species values</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option></select></label>
+        <p id="creature-summary" class="reference-note" aria-live="polite"></p>
+        <div id="creature-matchups"></div>
+      </section>
       <section class="card">
-        <h2>Combat matchups (reference only)</h2>
-        <p class="reference-note">Paired offensive stats from the first character and defensive stats from the target. Only defenses in the formula above change Final Damage; hit chance, procs, PvP, elemental and creature-specific stats require separate mechanics or target context.</p>
+        <h2>Combat matchups</h2>
+        <p class="reference-note">Accuracy, block, critical chance and procs are reference-only for a selected hit. PvP damage and elemental stats remain reference-only because their exact stacking is unverified.</p>
         <div class="grid reference-extras">
-          <label>PvE Accuracy <span>also counters enemy Evasion and Block against monsters</span><input name="pveAccuracy" type="number" min="0" step="any" value="0"></label>
+          <label class="pve-only">PvE Accuracy <span>also counters enemy Evasion and Block against monsters</span><input name="pveAccuracy" type="number" min="0" step="any" value="0"></label>
           <label class="enemy">Enemy Elemental Resistance <span>general reference; elemental skills have individual tolerances</span><input name="elementalResistance" type="number" min="0" step="any" value="0"></label>
         </div>
         <div id="reference-matchups"></div>
       </section>
     </form>
-    <footer>Prefilled values are examples, not official game stats. The supplied formatted formula omits Boss Damage Boost from the final sum.</footer>
+    <footer>Prefilled values are examples, not official game stats. Community-derived formula; actual results depend on the client patch, skill and target.</footer>
     </div>
     <div id="character-view" class="tab-panel" role="tabpanel" aria-labelledby="character-tab" hidden>
       <section class="card">
@@ -109,11 +140,11 @@
         <label id="character-choice-label" hidden>Matching characters<select id="character-choice"></select></label>
       </section>
       <section id="profile-panel" class="card" hidden>
-        <h2 id="profile-title"></h2>
+        <h2 class="icon-heading"><span id="profile-class-icon" class="actor-icon" hidden></span><span id="profile-title"></span></h2>
         <p id="profile-meta"></p>
         <p id="profile-status" role="status" aria-live="polite"></p>
         <button type="button" id="import-character" disabled>Load available stats into calculator</button>
-        <p class="import-note">Explicit character-sheet offensive matchup stats are imported; missing stats may use equipped-item values marked as partial. Formula bonuses come from equipped items. Pure Attack, skill coefficients, target Defense and unavailable totals stay manual. Reference-only matchups do not alter Final Damage.</p>
+        <p class="import-note">Explicit character-sheet HP and offensive matchup stats are imported when present; missing stats may use equipped-item values marked as partial. Formula bonuses come from equipped items. Pure Attack, skill coefficients, target Defense and unavailable totals stay manual. Reference-only matchups do not alter Final Damage.</p>
         <div class="profile-columns">
           <section><h3>Character attributes</h3><ul id="profile-stats"></ul></section>
           <section><h3>Equipped gear and options</h3><ul id="profile-gear"></ul></section>
@@ -135,34 +166,46 @@
         <label id="enemy-choice-label" hidden>Matching characters<select id="enemy-choice"></select></label>
       </section>
       <section id="enemy-panel" class="card" hidden>
-        <h2 id="enemy-title"></h2>
+        <h2 class="icon-heading"><span id="enemy-class-icon" class="actor-icon" hidden></span><span id="enemy-title"></span></h2>
         <p id="enemy-meta"></p>
         <p id="enemy-profile-status" role="status" aria-live="polite"></p>
-        <button type="button" id="import-enemy" disabled>Load enemy defenses into calculator</button>
-        <p class="import-note">Character-sheet defenses take priority. If absent, explicit equipped-item defenses are shown and imported as partial values, not complete character totals. Missing attributes stay unchanged; NPC/boss defenses are not available from player profiles. Hit/proc resistances remain reference-only in the damage formula.</p>
-        <h3>Available enemy defenses</h3>
+        <button type="button" id="import-enemy" disabled>Load enemy HP and defenses into calculator</button>
+        <p class="import-note">Explicit character-sheet HP and defenses take priority. If defenses are absent, equipped-item defenses are shown and imported as partial values. Missing attributes reset to zero (unknown) on target change; NPC/boss HP and defenses are not available from player profiles. Hit/proc resistances remain reference-only in the damage formula.</p>
+        <h3>Available enemy HP and defenses</h3>
         <ul id="enemy-stats"></ul>
       </section>
     </div>
     <div id="boss-view" class="tab-panel" role="tabpanel" aria-labelledby="boss-tab" hidden>
       <section class="card">
-        <h2>Boss catalog</h2>
-        <p class="import-note">Offline snapshot of 521 field bosses and hero/legend monsters from the AION 2 global client. Names, levels, creature types and available locations/classifications are shown; verified boss Defense and damage tolerances are not published. Selecting a boss never invents these values.</p>
+        <h2>Mobs &amp; Bosses</h2>
+        <p class="import-note">Offline snapshot of all 3,593 monsters in the Aion2Data global-client catalog: 521 bosses and 3,072 other mobs. Levels, ranks and creature types are available; verified individual Defense and damage tolerances are not. Unknown values stay manual.</p>
         <div class="boss-filters">
-          <label>Search by name, location or classification<input id="boss-search" type="search" placeholder="Boss or location"></label>
-          <label>Encounter group<select id="boss-group"><option value="">All groups</option><option value="Field boss">Field bosses (79)</option><option value="Hero / legend">Hero / legend monsters (442)</option></select></label>
-          <label>Boss<select id="boss-choice"></select></label>
+          <label>Opponent<select id="opponent-kind"><option value="boss">Boss (521)</option><option value="mob">Mob (3,072)</option></select></label>
+          <label id="boss-group-label">Boss group<select id="boss-group"><option value="">All bosses</option><option value="Field boss">Field bosses (79)</option><option value="Hero / legend">Hero / legend monsters (442)</option></select></label>
+          <label>Search by name, location or classification<input id="boss-search" type="search" placeholder="Name or location"></label>
+          <label>Monster<select id="boss-choice"></select></label>
         </div>
         <p id="boss-count" role="status"></p>
       </section>
       <section class="card">
-        <h2 id="boss-title">Select a boss</h2>
+        <h2 class="icon-heading"><span id="boss-icon" class="actor-icon"></span><span id="boss-title">Select a monster</span></h2>
         <p id="boss-details" class="import-note"></p>
         <p id="boss-source" class="import-note boss-source" hidden></p>
-        <p class="import-note">Creature-type matchups: Cogni, Fera, Natura and Varian select the matching player's Damage Boost and the enemy's Damage Tolerance in the calculator. Special has no matching creature stat. Other boss defenses remain manual; prior enemy-character values are cleared on import so they cannot masquerade as boss stats.</p>
-        <button type="button" id="import-boss" disabled>Load boss into calculator</button>
+        <p class="import-note">Cogni, Fera, Natura and Varian select the matching player's creature Damage Boost and enemy Damage Tolerance. Special has no matching creature stat. Missing enemy defenses stay manual; importing another target clears previous enemy defenses.</p>
+        <button type="button" id="import-boss" disabled>Load target into calculator</button>
       </section>
     </div>
   </main>
+  <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-boss" viewBox="0 0 24 24"><path d="m2 7 5 3 5-6 5 6 5-3-2 12H4L2 7Zm3 10h14l1-7-4 3-4-6-4 6-4-3 1 7Z"/></symbol>
+    <symbol id="icon-mob" viewBox="0 0 24 24"><path d="M7 11c-2 0-3-2-3-4S5 4 6 4c2 0 3 2 3 4s-1 3-2 3Zm10 0c-1 0-2-1-2-3s1-4 3-4c1 0 2 1 2 3s-1 4-3 4ZM3 14c-1 0-2-1-2-3s1-3 2-3 2 1 2 3-1 3-2 3Zm18 0c-1 0-2-1-2-3s1-3 2-3 2 1 2 3-1 3-2 3ZM12 11c3 0 3 3 6 5 3 3 1 6-2 6-2 0-3-1-4-1s-2 1-4 1c-3 0-5-3-2-6 3-2 3-5 6-5Z"/></symbol>
+    <symbol id="icon-skill" viewBox="0 0 24 24"><path d="m12 1 2.4 7.6L22 11l-7.6 2.4L12 21l-2.4-7.6L2 11l7.6-2.4L12 1Zm0 6.5L10.8 11l1.2 3.5 1.2-3.5L12 7.5Z"/></symbol>
+    <symbol id="icon-attack" viewBox="0 0 24 24"><path d="m4 2 8 8-2 2-8-8V2h2Zm16 0h2v2l-8 8-2-2 8-8ZM4 20l6-6 2 2-6 6H4v-2Zm16 0v2h-2l-6-6 2-2 6 6Z"/></symbol>
+    <symbol id="icon-defense" viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5 3 8 9 10 6-2 9-5 9-10V6l-9-4Zm0 3 6 3v4c0 3.5-2 5.5-6 7-4-1.5-6-3.5-6-7V8l6-3Z"/></symbol>
+    <symbol id="icon-health" viewBox="0 0 24 24"><path d="M12 21 3 12C-2 6 5 0 12 6c7-6 14 0 9 6l-9 9Zm0-3 7-7c3-4-1-8-5-4l-2 2-2-2c-4-4-8 0-5 4l7 7Z"/></symbol>
+    <symbol id="icon-chance" viewBox="0 0 24 24"><path d="M12 2 2 12l10 10 10-10L12 2Zm0 3 7 7-7 7-7-7 7-7Zm0 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/></symbol>
+    <symbol id="icon-damage" viewBox="0 0 24 24"><path d="M13 1 4 13h7l-1 10 10-13h-7V1Zm-2 7v4h5l-3 4 .5-5H8l3-3Z"/></symbol>
+    <symbol id="icon-stat" viewBox="0 0 24 24"><path d="M12 2 2 12l10 10 10-10L12 2Zm0 3 7 7-7 7-7-7 7-7Z"/></symbol>
+  </svg>
 </body>
 </html>
