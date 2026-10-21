@@ -26,8 +26,25 @@ function showBoss() {
   bossImport.disabled = !boss;
   document.querySelector('#boss-title').textContent = boss?.name ?? 'Select a monster';
   setDisplayIcon(document.querySelector('#boss-icon'), opponentKind.value === 'boss' ? 'boss' : 'mob');
+  const facts = document.querySelector('#boss-facts');
+  facts.hidden = !boss;
+  facts.replaceChildren();
+  if (boss) {
+    for (const [label, value] of [['Level', boss.level], ['Rank', boss.rank],
+      ['Creature type', boss.type], ['Encounter', boss.group ?? 'Mob'],
+      ['HP', 'Unknown · server-side'], ['Defense', 'Unknown · server-side']]) {
+      const card = document.createElement('div');
+      card.className = 'boss-fact';
+      const caption = document.createElement('small');
+      caption.textContent = label;
+      const detail = document.createElement('strong');
+      detail.textContent = value;
+      card.append(caption, detail);
+      facts.append(card);
+    }
+  }
   document.querySelector('#boss-details').textContent = boss
-    ? `Level ${boss.level} · ${boss.rank} · ${boss.type} · ${boss.group ?? 'Mob'} · NPC ${boss.id}.${boss.location ? ` Location: ${boss.location}.` : ''}${boss.subtitle ? ` Classification: ${boss.subtitle}.` : ''} Defense and damage tolerances: not published in the source.`
+    ? `NPC ${boss.id}${boss.location ? ` · ${boss.location}` : ''}${boss.subtitle ? ` · ${boss.subtitle}` : ''}`
     : '';
   const source = document.querySelector('#boss-source');
   source.hidden = !boss;

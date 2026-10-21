@@ -27,6 +27,7 @@ internal sealed class CalculatorWindow : Form
         ["recommendations.js"] = "text/javascript; charset=utf-8",
         ["icons.js"] = "text/javascript; charset=utf-8",
         ["matchups.js"] = "text/javascript; charset=utf-8",
+        ["profile-ui.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
         ["characters.js"] = "text/javascript; charset=utf-8",
         ["boss-data.js"] = "text/javascript; charset=utf-8",

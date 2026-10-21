@@ -14,13 +14,27 @@ const profile = {
     mainStats: [{ name: 'Attack', value: '323', minValue: '251', extra: '119' }] } }
 };
 
-test('shows public attributes, equipped items and learned skills without treating item attack as Pure Attack', () => {
-  const data = extractCharacter(profile);
-  assert.equal(data.name, 'Kanon');
-  assert.deepEqual(data.stats, ['Might: 12']);
-  assert.deepEqual(data.skills, ['Bolt · Lv 12 · Active']);
-  assert.equal(data.gear.length, 1);
-  assert.match(data.gear[0], /Damage Boost \+5.6%/);
+test('groups real gear options, learned abilities and progression without inventing missing bonuses', () => {
+  const data = structuredClone(profile);
+  data.info.profile.titleName = 'Treading on Black Wings';
+  data.info.title = { titleList: [{ name: 'Treading on Black Wings', equipCategory: 'Attack',
+    equipStatList: [{ desc: 'PvP Attack +40' }] }] };
+  data.info.daevanion = { boardList: [{ name: 'Nezekan', openNodeCount: 12, totalNodeCount: 20 }] };
+  data.equipment.equipment.equipmentList[0].icon = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/mace.png';
+  data.itemDetails['1'].subSkills = [{ name: 'Bolt', level: 1 }];
+  data.itemDetails['1'].magicStoneStat = [{ name: 'HP', value: '+100' }];
+  data.equipment.skill.skillList[0].icon = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/bolt.png';
+  const view = extractCharacter(data);
+  assert.equal(view.name, 'Kanon');
+  assert.deepEqual(view.stats.map(stat => stat.name), ['Might']);
+  assert.equal(view.gear[0].item.name, 'Mace');
+  assert.equal(view.gear[0].detail.subStats[0].value, '5.6%');
+  assert.equal(view.gear[0].detail.subSkills[0].name, 'Bolt');
+  assert.equal(view.gear[0].detail.magicStoneStat[0].value, '+100');
+  assert.deepEqual(view.skills.map(skill => skill.name), ['Bolt']);
+  assert.equal(view.titles[0].equipStatList[0].desc, 'PvP Attack +40');
+  assert.equal(view.boards[0].openNodeCount, 12);
+  assert.deepEqual(view.arcana, []);
 });
 
 test('imports only explicit numeric gear bonuses with their appropriate percentage baselines', () => {

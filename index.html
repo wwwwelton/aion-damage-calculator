@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://assets.playnccdn.com https://profileimg.plaync.com https://fizz-download.playnccdn.com">
   <title>AION 2 — Damage Calculator</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="calculator.js"></script>
@@ -11,6 +11,7 @@
   <script defer src="recommendations.js"></script>
   <script defer src="matchups.js"></script>
   <script defer src="icons.js"></script>
+  <script defer src="profile-ui.js"></script>
   <script defer src="boss-data.js"></script>
   <script defer src="mob-data.js"></script>
   <script defer src="bosses.js"></script>
@@ -144,12 +145,8 @@
         <p id="profile-meta"></p>
         <p id="profile-status" role="status" aria-live="polite"></p>
         <button type="button" id="import-character" disabled>Load available stats into calculator</button>
-        <p class="import-note">Explicit character-sheet HP and offensive matchup stats are imported when present; missing stats may use equipped-item values marked as partial. Formula bonuses come from equipped items. Pure Attack, skill coefficients, target Defense and unavailable totals stay manual. Reference-only matchups do not alter Final Damage.</p>
-        <div class="profile-columns">
-          <section><h3>Character attributes</h3><ul id="profile-stats"></ul></section>
-          <section><h3>Equipped gear and options</h3><ul id="profile-gear"></ul></section>
-          <section><h3>Skills</h3><ul id="profile-skills"></ul></section>
-        </div>
+        <p class="import-note">Character-sheet totals and explicit equipment bonuses can be loaded into the calculator. Gear-only values are partial; missing HP and target Defense remain manual.</p>
+        <div id="profile-dossier"></div>
       </section>
     </div>
     <div id="enemy-view" class="tab-panel" role="tabpanel" aria-labelledby="enemy-tab" hidden>
@@ -170,15 +167,16 @@
         <p id="enemy-meta"></p>
         <p id="enemy-profile-status" role="status" aria-live="polite"></p>
         <button type="button" id="import-enemy" disabled>Load enemy HP and defenses into calculator</button>
-        <p class="import-note">Explicit character-sheet HP and defenses take priority. If defenses are absent, equipped-item defenses are shown and imported as partial values. Missing attributes reset to zero (unknown) on target change; NPC/boss HP and defenses are not available from player profiles. Hit/proc resistances remain reference-only in the damage formula.</p>
-        <h3>Available enemy HP and defenses</h3>
+        <p class="import-note">Character-sheet HP and defenses take priority; equipped-item values are partial. NPC/boss HP and defenses cannot be inferred from player equipment.</p>
+        <div id="enemy-dossier"></div>
+        <h3>Available enemy HP and defenses for import</h3>
         <ul id="enemy-stats"></ul>
       </section>
     </div>
     <div id="boss-view" class="tab-panel" role="tabpanel" aria-labelledby="boss-tab" hidden>
       <section class="card">
         <h2>Mobs &amp; Bosses</h2>
-        <p class="import-note">Offline snapshot of all 3,593 monsters in the Aion2Data global-client catalog: 521 bosses and 3,072 other mobs. Levels, ranks and creature types are available; verified individual Defense and damage tolerances are not. Unknown values stay manual.</p>
+        <p class="import-note">Search the offline NPC catalog by name and choose a specific ID. Rank, level, creature type and known location come from the client; HP and combat attributes are server-side and remain unknown.</p>
         <div class="boss-filters">
           <label>Opponent<select id="opponent-kind"><option value="boss">Boss (521)</option><option value="mob">Mob (3,072)</option></select></label>
           <label id="boss-group-label">Boss group<select id="boss-group"><option value="">All bosses</option><option value="Field boss">Field bosses (79)</option><option value="Hero / legend">Hero / legend monsters (442)</option></select></label>
@@ -189,9 +187,10 @@
       </section>
       <section class="card">
         <h2 class="icon-heading"><span id="boss-icon" class="actor-icon"></span><span id="boss-title">Select a monster</span></h2>
+        <div id="boss-facts" class="boss-facts" hidden></div>
         <p id="boss-details" class="import-note"></p>
         <p id="boss-source" class="import-note boss-source" hidden></p>
-        <p class="import-note">Cogni, Fera, Natura and Varian select the matching player's creature Damage Boost and enemy Damage Tolerance. Special has no matching creature stat. Missing enemy defenses stay manual; importing another target clears previous enemy defenses.</p>
+        <p class="import-note">NPC skill and attack details are not in this offline snapshot; the source URL identifies the monster's page for further research. Cogni, Fera, Natura and Varian apply the corresponding creature matchup; missing HP and defenses stay manual.</p>
         <button type="button" id="import-boss" disabled>Load target into calculator</button>
       </section>
     </div>

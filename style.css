@@ -19,18 +19,14 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 #character-choice-label, #enemy-choice-label { max-width: 530px; }
 #import-enemy { display: inline-block; max-width: 100%; margin: 4px 0 12px; text-align: center; white-space: normal; }
 .import-note, #character-view .card > p { color: #9daec5; line-height: 1.5; }
-.profile-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-.profile-columns h3 { font-size: 15px; }
-.profile-columns ul { max-height: 450px; overflow: auto; padding-left: 18px; overflow-wrap: anywhere; }
-.profile-columns li { padding-bottom: 8px; line-height: 1.4; }
 .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .icon { flex: none; width: 20px; height: 20px; fill: currentColor; color: #91e6dc; }
 .icon-class { width: 36px; height: 36px; object-fit: contain; }
 .actor-icon { display: inline-flex; align-items: center; vertical-align: middle; margin-left: 6px; }
 .icon-heading { display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
 .icon-heading .actor-icon { margin: 0; }
-.profile-columns li, #enemy-stats li { display: flex; align-items: flex-start; gap: 8px; }
-.profile-columns li .icon, #enemy-stats li .icon { margin-top: 1px; }
+#enemy-stats li { display: flex; align-items: flex-start; gap: 8px; }
+#enemy-stats li .icon { margin-top: 1px; }
 #calculator label { position: relative; }
 #calculator label > .icon { position: absolute; right: 0; top: 0; width: 16px; height: 16px; opacity: .8; }
 .result { padding: 23px 28px; border: 1px solid #346f79; border-radius: 16px; background: linear-gradient(110deg, #183b48, #172738); margin-bottom: 22px; display: flex; flex-direction: column; gap: 4px; }
@@ -90,6 +86,55 @@ footer { font-size: 12px; margin-top: 20px; }
 .boss-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
 .boss-filters label:last-child { grid-column: 1 / -1; }
 #import-boss { min-height: 40px; max-width: 100%; padding: 8px 15px; border: 1px solid #69d8cc; border-radius: 8px; background: #23515b; color: #fff; font: inherit; cursor: pointer; }
+.dossier-summary { display: flex; gap: 16px; align-items: center; padding: 18px; margin: 16px 0; border: 1px solid #40516a; border-radius: 12px; background: #152537; }
+.dossier-summary strong, .dossier-summary small { display: block; }
+.dossier-summary strong { font-size: 20px; }
+.dossier-summary small { color: #aebfd1; margin-top: 4px; }
+.dossier-portrait { width: 78px; height: 78px; border-radius: 12px; object-fit: cover; }
+.dossier-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; border-bottom: 1px solid #40516a; }
+.dossier-tab { border: 0; border-bottom: 3px solid transparent; padding: 12px 16px; background: transparent; color: #b8c8d8; font: inherit; cursor: pointer; }
+.dossier-tab[aria-selected="true"] { color: #91e6dc; border-bottom-color: #69d8cc; font-weight: 700; }
+.dossier-tab:focus-visible { outline: 2px solid #69d8cc; }
+.dossier-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 22px 0 12px; }
+.dossier-section-head h3 { margin: 0; font-size: 17px; }
+.dossier-section-head small, .gear-card small, .skill-card small, .progression-card small { color: #aebfd1; }
+.gear-grid, .attribute-grid, .progression-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.skill-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.gear-card, .attribute-card, .progression-card, .skill-card { min-width: 0; padding: 14px; border: 1px solid #40516a; border-radius: 10px; background: #172334; overflow-wrap: anywhere; }
+.gear-card-head, .skill-card, .attribute-card { display: flex; align-items: flex-start; gap: 12px; }
+.gear-card-head .remote-icon, .skill-card .remote-icon { width: 44px; height: 44px; border-radius: 8px; object-fit: contain; }
+.gear-card-head strong, .gear-card-head small, .skill-card strong, .skill-card small, .attribute-card span, .attribute-card strong, .attribute-card small { display: block; }
+.gear-options { border-top: 1px solid #33455a; margin-top: 12px; padding-top: 10px; }
+.gear-options h4 { color: #91e6dc; font-size: 12px; margin: 0 0 8px; }
+.option-list { margin: 0; padding: 0; list-style: none; }
+.option-list li { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+.option-list li span { flex: 1; min-width: 0; }
+.option-list li strong { text-align: right; font-weight: 650; }
+.option-list li .icon { width: 16px; height: 16px; }
+.option-list li small { white-space: nowrap; }
+.attribute-card strong { font-size: 20px; color: #91e6dc; }
+.attribute-card small { margin-top: 4px; color: #b8c8d8; }
+.progression-card > .icon { width: 34px; height: 34px; display: block; }
+.progression-card strong, .progression-card small { display: block; margin-top: 4px; }
+.progression-card p { margin: 6px 0 0; color: #b8c8d8; font-size: 13px; }
+@media (max-width: 900px) {
+  .skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .gear-grid, .attribute-grid, .progression-grid, .skill-grid { grid-template-columns: minmax(0, 1fr); }
+  .dossier-summary { align-items: flex-start; }
+  .dossier-portrait { width: 56px; height: 56px; }
+  .dossier-tab { flex: 1 1 40%; }
+  .dossier-section-head { display: block; }
+}
+.boss-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+.boss-fact { padding: 14px; border: 1px solid #40516a; border-radius: 10px; background: #172334; overflow-wrap: anywhere; }
+.boss-fact small, .boss-fact strong { display: block; }
+.boss-fact small { color: #aebfd1; margin-bottom: 6px; }
+.boss-fact strong { color: #91e6dc; }
+@media (max-width: 560px) {
+  .boss-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .boss-source { overflow-wrap: anywhere; user-select: text; }
 .encounter { border-color: #346f79; }
 .encounter > label { max-width: 340px; margin-bottom: 18px; }

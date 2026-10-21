@@ -22,6 +22,28 @@ function iconElement(kind, label = '') {
   return svg;
 }
 
+function profileImage(url, kind = 'stat', label = '') {
+  let parsed;
+  try { parsed = new URL(url); } catch { return iconElement(kind, label); }
+  const gameAsset = parsed.hostname === 'assets.playnccdn.com'
+    && parsed.pathname.startsWith('/static-aion2-gamedata/resources/');
+  const portrait = parsed.hostname === 'profileimg.plaync.com'
+    && parsed.pathname.startsWith('/game_profile_images/');
+  if (parsed.protocol !== 'https:' || (!gameAsset && !portrait)) return iconElement(kind, label);
+  const image = document.createElement('img');
+  image.className = 'icon remote-icon';
+  image.alt = '';
+  image.loading = 'lazy';
+  image.referrerPolicy = 'no-referrer';
+  image.addEventListener('error', () => {
+    const fallback = iconElement(kind, label);
+    if (image.classList.contains('dossier-portrait')) fallback.classList.add('dossier-portrait');
+    image.replaceWith(fallback);
+  }, { once: true });
+  image.src = parsed.href;
+  return image;
+}
+
 function attributeIcon(name) {
   if (/\b(hp|health|recovery|regeneration|constitution)\b/i.test(name)) return 'health';
   if (/\b(defense|tolerance|resist|block|evasion|endurance)\b/i.test(name)) return 'defense';

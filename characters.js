@@ -49,21 +49,22 @@ function characterHp(data) {
 
 function extractCharacter(data) {
   const profile = data?.info?.profile || {};
-  const stats = (data?.info?.stat?.statList || [])
-    .filter(item => item.name && Number.isFinite(Number(item.value)))
-    .map(item => `${item.name}: ${item.value}`);
-  const gear = equippedDetails(data).map(({ item, detail }) => {
-    const options = [...(detail.mainStats || []), ...(detail.subStats || [])]
-      .filter(option => option.name && option.value != null)
-      .map(option => `${option.name} +${option.value}`);
-    return `${item.slotPosName || 'Gear'} · ${item.name || detail.name || 'Unknown'}${options.length ? ' — ' + options.join(', ') : ''}`;
-  });
-  const skills = (data?.equipment?.skill?.skillList || [])
-    .filter(skill => skill.name && Number(skill.acquired) && Number(skill.skillLevel) > 0)
-    .map(skill => `${skill.name} · Lv ${skill.skillLevel} · ${skill.category || 'Skill'}`);
+  const gear = equippedDetails(data);
   return { name: profile.characterName || '', server: profile.serverName || '',
     className: profile.className || '', level: profile.characterLevel || '',
-    combatPower: profile.combatPower || '', stats, gear, skills };
+    combatPower: profile.combatPower || '', race: profile.raceName || '',
+    legion: profile.regionName || '', portrait: profile.profileImage || '',
+    stats: (data?.info?.stat?.statList || []).filter(stat => stat.name && Number.isFinite(Number(stat.value))),
+    gear,
+    arcana: (data?.equipment?.equipment?.equipmentList || [])
+      .filter(item => String(item.slotPosName).startsWith('Arcana'))
+      .map(item => ({ item, detail: data?.itemDetails?.[String(item.slotPos)] || {} })),
+    skills: (data?.equipment?.skill?.skillList || [])
+      .filter(skill => skill.name && Number(skill.acquired) && Number(skill.skillLevel) > 0),
+    titles: (data?.info?.title?.titleList || []).filter(title => title.name),
+    boards: data?.info?.daevanion?.boardList || [],
+    pet: data?.equipment?.petwing?.pet || null,
+    wing: data?.equipment?.petwing?.wing || null };
 }
 
 const referenceRows = (typeof module !== 'undefined' ? require('./matchups').referenceGroups : referenceGroups)
@@ -259,23 +260,14 @@ if (typeof document !== 'undefined') {
     document.querySelector('#profile-meta').textContent = `${item.className} · Level ${item.level} · ${item.raceName || ''} · CP ${item.combatPower ?? '—'}`;
     setDisplayIcon(document.querySelector('#profile-class-icon'), 'class', item.className);
     profileStatus.textContent = 'Loading attributes, gear and skills…';
-    for (const id of ['profile-stats', 'profile-gear', 'profile-skills']) document.getElementById(id).replaceChildren();
+    document.querySelector('#profile-dossier').replaceChildren();
     try {
       const data = await request('profile', { serverId: item.serverId, characterId: item.characterId,
         region: item.queryRegion, globalRegion: item.queryGlobalRegion });
       if (profileId !== currentProfile) return;
       loaded = data;
       const view = extractCharacter(data);
-      for (const [id, entries] of [['profile-stats', view.stats], ['profile-gear', view.gear], ['profile-skills', view.skills]]) {
-        const list = document.getElementById(id);
-        list.replaceChildren(...(entries.length ? entries : ['Not available in this public profile.']).map(text => {
-          const row = document.createElement('li');
-          const kind = id === 'profile-skills' ? 'skill'
-            : id === 'profile-gear' ? 'stat' : attributeIcon(text.split(':')[0]);
-          row.append(iconElement(kind), document.createTextNode(text));
-          return row;
-        }));
-      }
+      renderDossier(document.querySelector('#profile-dossier'), view);
       importButton.disabled = !Object.keys(equipmentBonuses(data)).length
         && !Object.keys(offensiveReferences(data)).length && characterHp(data) === null;
       profileStatus.textContent = data.complete === false
@@ -406,12 +398,14 @@ if (typeof document !== 'undefined') {
     document.querySelector('#enemy-meta').textContent = `${item.className} · Level ${item.level} · CP ${item.combatPower ?? '—'}`;
     setDisplayIcon(document.querySelector('#enemy-class-icon'), 'class', item.className);
     enemyProfileStatus.textContent = 'Loading defensive attributes…';
+    document.querySelector('#enemy-dossier').replaceChildren();
     document.querySelector('#enemy-stats').replaceChildren();
     try {
       const data = await request('profile', { serverId: item.serverId, characterId: item.characterId },
         item.queryRegion, item.queryGlobalRegion);
       if (profileId !== enemyProfileId) return;
       enemyLoaded = data;
+      renderDossier(document.querySelector('#enemy-dossier'), extractCharacter(data));
       const defenses = enemyDefenses(data);
       const sheet = enemySheetDefenses(data);
       const entries = Object.entries(defenses);
