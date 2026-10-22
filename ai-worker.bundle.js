@@ -48019,6 +48019,8 @@ ${context}
       }
       postMessage({ id: id2, state: "done", text });
     } catch (error) {
+      console.error("AI Worker error:", error);
+      console.error("AI Worker error stack:", error.stack);
       postMessage({ id: id2, state: "error", error: error.message || String(error) });
     }
   }

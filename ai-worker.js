@@ -74,6 +74,8 @@ async function generate() {
       }
       postMessage({ id, state: 'done', text });
     } catch (error) {
+      console.error('AI Worker error:', error);
+      console.error('AI Worker error stack:', error.stack);
       postMessage({ id, state: 'error', error: error.message || String(error) });
     }
   }
