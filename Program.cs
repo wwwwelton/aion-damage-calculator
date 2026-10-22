@@ -37,6 +37,7 @@ internal sealed class CalculatorWindow : Form
         ["assets/ai/models/onnx-community/Qwen3-0.6B-ONNX/generation_config.json"] = "application/json",
         ["assets/ai/models/onnx-community/Qwen3-0.6B-ONNX/onnx/model_q4f16.onnx"] = "application/octet-stream",
         ["profile-ui.js"] = "text/javascript; charset=utf-8",
+        ["stat-tooltips.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
         ["characters.js"] = "text/javascript; charset=utf-8",
         ["boss-data.js"] = "text/javascript; charset=utf-8",

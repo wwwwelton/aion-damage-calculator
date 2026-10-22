@@ -29,6 +29,86 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 #enemy-stats li .icon { margin-top: 1px; }
 #calculator label { position: relative; }
 #calculator label > .icon { position: absolute; right: 0; top: 0; width: 16px; height: 16px; opacity: .8; }
+.stat-tip-trigger {
+  position: absolute;
+  top: 0;
+  right: 22px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #142436;
+  border: 1px solid #4a6382;
+  color: #70ded4;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  user-select: none;
+  z-index: 20;
+  transition: all 0.15s ease;
+}
+.stat-tip-trigger:hover,
+.stat-tip-trigger:focus-visible,
+.stat-tip-trigger.open {
+  background: #23515b;
+  border-color: #70ded4;
+  color: #fff;
+  outline: none;
+  box-shadow: 0 0 6px rgba(112, 222, 212, 0.45);
+}
+.stat-tooltip-box {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: -10px;
+  width: 280px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #101c2b, #0d1724);
+  border: 1px solid #3d6a7d;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.8);
+  color: #d5dfed;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+  z-index: 99999;
+  text-align: left;
+}
+.stat-tip-trigger:hover .stat-tooltip-box,
+.stat-tip-trigger:focus-visible .stat-tooltip-box,
+.stat-tip-trigger.open .stat-tooltip-box {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.stat-tooltip-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #70ded4;
+  margin-bottom: 2px;
+}
+.stat-tooltip-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8ea4bf;
+  margin-bottom: 6px;
+}
+.stat-tooltip-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #c9d8e8;
+  font-weight: 400;
+  white-space: normal;
+}
 .result { padding: 23px 28px; border: 1px solid #346f79; border-radius: 16px; background: linear-gradient(110deg, #183b48, #172738); margin-bottom: 22px; display: flex; flex-direction: column; gap: 4px; }
 .result span { font-size: 12px; letter-spacing: .15em; color: #91e6dc; font-weight: 800; }
 .result strong { font-size: 48px; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -60,7 +140,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .reference-group summary { cursor: pointer; font-weight: 700; color: #91e6dc; }
 .reference-group p { color: #aebfd1; line-height: 1.5; }
 .reference-group .matchup { padding: 8px 0; }
-label { display: flex; flex-direction: column; min-width: 0; gap: 7px; font-size: 13px; font-weight: 650; color: #d5dfed; }
+label { position: relative; display: flex; flex-direction: column; min-width: 0; gap: 7px; font-size: 13px; font-weight: 650; color: #d5dfed; }
 label span { color: #8ea4bf; font-weight: 400; }
 input, select { width: 100%; min-width: 0; height: 40px; margin-top: auto; border: 1px solid #40516a; border-radius: 8px; padding: 0 11px; background: #111c2b; color: #fff; font: inherit; outline: none; }
 input:focus, select:focus { border-color: #70ded4; box-shadow: 0 0 0 2px #70ded433; }

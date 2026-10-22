@@ -33,6 +33,7 @@
     <EmbeddedResource Include="boss-data.js" LogicalName="boss-data.js" />
     <EmbeddedResource Include="mob-data.js" LogicalName="mob-data.js" />
     <EmbeddedResource Include="bosses.js" LogicalName="bosses.js" />
+    <EmbeddedResource Include="stat-tooltips.js" LogicalName="stat-tooltips.js" />
     <EmbeddedResource Include="renderer.js" LogicalName="renderer.js" />
     <EmbeddedResource Include="characters.js" LogicalName="characters.js" />
   </ItemGroup>

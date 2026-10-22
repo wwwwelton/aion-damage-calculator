@@ -76,4 +76,5 @@ if (typeof document !== 'undefined') {
     details.append(summary, note, grid);
     (group.mode === 'pve' ? document.querySelector('#creature-matchups') : container).append(details);
   }
+  if (typeof attachStatTooltips === 'function') attachStatTooltips();
 }
