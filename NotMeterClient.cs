@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 
 namespace Aion2Calculator;
@@ -5,18 +6,29 @@ namespace Aion2Calculator;
 // Public character endpoints observed on NotMeter. Only user-initiated lookups use this client.
 internal sealed class NotMeterClient : IDisposable
 {
-    private readonly HttpClient http = new(new HttpClientHandler { AllowAutoRedirect = false })
+    private readonly HttpClient http = new(new HttpClientHandler
+    {
+        AllowAutoRedirect = false,
+        AutomaticDecompression = DecompressionMethods.All
+    })
     {
         BaseAddress = new Uri("https://notmeter.59-27-108-81.sslip.io/character/v1/"),
         // Fail fast: a healthy NotMeter response arrives in ~1–3 s; only a stalled endpoint exceeds 20 s.
-        Timeout = TimeSpan.FromSeconds(20)
+        Timeout = TimeSpan.FromSeconds(20),
+        DefaultRequestVersion = HttpVersion.Version20,
+        DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower
     };
+    private readonly Dictionary<string, CacheEntry> cache = [];
+    private readonly object cacheLock = new();
+    private readonly record struct CacheEntry(DateTimeOffset ExpiresAt, JsonElement Data);
+    private const int MaxCacheEntries = 128;
 
     public async Task<JsonElement> SearchAsync(string name, string region, string globalRegion)
     {
         if (string.IsNullOrWhiteSpace(name) || name.Length > 20) throw new ArgumentException("Enter a character name (up to 20 characters).");
         var regionQuery = RegionQuery(region, globalRegion);
         var url = $"search?name={Uri.EscapeDataString(name.Trim())}{regionQuery}&fast=1";
+        if (TryGetCached(url, out var cached)) return cached;
         JsonElement data = default;
         for (var attempt = 0; attempt < 8; attempt++)
         {
@@ -24,6 +36,7 @@ internal sealed class NotMeterClient : IDisposable
             if (!data.TryGetProperty("complete", out var complete) || complete.ValueKind != JsonValueKind.False) break;
             await Task.Delay(1500);
         }
+        StoreComplete(url, data, TimeSpan.FromMinutes(2));
         return data;
     }
 
@@ -32,6 +45,7 @@ internal sealed class NotMeterClient : IDisposable
         if (serverId <= 0 || string.IsNullOrWhiteSpace(characterId) || characterId.Length > 128)
             throw new ArgumentException("Select a valid search result.");
         var url = $"profile?serverId={serverId}&characterId={Uri.EscapeDataString(characterId)}{RegionQuery(region, globalRegion)}&fast=1";
+        if (TryGetCached(url, out var cached)) return cached;
         JsonElement data = default;
         for (var attempt = 0; attempt < 8; attempt++)
         {
@@ -39,6 +53,7 @@ internal sealed class NotMeterClient : IDisposable
             if (!data.TryGetProperty("complete", out var complete) || complete.ValueKind != JsonValueKind.False) break;
             await Task.Delay(1200);
         }
+        StoreComplete(url, data, TimeSpan.FromMinutes(5));
         return data;
     }
 
@@ -49,6 +64,43 @@ internal sealed class NotMeterClient : IDisposable
             throw new ArgumentException("Select a Global region.");
         var language = region == "kr" ? "ko-KR" : region == "tw" ? "zh-TW" : "en-US";
         return $"&region={region}&lang={language}" + (region == "ww" ? $"&globalRegion={globalRegion}" : "");
+    }
+
+    private bool TryGetCached(string key, out JsonElement data)
+    {
+        lock (cacheLock)
+        {
+            if (cache.TryGetValue(key, out var entry) && entry.ExpiresAt > DateTimeOffset.UtcNow)
+            {
+                data = entry.Data;
+                return true;
+            }
+            cache.Remove(key);
+        }
+        data = default;
+        return false;
+    }
+
+    private void StoreComplete(string key, JsonElement data, TimeSpan lifetime)
+    {
+        if (data.ValueKind == JsonValueKind.Undefined
+            || data.TryGetProperty("complete", out var complete) && complete.ValueKind == JsonValueKind.False) return;
+        lock (cacheLock)
+        {
+            if (cache.Count >= MaxCacheEntries && !cache.ContainsKey(key))
+            {
+                string? evictionKey = null;
+                var earliestExpiry = DateTimeOffset.MaxValue;
+                foreach (var pair in cache)
+                {
+                    if (pair.Value.ExpiresAt >= earliestExpiry) continue;
+                    earliestExpiry = pair.Value.ExpiresAt;
+                    evictionKey = pair.Key;
+                }
+                if (evictionKey is not null) cache.Remove(evictionKey);
+            }
+            cache[key] = new CacheEntry(DateTimeOffset.UtcNow.Add(lifetime), data);
+        }
     }
 
     private async Task<JsonElement> GetAsync(string path)

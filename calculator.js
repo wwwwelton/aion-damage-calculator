@@ -26,21 +26,28 @@ function applyTargetMode(values, mode) {
   }
   selected.defenseScale = mode === 'player' ? 0.01 : 0.1;
   if (mode === 'player' && selected.double > 1) selected.double = 1 + (selected.double - 1) * 0.5;
+  if (mode === 'player' && selected.criticalDamageBoost > 1) {
+    selected.criticalDamageBoost = Math.max(1, selected.criticalDamageBoost - 0.25);
+  }
   return selected;
 }
 
 function calculateDamage(values) {
   const v = values;
-  const attack = (((v.pureAttack * (v.weaponDamageBoost - (v.weaponDamageTolerance ?? 0)) * v.multiHit * v.powerShard)
+  const weaponMultiplier = Math.max(0, v.weaponDamageBoost - (v.weaponDamageTolerance ?? 0));
+  const attack = (((v.pureAttack * weaponMultiplier * v.multiHit * v.powerShard)
     + v.attackBonus) * v.attackIncrease
     + v.pveAttackPower + v.bossAttackPower + v.speciesAttackPower + v.frontBackAttackPower);
   const skill = attack * v.skillCoefficient + v.skillAdditionalDamage;
-  const mitigated = skill - Math.max(0, v.defense - v.penetration) * (v.defenseScale ?? 0.1);
-  return mitigated * (v.damageBoost + v.pveDamageBoost + v.speciesDamageBoost
+  const mitigated = Math.max(0,
+    skill - Math.max(0, v.defense - v.penetration) * (v.defenseScale ?? 0.1));
+  const damageMultiplier = Math.max(0, v.damageBoost + v.pveDamageBoost + v.speciesDamageBoost
     + (v.bossDamageBoost ?? 0) - (v.damageTolerance ?? 0) - (v.pveDamageTolerance ?? 0)
-    - (v.bossDamageTolerance ?? 0) - (v.speciesDamageTolerance ?? 0))
-    * (v.criticalDamageBoost - (v.criticalDamageTolerance ?? 0)) * v.double
-    * (v.frontBackDamageBoost - (v.frontBackDamageTolerance ?? 0)) * v.skillSpecialtyEnhancement;
+    - (v.bossDamageTolerance ?? 0) - (v.speciesDamageTolerance ?? 0));
+  const criticalMultiplier = Math.max(0, v.criticalDamageBoost - (v.criticalDamageTolerance ?? 0));
+  const positionalMultiplier = Math.max(0, v.frontBackDamageBoost - (v.frontBackDamageTolerance ?? 0));
+  return mitigated * damageMultiplier * criticalMultiplier * v.double
+    * positionalMultiplier * v.skillSpecialtyEnhancement;
 }
 
 if (typeof module !== 'undefined') module.exports = { calculateDamage, applyTargetMode, estimateCombat };

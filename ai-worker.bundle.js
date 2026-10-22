@@ -47967,7 +47967,7 @@ async function generate() {
   if (running) return;
   running = true;
   while (pending) {
-    const { id: id2, question, context, research, history } = pending;
+    const { id: id2, question, context, research, history, language = "en" } = pending;
     pending = null;
     try {
       if (!generator) {
@@ -47981,11 +47981,16 @@ async function generate() {
         });
       }
       postMessage({ id: id2, state: "generating" });
-      const systemPrompt = `You are the Avatarnoia Flow combat advisor for AION 2.
+      const portuguese = language === "pt";
+      const systemPrompt = portuguese ? `Voc\xEA \xE9 o consultor de combate Avatarnoia Flow para AION 2. Responda somente em portugu\xEAs brasileiro, de forma direta e concisa.
+C\xE1lculo ativo da configura\xE7\xE3o:
+${context}
+` + (research ? `Nota de guia do AION 2: ${research}
+` : "") + "Priorize atributos, coeficientes de habilidade e mitiga\xE7\xE3o com base nos n\xFAmeros fornecidos. N\xE3o mostre racioc\xEDnio interno nem tags <think>." : `You are the Avatarnoia Flow combat advisor for AION 2. Answer only in concise English.
 Active build calculation:
 ${context}
 ` + (research ? `AION 2 Guide Note: ${research}
-` : "") + "Guidelines:\n- Give direct, practical, mathematically sound English advice for AION 2.\n- Target stat priorities, skill coefficients, or mitigation.\n- Do NOT output <think> tags or internal thinking. Answer directly.";
+` : "") + "Prioritize stats, skill coefficients and mitigation from the supplied numbers. Do not show internal reasoning or <think> tags.";
       const messages = [{ role: "system", content: systemPrompt }];
       if (Array.isArray(history)) {
         for (const item of history.slice(-6)) {
@@ -47994,12 +47999,12 @@ ${context}
           }
         }
       }
-      const query = question || "Which stat should I improve right now to increase my DPS?";
+      const query = question || (portuguese ? "Qual atributo devo melhorar agora para aumentar meu DPS?" : "Which stat should I improve right now to increase my DPS?");
       if (!history || history.length === 0 || history[history.length - 1]?.content !== query) {
         messages.push({ role: "user", content: query });
       }
       const output = await generator(messages, {
-        max_new_tokens: 220,
+        max_new_tokens: 180,
         repetition_penalty: 1.15,
         do_sample: false,
         chat_template_kwargs: { enable_thinking: false }
@@ -48010,7 +48015,7 @@ ${context}
         text = raw.replace(/<\/?think>/gi, "").trim();
       }
       if (!text) {
-        text = "Prioritize the top stat listed in the calculated upgrades below to maximize your DPS.";
+        text = portuguese ? "Priorize o primeiro atributo da compara\xE7\xE3o calculada abaixo para maximizar seu DPS." : "Prioritize the top stat listed in the calculated upgrades below to maximize your DPS.";
       }
       postMessage({ id: id2, state: "done", text });
     } catch (error) {

@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { extractCharacter, equipmentBonuses, enemyDefenses, offensiveReferences, characterHp } = require('./characters');
+const { extractCharacter, equipmentBonuses, enemyDefenses, offensiveReferences, characterHp,
+  formulaImportCoverage } = require('./characters');
 
 const profile = {
   info: { profile: { characterName: 'Kanon', serverName: 'Siel', className: 'Cleric', characterLevel: 45, combatPower: 90000 },
@@ -41,6 +42,24 @@ test('imports only explicit numeric gear bonuses with their appropriate percenta
   assert.deepEqual(equipmentBonuses(profile), {
     damageBoost: 105.6, pveAttackPower: 20, weaponDamageBoost: 103, criticalDamageBoost: 152
   });
+});
+
+test('imports language-independent Might scaling and explicit formula stats without inventing Pure Attack', () => {
+  const data = structuredClone(profile);
+  data.info.stat.statList[0] = { name: '위력', type: 'STR', value: 56,
+    statSecondList: ['공격력 증가 +5.6%'] };
+  data.itemDetails['1'].subStats.push({ name: 'Penetration', value: '85' },
+    { name: 'Skill Specialty Enhancement', value: '2%' });
+  assert.deepEqual(equipmentBonuses(data), {
+    damageBoost: 105.6, pveAttackPower: 20, weaponDamageBoost: 103,
+    criticalDamageBoost: 152, penetration: 85, skillSpecialtyEnhancement: 102,
+    attackIncrease: 105.6
+  });
+  const coverage = formulaImportCoverage(data);
+  assert.ok(coverage.imported.includes('penetration'));
+  assert.ok(coverage.imported.includes('attackIncrease'));
+  assert.ok(coverage.manual.includes('pureAttack'));
+  assert.ok(!coverage.imported.includes('pureAttack'));
 });
 
 test('ignores incomplete item details and invalid bonus units rather than inventing missing totals', () => {
@@ -100,6 +119,25 @@ test('first character supplies comparable offensive stats from sheet, then expli
   assert.deepEqual(offensiveReferences(player), {
     accuracy: 1200, criticalHit: 475, blockPenetration: 28,
     doubleChance: 3.5, cogniDamageBoost: 4, fireBoost: 2.5
+  });
+});
+
+test('imports language-independent Pantheon effects by stable stat type', () => {
+  const data = structuredClone(profile);
+  data.info.stat.statList = [
+    { name: '지혜', type: 'Wisdom', value: 21 },
+    { name: '환상', type: 'Illusion', value: 33 },
+    { name: '죽음', type: 'Death', value: 42 },
+    { name: '시간', type: 'Time', value: 53 },
+    { name: '파괴', type: 'Destruction', value: 14 },
+    { name: '운명', type: 'Destiny', value: 39 },
+    { name: '생명', type: 'Life', value: 19 }
+  ];
+  assert.deepEqual(offensiveReferences(data), {
+    doubleChance: 2.1, endurancePenetration: 3.3, regenerationPenetration: 4.2
+  });
+  assert.deepEqual(enemyDefenses(data), {
+    doubleResist: 5.3, perfectResist: 1.4, endurance: 3.9, regeneration: 1.9
   });
 });
 

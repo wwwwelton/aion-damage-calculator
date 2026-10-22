@@ -22,6 +22,7 @@ internal sealed class CalculatorWindow : Form
     {
         ["index.html"] = "text/html; charset=utf-8",
         ["style.css"] = "text/css; charset=utf-8",
+        ["i18n.js"] = "text/javascript; charset=utf-8",
         ["calculator.js"] = "text/javascript; charset=utf-8",
         ["numeric-input.js"] = "text/javascript; charset=utf-8",
         ["recommendations.js"] = "text/javascript; charset=utf-8",
@@ -144,7 +145,7 @@ internal sealed class CalculatorWindow : Form
                 if (image is not null)
                 {
                     e.Response = view.CoreWebView2.Environment.CreateWebResourceResponse(
-                        image, 200, "OK", "Content-Type: image/webp\r\nCache-Control: no-store");
+                        image, 200, "OK", "Content-Type: image/webp\r\nCache-Control: public, max-age=31536000, immutable");
                     return;
                 }
             }
@@ -154,8 +155,10 @@ internal sealed class CalculatorWindow : Form
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
             if (stream is not null)
             {
+                var cacheControl = name.StartsWith("assets/ai/", StringComparison.Ordinal)
+                    ? "public, max-age=31536000, immutable" : "no-store";
                 e.Response = view.CoreWebView2.Environment.CreateWebResourceResponse(
-                    stream, 200, "OK", $"Content-Type: {type}\r\nCache-Control: no-store");
+                    stream, 200, "OK", $"Content-Type: {type}\r\nCache-Control: {cacheControl}");
                 return;
             }
         }

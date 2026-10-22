@@ -26,7 +26,7 @@ The first build downloads the pinned Qwen3-0.6B ONNX model from Hugging Face and
 Node.js runs the JavaScript tests and builds the AI assets. From the repository root:
 
 ```bash
-node --test calculator.test.js numeric-input.test.js recommendations.test.js characters.test.js
+node --test *.test.js
 ```
 
 To change `ai-worker.js` or update Transformers.js, regenerate the bundled worker and local WebAssembly runtime before publishing:
@@ -44,7 +44,7 @@ npm run build:ai
 | --- | --- |
 | `Aion2Calculator.csproj`, `Program.cs` | Windows build, embedded files and WebView2 host |
 | `NotMeterClient.cs`, `GuideResearch.cs` | Public character lookup and opt-in wiki-guide retrieval through the native host |
-| `index.html`, `style.css`, `renderer.js`, `profile-ui.js`, `ai-tips.js` | Interface, character dossier and contextual assistant |
+| `index.html`, `style.css`, `i18n.js`, `renderer.js`, `profile-ui.js`, `ai-tips.js` | Bilingual interface, character dossier and contextual assistant |
 | `calculator.js`, `matchups.js`, `recommendations.js`, `numeric-input.js` | Damage calculation, matchup rules, tips and number parsing |
 | `characters.js`, `bosses.js`, `boss-data.js`, `mob-data.js` | Profile imports and offline NPC catalog |
 | `*.test.js` | Node.js regression tests |
@@ -52,7 +52,9 @@ npm run build:ai
 
 ## Calculation scope
 
-Multipliers are entered as percentages: 100% = ×1, 150% = ×1.5. The additive Damage Boost bucket starts at 100%; PvE, Boss and Species bonuses start at zero. Critical Hit, Double Chance procs and attack position apply only when selected. Presets are illustrative, not official values. Pure Attack is a derived formula term. This community-derived model adds Boss Damage Boost to the bucket (unlike the originally supplied formula), caps effective Defense at zero after Penetration, uses Defense ×0.1 in PvE and ×0.01 in PvP, and uses a ×2 Double proc in PvE versus ×1.5 in PvP. Other damage floors and game rounding are not modeled.
+Multipliers are entered as percentages: 100% = ×1, 150% = ×1.5. The additive Damage Boost bucket starts at 100%; PvE, Boss and Species bonuses start at zero. Critical Hit, Double Chance procs and attack position apply only when selected. Presets are illustrative, not official values. Pure Attack is a derived formula term. This community-derived model follows the tested attack → skill → Defense → boost → critical/Double/position order, caps effective Defense and each damage stage at zero, uses Defense ×0.1 in PvE and ×0.01 in PvP, uses a ×2 Double proc in PvE versus ×1.5 in PvP, and changes the base critical multiplier from ×1.5 in PvE to ×1.25 in PvP. Internal game rounding is not modeled.
+
+The header language selector switches the interface between Portuguese and English and persists the choice locally. Static labels, dynamic calculation messages, profile views, matchup sections, stat tips and future assistant replies follow the selected language; game-provided character, item, skill and NPC names remain as published by their source.
 
 ## Icons
 
@@ -80,7 +82,7 @@ English stat terminology follows the [AION 2 damage formula guide](https://gamep
 
 ## Character Search
 
-Open **Character Search**, enter an exact character name, choose Korea, Taiwan or a Global region, and press **Search**. If multiple characters share that name, choose the correct server/class in the dropdown. The profile displays public attributes, equipped gear options and learned skills. **Load available stats into calculator** copies explicit numeric bonuses from equipped items (for example, 5.6% Damage Boost becomes 105.6% in the calculator's base-plus-bonus field), and fills offensive matchup fields from the character sheet or, when missing, explicit **partial** equipment options. Pure Attack, skill coefficients, target Defense and other unavailable totals remain manual. Gear-only bonuses do not represent the complete character sheet. Public profiles may be delayed or incomplete.
+Open **Character Search**, enter an exact character name, choose Korea, Taiwan or a Global region, and press **Search**. If multiple characters share that name, choose the correct server/class in the dropdown. The profile displays public attributes, equipped gear options and learned skills. **Load available stats into calculator** copies explicit numeric bonuses from equipped items and fills offensive matchup fields from the character sheet or explicit **partial** equipment options. Stable profile types also provide language-independent Might → Attack Increase and published Pantheon proc effects for Korean, Taiwanese and Global profiles. Explicit Penetration and Skill Specialty Enhancement options are imported when present. Pure Attack, skill coefficients, rotation cadence, target Defense and other unavailable totals remain manual and are listed after import instead of being inferred. Gear-only bonuses do not represent the complete character sheet. Public profiles may be delayed or incomplete.
 
 The character dossier has **Equipment**, **Skills**, **Attributes** and **Progression** views. Equipment shows published base/bonus and Soul Bind options, stones and attached skills; Skills groups learned active, passive and Stigma abilities with their levels; Progression shows published titles, Daevanion boards, Arcana, pet and wing. The same views are available for the selected enemy player. Portrait and item/skill images require internet access; hidden or absent profile details are not inferred.
 
@@ -88,7 +90,7 @@ The character dossier has **Equipment**, **Skills**, **Attributes** and **Progre
 
 Open **Enemy Character**, enter a name and region, then select the correct character if several servers match. The profile shows explicit HP and defensive attributes from the public character sheet; where absent, it shows and labels equipped-item defenses as **partial** gear-only values. **Load enemy HP and defenses into calculator** copies available defenses and explicit HP into matching red fields; missing values reset to zero (unknown) when the opponent changes. A searched player character is not an NPC or boss: its defenses must not be mistaken for an encounter's actual stats. Block, Evasion and proc resistances remain reference-only for per-hit damage. The **Combat matchups** groups pair offensive stats with corresponding target defenses; PvP and elemental reference stats do not add unspecified multipliers to the supplied formula.
 
-The lookup follows NotMeter's public character search and profile endpoints (`https://notmeter.com/?view=character`). The service's current public API hostname is configured in `NotMeterClient.cs`; if it changes, search will report an error until that address is updated. The application does not store searched profiles.
+The lookup follows NotMeter's public character search and profile endpoints (`https://notmeter.com/?view=character`). Complete searches are cached in memory for two minutes and complete profiles for five minutes, avoiding repeated external loads while preserving the existing polling behavior for partial responses. NotMeter composes the public NC/PlayNC character `info`, `equipment` and item-detail endpoints; those official endpoints are an alternative source for the same published data, not a source for missing Pure Attack, skill coefficients or NPC server-side combat values. The service hostname is configured in `NotMeterClient.cs`; failed lookups remain visible to the user. No profile cache is written to disk.
 
 ## Boss catalog and creature-type matchups
 
@@ -108,7 +110,7 @@ Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.
 
 ### Avatarnoia Flow Engine 2.0
 
-The assistant beneath the attacker and target names starts automatically and refreshes advice as the calculator or opponent changes. Questions are optional. It runs the bundled [onnx-community/Qwen3-0.6B-ONNX](https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX) Q4F16 model locally through Transformers.js. WebGPU with `shader-f16` support and a current WebView2 Runtime are required for generation; the deterministic damage ranking remains available if the GPU lacks that feature. No model weights are downloaded when the program runs.
+The assistant beneath the attacker and target names starts automatically and refreshes advice as the calculator or opponent changes. Questions are optional. It runs the bundled [onnx-community/Qwen3-0.6B-ONNX](https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX) Q4F16 model locally through Transformers.js. WebGPU with `shader-f16` support and a current WebView2 Runtime are required for generation; the deterministic damage ranking remains available if the GPU lacks that feature. No model weights are downloaded when the program runs. Each request carries the selected UI language, and the system prompt requires Portuguese or English accordingly; conversation history is bounded and responses are capped to keep local generation responsive.
 
 The Windows app may automatically request one whitelisted [Aion 2 Maps combat guide](https://aion2maps.com/guides/stats-explained/) by topic and display its URL. Only a guide category is sent to the guide website; character names, calculator values and questions stay on the device. If the internet is unavailable, local advice still runs. This is guided lookup, not unrestricted web search.
 

@@ -70,6 +70,18 @@ test('PvP defense scales by 1% and a Double proc has half the PvE bonus', () => 
   assert.equal(calculateDamage(applyTargetMode({ ...values, penetration: 200 }, 'player')), 1500);
 });
 
+test('PvP critical hits use the 1.25 base multiplier instead of the PvE 1.5 base', () => {
+  const values = { ...base, criticalDamageBoost: 1.5 };
+  assert.equal(calculateDamage(applyTargetMode(values, 'boss')), 1500);
+  assert.equal(calculateDamage(applyTargetMode(values, 'player')), 1250);
+});
+
+test('damage stages cannot turn a landed hit into negative damage', () => {
+  assert.equal(calculateDamage({ ...base, defense: 20000 }), 0);
+  assert.equal(calculateDamage({ ...base, damageTolerance: 2 }), 0);
+  assert.equal(calculateDamage({ ...base, criticalDamageTolerance: 2 }), 0);
+});
+
 test('DPS and defeat time require a positive hit rate and actual target HP', () => {
   assert.deepEqual(estimateCombat(1200, 2.5, 9000), { dps: 3000, secondsToDefeat: 3 });
   assert.deepEqual(estimateCombat(1200, 2.5, 0), { dps: 3000, secondsToDefeat: null });

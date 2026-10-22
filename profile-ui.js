@@ -1,3 +1,6 @@
+const dossierText = key => I18N.t(key);
+const dossierFormat = (key, values) => I18N.format(key, values);
+
 function dossierNode(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -19,7 +22,7 @@ function statList(entries, className = 'option-list') {
     row.append(iconElement(attributeIcon(entry.name)), dossierNode('span', '', entry.name));
     const value = entry.value ?? entry.desc;
     if (value !== undefined && value !== null) row.append(dossierNode('strong', '', value));
-    if (entry.extra && Number(entry.extra) !== 0) row.append(dossierNode('small', '', `+${entry.extra} bonus`));
+    if (entry.extra && Number(entry.extra) !== 0) row.append(dossierNode('small', '', `+${entry.extra} ${dossierText('bonusSuffix')}`));
     list.append(row);
   }
   return list;
@@ -30,12 +33,13 @@ function gearCard({ item, detail }) {
   const head = dossierNode('div', 'gear-card-head');
   head.append(profileImage(item.icon || detail.icon, 'stat'));
   const title = dossierNode('div');
-  title.append(dossierNode('strong', '', item.name || detail.name || 'Unknown item'),
-    dossierNode('small', '', `${item.slotPosName || 'Equipment'} · ${item.grade || detail.grade || 'Grade unknown'}${item.enchantLevel ? ` · +${item.enchantLevel}` : ''}${item.exceedLevel ? ` · exceed ${item.exceedLevel}` : ''}`));
+  title.append(dossierNode('strong', '', item.name || detail.name || dossierText('unknownItem')),
+    dossierNode('small', '', `${item.slotPosName || dossierText('equipment')} · ${item.grade || detail.grade || dossierText('gradeUnknown')}${item.enchantLevel ? ` · +${item.enchantLevel}` : ''}${item.exceedLevel ? ` · exceed ${item.exceedLevel}` : ''}`));
   head.append(title);
   card.append(head);
-  for (const [label, entries] of [['Base & bonus options', detail.mainStats], ['Soul Bind', detail.subStats],
-    ['Manastones', detail.magicStoneStat], ['Theostones', detail.godStoneStat]]) {
+  for (const [label, entries] of [[dossierText('baseOptions'), detail.mainStats],
+    [dossierText('soulBind'), detail.subStats], [dossierText('manastones'), detail.magicStoneStat],
+    [dossierText('theostones'), detail.godStoneStat]]) {
     if (!entries?.length) continue;
     const block = dossierNode('div', 'gear-options');
     block.append(dossierNode('h4', '', label), statList(entries));
@@ -43,18 +47,18 @@ function gearCard({ item, detail }) {
   }
   if (detail.subSkills?.length) {
     const block = dossierNode('div', 'gear-options');
-    block.append(dossierNode('h4', '', 'Soul Bind skills'));
+    block.append(dossierNode('h4', '', dossierText('soulSkills')));
     const skills = dossierNode('ul', 'option-list');
     for (const skill of detail.subSkills) {
       const row = dossierNode('li');
-      row.append(profileImage(skill.icon, 'skill'), dossierNode('span', '', skill.name || 'Skill'),
+      row.append(profileImage(skill.icon, 'skill'), dossierNode('span', '', skill.name || dossierText('skill')),
         dossierNode('strong', '', `+${skill.level || 0}`));
       skills.append(row);
     }
     block.append(skills);
     card.append(block);
   }
-  if (card.children.length === 1) card.append(dossierNode('p', 'reference-note', 'Detailed options not available in this profile.'));
+  if (card.children.length === 1) card.append(dossierNode('p', 'reference-note', dossierText('detailsUnavailable')));
   return card;
 }
 
@@ -63,7 +67,7 @@ function skillCard(skill) {
   card.append(profileImage(skill.icon, 'skill'));
   const content = dossierNode('div');
   content.append(dossierNode('strong', '', skill.name),
-    dossierNode('small', '', `Level ${skill.skillLevel}${Number(skill.equip) ? ' · Equipped' : ''}`));
+    dossierNode('small', '', `${dossierText('level')} ${skill.skillLevel}${Number(skill.equip) ? ` · ${dossierText('equipped')}` : ''}`));
   card.append(content);
   return card;
 }
@@ -75,31 +79,32 @@ function renderDossier(container, view) {
   summary.append(portrait);
   const summaryText = dossierNode('div');
   summaryText.append(dossierNode('strong', '', `${view.name} · ${view.className}`),
-    dossierNode('small', '', `Level ${view.level || '—'} · ${view.race || 'Race unknown'} · ${view.server || 'Server unknown'}`),
-    dossierNode('small', '', `Combat Power ${view.combatPower || '—'}${view.legion ? ` · Legion ${view.legion}` : ''}`));
+    dossierNode('small', '', `${dossierText('level')} ${view.level || '—'} · ${view.race || dossierText('raceUnknown')} · ${view.server || dossierText('serverUnknown')}`),
+    dossierNode('small', '', `${dossierText('combatPower')} ${view.combatPower || '—'}${view.legion ? ` · ${dossierText('legion')} ${view.legion}` : ''}`));
   summary.append(summaryText);
   const tabs = dossierNode('div', 'dossier-tabs');
   tabs.setAttribute('role', 'tablist');
-  tabs.setAttribute('aria-label', 'Character details');
+  tabs.setAttribute('aria-label', dossierText('characterDetails'));
   const sections = [];
   for (const [label, render] of [
-    ['Equipment', section => {
-      section.append(dossierHeader('Equipped items', `${view.gear.length} pieces · explicit options only`));
+    [dossierText('tabEquipment'), section => {
+      section.append(dossierHeader(dossierText('equippedItems'),
+        dossierFormat('piecesPublished', { count: view.gear.length })));
       const grid = dossierNode('div', 'gear-grid');
       grid.append(...view.gear.map(gearCard));
       section.append(grid);
     }],
-    ['Skills', section => {
-      for (const [category, name] of [['Active', 'Active skills'], ['Passive', 'Passive skills'], ['Dp', 'Stigma skills']]) {
+    [dossierText('tabSkills'), section => {
+      for (const [category, key] of [['Active', 'activeSkills'], ['Passive', 'passiveSkills'], ['Dp', 'stigmaSkills']]) {
         const skills = view.skills.filter(skill => skill.category === category);
-        section.append(dossierHeader(name, `${skills.length} learned`));
+        section.append(dossierHeader(dossierText(key), dossierFormat('learnedCount', { count: skills.length })));
         const grid = dossierNode('div', 'skill-grid');
         grid.append(...skills.map(skillCard));
         section.append(grid);
       }
     }],
-    ['Attributes', section => {
-      section.append(dossierHeader('Character-sheet attributes', 'No equipment totals inferred'));
+    [dossierText('tabAttributes'), section => {
+      section.append(dossierHeader(dossierText('sheetAttributes'), dossierText('noInferredTotals')));
       const grid = dossierNode('div', 'attribute-grid');
       for (const stat of view.stats) {
         const card = dossierNode('article', 'attribute-card');
@@ -112,31 +117,36 @@ function renderDossier(container, view) {
       }
       section.append(grid);
     }],
-    ['Progression', section => {
-      section.append(dossierHeader('Equipped titles', `${view.titles.length} published`));
+    [dossierText('tabProgression'), section => {
+      section.append(dossierHeader(dossierText('equippedTitles'),
+        dossierFormat('publishedCount', { count: view.titles.length })));
       const titleGrid = dossierNode('div', 'progression-grid');
       for (const title of view.titles) {
         const card = dossierNode('article', 'progression-card');
-        card.append(dossierNode('strong', '', title.name), dossierNode('small', '', title.equipCategory || 'Title'));
+        card.append(dossierNode('strong', '', title.name), dossierNode('small', '', title.equipCategory || dossierText('title')));
         for (const stat of title.equipStatList || []) card.append(dossierNode('p', '', stat.desc));
         titleGrid.append(card);
       }
       section.append(titleGrid);
-      section.append(dossierHeader('Daevanion boards', `${view.boards.length} published`));
+      section.append(dossierHeader(dossierText('daevanionBoards'),
+        dossierFormat('publishedCount', { count: view.boards.length })));
       const boards = dossierNode('div', 'progression-grid');
       for (const board of view.boards) {
         const card = dossierNode('article', 'progression-card');
-        card.append(profileImage(board.icon, 'stat'), dossierNode('strong', '', board.name || 'Board'),
-          dossierNode('small', '', `${board.openNodeCount ?? 0} / ${board.totalNodeCount ?? '?'} nodes open`));
+        card.append(profileImage(board.icon, 'stat'), dossierNode('strong', '', board.name || dossierText('board')),
+          dossierNode('small', '', dossierFormat('nodesOpen', {
+            open: board.openNodeCount ?? 0, total: board.totalNodeCount ?? '?'
+          })));
         boards.append(card);
       }
       section.append(boards);
-      section.append(dossierHeader('Arcana', `${view.arcana.length} equipped`));
+      section.append(dossierHeader(dossierText('arcana'),
+        dossierFormat('equippedCount', { count: view.arcana.length })));
       const arcana = dossierNode('div', 'gear-grid');
       arcana.append(...view.arcana.map(gearCard));
       section.append(arcana);
       const companions = dossierNode('div', 'progression-grid');
-      for (const [label, value] of [['Mount', view.pet], ['Wings', view.wing]]) {
+      for (const [label, value] of [[dossierText('mount'), view.pet], [dossierText('wings'), view.wing]]) {
         if (!value?.name) continue;
         const card = dossierNode('article', 'progression-card');
         card.append(profileImage(value.icon, 'stat'), dossierNode('strong', '', value.name),

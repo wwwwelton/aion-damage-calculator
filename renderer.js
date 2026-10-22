@@ -12,7 +12,7 @@ const percentFields = new Set([
   'perfectResist', 'multiHitChance', 'multiHitResist', 'endurancePenetration', 'endurance',
   'double', 'frontBoost', 'backBoost', 'skillSpecialtyEnhancement'
 ]);
-const formatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+let formatter = new Intl.NumberFormat(I18N.currentLang === 'pt' ? 'pt-BR' : 'en-US', { maximumFractionDigits: 2 });
 const numericInputs = form.querySelectorAll('input[type="number"]');
 for (const input of numericInputs) {
   input.type = 'text';
@@ -40,15 +40,14 @@ function updateMode() {
   document.querySelector('#calculator-view').dataset.mode = mode;
   document.querySelector('#target-kind-label').hidden = mode === 'player';
   document.querySelector('#target-class-label').hidden = mode !== 'player';
-  document.querySelector('#result-label').textContent = `${mode === 'player' ? 'PVP · PLAYER' : mode === 'boss' ? 'PVE · BOSS' : 'PVE · MONSTER'} · ESTIMATED HIT`;
-  document.querySelector('#enemy-hp-label').textContent = mode === 'player' ? 'Enemy player HP' : mode === 'boss' ? 'Boss HP' : 'Mob HP';
-  const explanation = mode === 'player'
-    ? 'PvE, Boss and Species bonuses are excluded. PvP Defense uses 1% per point instead of 10%; a Double proc uses half its PvE bonus. PvP-specific Attack, Boost and Tolerance remain reference-only because their exact stacking is unverified.'
-    : mode === 'boss'
-      ? 'PvE and Boss attack and damage bonuses apply. Boss Damage Tolerance offsets Boss Damage Boost in the additive bucket.'
-      : 'PvE and Species terms apply; Boss attack and damage bonuses are excluded against non-boss monsters.';
+  document.querySelector('#result-label').textContent = I18N.t(
+    mode === 'player' ? 'resultPlayer' : mode === 'boss' ? 'resultBoss' : 'resultMonster');
+  document.querySelector('#enemy-hp-label').textContent = I18N.t(
+    mode === 'player' ? 'enemyPlayerHp' : mode === 'boss' ? 'bossHp' : 'mobHp');
+  const explanation = I18N.t(mode === 'player' ? 'modePlayerNote'
+    : mode === 'boss' ? 'modeBossNote' : 'modeMonsterNote');
   updateActorIcons();
-  document.querySelector('#mode-note').textContent = `${explanation} Switching target modes clears enemy defenses; offensive values stay entered.`;
+  document.querySelector('#mode-note').textContent = `${explanation} ${I18N.t('modeSwitchNote')}`;
 }
 let previousMode = targetMode.value;
 targetMode.addEventListener('change', () => {
@@ -103,31 +102,43 @@ function update() {
   document.querySelector('#estimated-time').textContent = estimate.secondsToDefeat === null
     ? '—' : `${formatter.format(estimate.secondsToDefeat)} s`;
   document.querySelector('#estimate-note').textContent = values.hitsPerSecond <= 0
-    ? 'Enter a positive landed-hit rate to estimate DPS. Zero means unknown, not zero damage per second.'
+    ? I18N.t('estimateNeedRate')
     : values.enemyHp <= 0
-      ? 'Enter target HP to estimate time to defeat; zero means unknown. NPC HP is not published in the client data.'
-      : 'Assumes constant landed hits, no misses, procs, healing, downtime, phase changes or in-game rounding.';
+      ? I18N.t('estimateNeedHp')
+      : I18N.t('estimateAssumptions');
   document.querySelector('#creature-summary').textContent = creatureType
-    ? `${creatureChoice.selectedOptions[0].textContent}: ${formatter.format(values[`${creatureType}DamageBoost`])}% Damage Boost versus ${formatter.format(values[`${creatureType}DamageTolerance`])}% enemy Damage Tolerance applied instead of generic Species values.`
-    : 'Generic Species values are used until a creature type is selected.';
+    ? I18N.format('creatureSelected', {
+      type: creatureChoice.selectedOptions[0].textContent,
+      boost: formatter.format(values[`${creatureType}DamageBoost`]),
+      tolerance: formatter.format(values[`${creatureType}DamageTolerance`])
+    })
+    : I18N.t('creatureGeneric');
   const upgrades = rankDamageUpgrades(scenarioValues, { critical, position });
-  upgradeList.replaceChildren(...upgrades.map(({ label, percent }) => {
+  const upgradeKeys = {
+    weaponDamageBoost: 'weaponDamageBoostLabel',
+    damageBoost: 'damageBoostLabel',
+    criticalDamageBoost: 'criticalDamageBoostLabel',
+    frontBackDamageBoost: position === 'front' ? 'frontBoostLabel' : 'backBoostLabel'
+  };
+  upgradeList.replaceChildren(...upgrades.map(({ field, label, percent }) => {
     const item = document.createElement('li');
-    item.textContent = `${label}: +${percent.toFixed(2)}% damage`;
+    item.dataset.field = field;
+    item.dataset.label = I18N.t(upgradeKeys[field], label).replace(/\s*\(%\)$/, '');
+    item.textContent = `${item.dataset.label}: ${I18N.format('damageGain', { percent: percent.toFixed(2) })}`;
     return item;
   }));
   const notes = [];
-  if (!upgrades.length) notes.push('A positive damage baseline is required to compare percentage gains.');
-  if (!critical) notes.push('Critical Damage Boost applies only to critical hits; select Critical Hit to compare it.');
-  if (position === 'none') notes.push('Select Front or Back to compare a positional boost.');
-  else notes.push('Positional gains apply only when attacks land from the selected side.');
-  notes.push('Double Chance is a proc rate, not a guaranteed multiplier; proc chance and resistance are not modeled.');
+  if (!upgrades.length) notes.push(I18N.t('noPositiveBaseline'));
+  if (!critical) notes.push(I18N.t('criticalComparisonHint'));
+  if (position === 'none') notes.push(I18N.t('positionComparisonHint'));
+  else notes.push(I18N.t('positionUptimeHint'));
+  notes.push(I18N.t('procHint'));
   upgradeContext.textContent = notes.join(' ');
   status.textContent = targetMode.value === 'player'
-    ? 'Community PvP estimate: 1% Defense per point; PvP-specific Attack/Boost/Tolerance not included.'
+    ? I18N.t('communityPvpStatus')
     : creatureType
-      ? `Community formula estimate; ${creatureType} creature matchup replaces generic Species values. In-game rounding is not included.`
-      : 'Community formula estimate; in-game rounding is not included.';
+      ? I18N.format('communityCreatureStatus', { type: creatureChoice.selectedOptions[0].textContent })
+      : I18N.t('communityFormulaStatus');
   scheduleAiTips();
 }
 form.addEventListener('input', update);
@@ -140,3 +151,10 @@ form.addEventListener('focusout', (event) => {
 });
 form.addEventListener('change', update);
 update();
+
+I18N.onLanguageChange(() => {
+  formatter = new Intl.NumberFormat(I18N.currentLang === 'pt' ? 'pt-BR' : 'en-US',
+    { maximumFractionDigits: 2 });
+  updateMode();
+  update();
+});

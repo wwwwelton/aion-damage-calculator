@@ -12,27 +12,31 @@ function filterBosses() {
   visibleBosses = catalog.filter(boss =>
     (opponentKind.value === 'mob' || !bossGroup.value || boss.group === bossGroup.value)
     && `${boss.name} ${boss.location ?? ''} ${boss.subtitle ?? ''}`.toLocaleLowerCase().includes(search));
-  const options = [new Option('Select a monster', '')];
+  const options = [new Option(I18N.t('selectMonster'), '')];
   for (const boss of visibleBosses) {
     options.push(new Option(`${boss.name} · Lv ${boss.level} · ${boss.type} · ${boss.group ?? boss.rank}`, boss.id));
   }
   bossChoice.replaceChildren(...options);
-  document.querySelector('#boss-count').textContent = `${visibleBosses.length} of ${catalog.length} ${opponentKind.value === 'boss' ? 'bosses' : 'mobs'} shown.`;
+  document.querySelector('#boss-count').textContent = I18N.format('catalogCount', {
+    shown: visibleBosses.length,
+    total: catalog.length,
+    kind: I18N.t(opponentKind.value === 'boss' ? 'bosses' : 'mobs')
+  });
   showBoss();
 }
 
 function showBoss() {
   const boss = visibleBosses.find(item => item.id === bossChoice.value);
   bossImport.disabled = !boss;
-  document.querySelector('#boss-title').textContent = boss?.name ?? 'Select a monster';
+  document.querySelector('#boss-title').textContent = boss?.name ?? I18N.t('selectMonster');
   setDisplayIcon(document.querySelector('#boss-icon'), opponentKind.value === 'boss' ? 'boss' : 'mob');
   const facts = document.querySelector('#boss-facts');
   facts.hidden = !boss;
   facts.replaceChildren();
   if (boss) {
-    for (const [label, value] of [['Level', boss.level], ['Rank', boss.rank],
-      ['Creature type', boss.type], ['Encounter', boss.group ?? 'Mob'],
-      ['HP', 'Unknown · server-side'], ['Defense', 'Unknown · server-side']]) {
+    for (const [label, value] of [[I18N.t('factLevel'), boss.level], [I18N.t('factRank'), boss.rank],
+      [I18N.t('factCreatureType'), boss.type], [I18N.t('factEncounter'), boss.group ?? I18N.t('mobs')],
+      [I18N.t('factHp'), I18N.t('unknownServerSide')], [I18N.t('factDefense'), I18N.t('unknownServerSide')]]) {
       const card = document.createElement('div');
       card.className = 'boss-fact';
       const caption = document.createElement('small');
@@ -48,7 +52,7 @@ function showBoss() {
     : '';
   const source = document.querySelector('#boss-source');
   source.hidden = !boss;
-  if (boss) source.textContent = `Source: https://aion2data.com/monsters/${boss.id}-${boss.slug}`;
+  if (boss) source.textContent = `${I18N.t('source')}: https://aion2data.com/monsters/${boss.id}-${boss.slug}`;
 }
 
 opponentKind.addEventListener('change', () => {
@@ -72,8 +76,17 @@ bossImport.addEventListener('click', () => {
   calculator.dispatchEvent(new Event('input', { bubbles: true }));
   const warning = document.querySelector('#import-warning');
   warning.hidden = false;
-  warning.textContent = `${boss.name} (Lv ${boss.level}, ${boss.type}, ${opponentKind.value}) selected. Previous enemy defenses cleared; target Defense and tolerances remain unknown (0 until entered manually). ${bossTypes.has(boss.type) ? `${boss.type} creature bonuses now replace generic Species values.` : 'Special has no creature-specific matchup; generic Species values remain manual.'}`;
+  warning.textContent = `${I18N.format('targetSelected', {
+    name: boss.name, level: boss.level, type: boss.type, kind: opponentKind.value
+  })} ${I18N.t(bossTypes.has(boss.type) ? 'creatureBonusesApplied' : 'specialCreatureManual')
+    .replace('{type}', boss.type)}`;
   showTab('calculator-view');
   document.querySelector('.encounter').scrollIntoView({ block: 'start' });
 });
 filterBosses();
+I18N.onLanguageChange(() => {
+  const selected = bossChoice.value;
+  filterBosses();
+  bossChoice.value = selected;
+  showBoss();
+});

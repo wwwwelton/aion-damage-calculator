@@ -370,9 +370,48 @@ const STAT_CATALOG = {
   }
 };
 
+const PT_STAT_DESCRIPTIONS = {
+  pureAttack: 'Soma de Ataque de arma, guarder, acessórios, linhas de atributo, pedras e aparências antes dos multiplicadores. Não é um atributo exibido pelo jogo.',
+  weaponDamageBoost: 'Multiplica o Ataque vindo de equipamentos e é reduzido pela Tolerância a Dano de Arma do alvo.',
+  multiHit: 'Fator efetivo de dano usado pela fórmula para representar o resultado de Golpe Múltiplo; não é a chance exibida na ficha.',
+  multiHitChance: 'Chance de gerar até quatro golpes extras. Cada golpe extra causa uma fração do dano final.',
+  multiHitResist: 'Reduz a chance de o inimigo ativar Golpe Múltiplo.',
+  powerShard: 'Multiplicador da munição Power Shard aplicado ao ataque de equipamento.',
+  attackBonus: 'Ataque fixo somado depois do Aumento de Dano de Arma e antes do Aumento de Ataque.',
+  attackIncrease: 'Multiplica Ataque Puro e Bônus de Ataque. Might contribui diretamente para este percentual.',
+  skillCoefficient: 'Parcela do Ataque usada pela habilidade. O coeficiente depende da habilidade escolhida.',
+  skillAdditionalDamage: 'Dano fixo da habilidade somado antes da redução por Defesa.',
+  penetration: 'Subtrai Defesa do alvo na proporção 1:1, sem permitir Defesa efetiva abaixo de zero.',
+  defense: 'Redução fixa: 10% do valor no PvE e 1% no PvP, depois de descontar Penetração.',
+  damageBoost: 'Entra no grupo aditivo de aumentos de dano e é reduzido pelas tolerâncias correspondentes.',
+  criticalDamageBoost: 'Multiplicador de um golpe crítico. A base é 1,5× no PvE e 1,25× no PvP.',
+  criticalDamageTolerance: 'Reduz o multiplicador de dano crítico do atacante.',
+  double: 'Multiplicador de um proc de Chance Dupla: 2× no PvE e 1,5× no PvP.',
+  doubleChance: 'Chance de ativar um golpe Duplo, reduzida pela Resistência Dupla do alvo.',
+  frontBoost: 'Multiplica o dano quando o golpe acerta pela frente.',
+  backBoost: 'Multiplica o dano quando o golpe acerta pelas costas; ataques traseiros também ignoram Bloqueio.',
+  skillSpecialtyEnhancement: 'Multiplicador final fornecido pela especialização da habilidade.',
+  playerHp: 'HP total do atacante. Não altera o dano causado.',
+  enemyHp: 'HP total do alvo, usado para estimar o tempo de derrota.',
+  hitsPerSecond: 'Taxa de golpes realmente acertados, multiplicada pelo dano estimado para calcular DPS.'
+};
+
+function localizedStatInfo(name, info) {
+  if (typeof I18N === 'undefined' || I18N.currentLang !== 'pt') return info;
+  const defensive = /Tolerance|Resist|Defense|Evasion|Block|Endurance|Regeneration/i.test(info.title);
+  return {
+    title: I18N.statLabel(info.title),
+    tag: defensive ? 'Defesa · atributo de combate' : 'Ofensiva · atributo de combate',
+    desc: PT_STAT_DESCRIPTIONS[name]
+      || (defensive
+        ? 'Reduz, evita ou neutraliza o efeito ofensivo correspondente conforme as regras de combate do AION 2.'
+        : 'Aumenta ou modifica o efeito ofensivo correspondente conforme as regras de combate do AION 2.')
+  };
+}
+
 function getStatInfo(name) {
   if (!name) return null;
-  if (STAT_CATALOG[name]) return STAT_CATALOG[name];
+  if (STAT_CATALOG[name]) return localizedStatInfo(name, STAT_CATALOG[name]);
 
   // Check genus prefixes: cogni, fera, natura, varian
   const genusMatch = name.match(/^(cogni|fera|natura|varian)(.+)$/i);
@@ -381,17 +420,17 @@ function getStatInfo(name) {
     const baseName = genusMatch[2].charAt(0).toLowerCase() + genusMatch[2].slice(1);
     const baseInfo = STAT_CATALOG[baseName] || STAT_CATALOG[baseName.replace(/^[a-z]/, c => c.toLowerCase())];
     if (baseInfo) {
-      return {
+      return localizedStatInfo(name, {
         title: `${genus} ${baseInfo.title.replace(/^[^·(]+/, genus)}`,
         tag: `Genus (${genus}) · ${baseInfo.tag}`,
         desc: `Specific to ${genus} creature genus. ${baseInfo.desc}`
-      };
+      });
     }
   }
 
   // Fallback pattern matching
   for (const key of Object.keys(STAT_CATALOG)) {
-    if (name.toLowerCase() === key.toLowerCase()) return STAT_CATALOG[key];
+    if (name.toLowerCase() === key.toLowerCase()) return localizedStatInfo(key, STAT_CATALOG[key]);
   }
   return null;
 }
@@ -401,7 +440,7 @@ function createStatTooltipElement(info) {
   trigger.className = 'stat-tip-trigger';
   trigger.setAttribute('tabindex', '0');
   trigger.setAttribute('role', 'button');
-  trigger.setAttribute('aria-label', `Information about ${info.title}`);
+  trigger.setAttribute('aria-label', `${typeof I18N !== 'undefined' && I18N.currentLang === 'pt' ? 'Informações sobre' : 'Information about'} ${info.title}`);
 
   const icon = document.createElement('span');
   icon.className = 'stat-tip-icon';
@@ -469,6 +508,12 @@ if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => attachStatTooltips());
   } else {
     attachStatTooltips();
+  }
+  if (typeof I18N !== 'undefined') {
+    I18N.onLanguageChange(() => {
+      document.querySelectorAll('.stat-tip-trigger').forEach(node => node.remove());
+      attachStatTooltips();
+    });
   }
 }
 

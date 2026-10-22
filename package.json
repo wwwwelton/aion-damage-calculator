@@ -1,7 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "build:ai": "node build-ai.mjs"
+    "build:ai": "node build-ai.mjs",
+    "test": "node --test *.test.js"
   },
   "devDependencies": {
     "@huggingface/transformers": "3.8.1",

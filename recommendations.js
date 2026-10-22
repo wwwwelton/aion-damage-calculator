@@ -18,7 +18,7 @@ function rankDamageUpgrades(values, conditions) {
 
   return candidates.map(([label, key]) => {
     const upgraded = damageFormula({ ...values, [key]: values[key] + 0.01 });
-    return { label, percent: (upgraded - baseline) / baseline * 100 };
+    return { label, field: key, percent: (upgraded - baseline) / baseline * 100 };
   }).filter(item => Number.isFinite(item.percent) && item.percent > 0)
     .sort((a, b) => b.percent - a.percent);
 }

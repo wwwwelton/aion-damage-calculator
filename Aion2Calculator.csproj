@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3650.58" />
     <EmbeddedResource Include="index.html" LogicalName="index.html" />
     <EmbeddedResource Include="style.css" LogicalName="style.css" />
+    <EmbeddedResource Include="i18n.js" LogicalName="i18n.js" />
     <EmbeddedResource Include="calculator.js" LogicalName="calculator.js" />
     <EmbeddedResource Include="numeric-input.js" LogicalName="numeric-input.js" />
     <EmbeddedResource Include="recommendations.js" LogicalName="recommendations.js" />
@@ -37,6 +38,11 @@
     <EmbeddedResource Include="renderer.js" LogicalName="renderer.js" />
     <EmbeddedResource Include="characters.js" LogicalName="characters.js" />
   </ItemGroup>
+  <Target Name="RemoveUnusedWebView2WpfReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
   <Target Name="CheckLocalModel" BeforeTargets="PrepareForBuild">
     <Error Condition="!Exists('assets/ai/models/onnx-community/Qwen3-0.6B-ONNX/onnx/model_q4f16.onnx')" Text="Run npm ci and npm run build:ai to bundle Qwen3-0.6B Q4F16 before publishing." />
   </Target>

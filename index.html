@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; style-src 'self'; img-src 'self' https://assets.playnccdn.com https://profileimg.plaync.com https://fizz-download.playnccdn.com">
   <title>AION 2 — Damage Calculator</title>
   <link rel="stylesheet" href="style.css">
+  <script defer src="i18n.js"></script>
   <script defer src="calculator.js"></script>
   <script defer src="numeric-input.js"></script>
   <script defer src="recommendations.js"></script>
@@ -23,38 +24,45 @@
 <body>
   <main>
     <header>
-      <p class="eyebrow">AION 2 · LOCAL CALCULATOR</p>
-      <h1>Damage Calculator</h1>
-      <p>Choose a target mode, then enter the attacker and target stats. Multipliers use 100% as neutral; additive damage bonuses use 0%.</p>
+      <div class="header-row">
+        <div>
+          <p class="eyebrow" data-i18n="appEyebrow">AION 2 · LOCAL CALCULATOR</p>
+          <h1 data-i18n="appTitle">Damage Calculator</h1>
+        </div>
+        <label class="language-selector" data-i18n-label="langLabel">Language
+          <select id="lang-select" aria-label="Language"><option value="pt">Português</option><option value="en">English</option></select>
+        </label>
+      </div>
+      <p data-i18n="appSubtitle">Choose a target mode, then enter the attacker and target stats. Multipliers use 100% as neutral; additive damage bonuses use 0%.</p>
     </header>
     <nav class="tabs" role="tablist" aria-label="Application tabs">
-      <button type="button" id="calculator-tab" role="tab" aria-controls="calculator-view" class="tab active" data-tab="calculator-view" aria-selected="true">Damage Calculator</button>
-      <button type="button" id="character-tab" role="tab" aria-controls="character-view" class="tab" data-tab="character-view" aria-selected="false">Character Search</button>
-      <button type="button" id="enemy-tab" role="tab" aria-controls="enemy-view" class="tab" data-tab="enemy-view" aria-selected="false">Enemy Character</button>
-      <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false">Mobs &amp; Bosses</button>
+      <button type="button" id="calculator-tab" role="tab" aria-controls="calculator-view" class="tab active" data-tab="calculator-view" aria-selected="true" data-i18n="tabCalculator">Damage Calculator</button>
+      <button type="button" id="character-tab" role="tab" aria-controls="character-view" class="tab" data-tab="character-view" aria-selected="false" data-i18n="tabCharacter">Character Search</button>
+      <button type="button" id="enemy-tab" role="tab" aria-controls="enemy-view" class="tab" data-tab="enemy-view" aria-selected="false" data-i18n="tabEnemy">Enemy Character</button>
+      <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false" data-i18n="tabBoss">Mobs &amp; Bosses</button>
     </nav>
     <div id="calculator-view" class="tab-panel" role="tabpanel" aria-labelledby="calculator-tab">
     <section class="card encounter" aria-label="Combat scenario">
-      <label>Target mode<select id="target-mode"><option value="boss">PvE · Boss</option><option value="monster">PvE · Other monster</option><option value="player">PvP · Player</option></select></label>
+      <label data-i18n-label="targetModeLabel">Target mode<select id="target-mode"><option value="boss" data-i18n="targetModeBoss">PvE · Boss</option><option value="monster" data-i18n="targetModeMonster">PvE · Other monster</option><option value="player" data-i18n="targetModePlayer">PvP · Player</option></select></label>
       <div class="combatants">
-        <div><h2>Attacker <span id="attacker-icon" class="actor-icon" hidden></span></h2><label>Character name<input id="attacker-name" type="text" placeholder="Your character"></label><label>Class<input id="attacker-class" type="text" placeholder="Class"></label></div>
-        <div><h2>Target <span id="target-icon" class="actor-icon"></span></h2><label>Name<input id="target-name" type="text" placeholder="Select a boss or enter a name"></label><label id="target-kind-label">Creature type<select id="creature-type-header"><option value="">Unknown / manual</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option><option value="special">Special</option></select></label><label id="target-class-label" hidden>Class<input id="target-class" type="text" placeholder="Target class"></label></div>
+        <div><h2 data-i18n-label="attackerTitle">Attacker <span id="attacker-icon" class="actor-icon" hidden></span></h2><label data-i18n-label="charNameLabel">Character name<input id="attacker-name" type="text" placeholder="Your character" data-i18n-placeholder="charNamePlaceholder"></label><label data-i18n-label="classLabel">Class<input id="attacker-class" type="text" placeholder="Class" data-i18n-placeholder="classPlaceholder"></label></div>
+        <div><h2 data-i18n-label="targetTitle">Target <span id="target-icon" class="actor-icon"></span></h2><label data-i18n-label="targetNameLabel">Name<input id="target-name" type="text" placeholder="Select a boss or enter a name" data-i18n-placeholder="targetNamePlaceholder"></label><label id="target-kind-label" data-i18n-label="creatureTypeLabel">Creature type<select id="creature-type-header"><option value="" data-i18n="creatureTypeUnknown">Unknown / manual</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option><option value="special" data-i18n="creatureTypeSpecial">Special</option></select></label><label id="target-class-label" hidden data-i18n-label="classLabel">Class<input id="target-class" type="text" placeholder="Target class" data-i18n-placeholder="targetClassPlaceholder"></label></div>
       </div>
       <section class="ai-assistant" aria-labelledby="ai-title">
-        <h2 id="ai-title">Avatarnoia Flow Engine 2.0</h2>
-        <p class="reference-note">Bundled Qwen3-0.6B ONNX (Q4F16); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. WebGPU with shader-f16 is required. Calculated comparisons take precedence over AI text.</p>
-        <label for="ai-question">AION 2 Combat Assistant</label>
+        <h2 id="ai-title" data-i18n="aiAssistantTitle">Avatarnoia Flow Engine 2.0</h2>
+        <p class="reference-note" data-i18n="aiAssistantNote">Bundled Qwen3-0.6B ONNX (Q4F16); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. WebGPU with shader-f16 is required. Calculated comparisons take precedence over AI text.</p>
+        <label for="ai-question" data-i18n="aiChatHeader">AION 2 Combat Assistant</label>
         <div id="ai-chat-dialog" class="ai-chat-dialog" role="log" aria-live="polite">
           <div class="ai-msg ai-msg-assistant">
             <span class="ai-msg-author">Avatarnoia Flow</span>
-            <div id="ai-answer" class="ai-msg-body">Preparing local damage advice…</div>
+            <div id="ai-answer" class="ai-msg-body" data-i18n="aiInitialStatus">Preparing local damage advice…</div>
           </div>
         </div>
         <div class="ai-input-row">
-          <input id="ai-question" type="text" maxlength="250" placeholder="Ask about your setup (e.g. Whats the best way to up dps?)...">
-          <button type="button" id="ai-send">Ask</button>
+          <input id="ai-question" type="text" maxlength="250" placeholder="Ask about your setup (e.g. Whats the best way to up dps?)..." data-i18n-placeholder="aiQuestionPlaceholder">
+          <button type="button" id="ai-send" data-i18n="aiAskBtn">Ask</button>
         </div>
-        <button type="button" id="ai-apply" hidden>Apply suggested +1% upgrade</button>
+        <button type="button" id="ai-apply" hidden data-i18n="aiApplyBtn">Apply suggested +1% upgrade</button>
         <p id="ai-source" class="reference-note"></p>
       </section>
       <p id="mode-note" class="reference-note"></p>
@@ -62,155 +70,155 @@
     <section class="result" aria-live="polite">
       <span id="result-label">PVE · BOSS · ESTIMATED HIT</span>
       <strong id="result">0</strong>
-      <small id="status">Result of the supplied formula; in-game rounding is not included.</small>
+      <small id="status" data-i18n="resultStatus">Result of the supplied formula; in-game rounding is not included.</small>
     </section>
     <p id="import-warning" class="import-warning" role="status" hidden></p>
     <section class="card advice" aria-labelledby="advice-title">
-      <h2 id="advice-title">Damage upgrade tips</h2>
-      <p>Estimated gain per +1 percentage point, using your current values and the supplied formula:</p>
+      <h2 id="advice-title" data-i18n="adviceTitle">Damage upgrade tips</h2>
+      <p data-i18n="adviceSubtitle">Estimated gain per +1 percentage point, using your current values and the supplied formula:</p>
       <ol id="upgrade-list" aria-live="polite"></ol>
       <p id="upgrade-context" class="advice-note"></p>
-      <small>Per-hit comparisons, not DPS or upgrade-cost rankings. Based on the AION 2 damage formula guide (Gameplay.tips) and Stats explained (Aion 2 Maps); results depend on the target, uptime and patch.</small>
+      <small data-i18n="adviceFooter">Per-hit comparisons, not DPS or upgrade-cost rankings. Based on the AION 2 damage formula guide (Gameplay.tips) and Stats explained (Aion 2 Maps); results depend on the target, uptime and patch.</small>
     </section>
     <form id="calculator">
       <section class="card estimate">
-        <h2>Estimated DPS &amp; target HP</h2>
-        <p class="reference-note">Set landed hits per second for this exact hit. This is sustained damage for an assumed constant hit, not a measured rotation or proc average. HP is not known for NPCs; enter a value only when you know it.</p>
+        <h2 data-i18n="cardEstimateTitle">Estimated DPS &amp; target HP</h2>
+        <p class="reference-note" data-i18n="cardEstimateNote">Set landed hits per second for this exact hit. This is sustained damage for an assumed constant hit, not a measured rotation or proc average. HP is not known for NPCs; enter a value only when you know it.</p>
         <div class="grid">
-          <label>Player HP <span>attacker's character-sheet HP; does not affect outgoing damage</span><input name="playerHp" type="number" min="0" step="any" value="0"></label>
-          <label class="enemy"><span id="enemy-hp-label">Boss HP</span><span>0 = unknown; reset when changing targets</span><input name="enemyHp" type="number" min="0" step="any" value="0"></label>
-          <label>Landed hits per second <span>enter your observed or assumed rate</span><input name="hitsPerSecond" type="number" min="0" step="any" value="0"></label>
+          <label data-i18n-label="playerHpLabel">Player HP <span data-i18n="playerHpSpan">attacker's character-sheet HP; does not affect outgoing damage</span><input name="playerHp" type="number" min="0" step="any" value="0"></label>
+          <label class="enemy"><span id="enemy-hp-label">Boss HP</span><span data-i18n="enemyHpSpan">0 = unknown; reset when changing targets</span><input name="enemyHp" type="number" min="0" step="any" value="0"></label>
+          <label data-i18n-label="hitsPerSecondLabel">Landed hits per second <span data-i18n="hitsPerSecondSpan">enter your observed or assumed rate</span><input name="hitsPerSecond" type="number" min="0" step="any" value="0"></label>
         </div>
         <div class="estimate-results">
-          <div><span>ESTIMATED DPS</span><strong id="estimated-dps">—</strong></div>
-          <div><span>TIME TO DEFEAT</span><strong id="estimated-time">—</strong></div>
+          <div><span data-i18n="estimatedDpsLabel">ESTIMATED DPS</span><strong id="estimated-dps">—</strong></div>
+          <div><span data-i18n="timeToDefeatLabel">TIME TO DEFEAT</span><strong id="estimated-time">—</strong></div>
         </div>
         <p id="estimate-note" class="reference-note" role="status"></p>
       </section>
       <section class="card">
-        <h2>Attack</h2>
+        <h2 data-i18n="cardAttackTitle">Attack</h2>
         <div class="grid">
-          <label>Pure Attack <span>derived value, not an in-game stat</span><input name="pureAttack" type="number" min="0" step="any" value="1000"></label>
-          <div class="matchup"><label>Weapon Damage Boost <span>multiplier (%)</span><input name="weaponDamageBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Weapon Damage Tolerance (%)<input name="weaponDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <label>Multi-Hit <span>multiplier (%)</span><input name="multiHit" type="number" min="0" step="any" value="100"></label>
-          <label>Power Shard <span>multiplier (%)</span><input name="powerShard" type="number" min="0" step="any" value="100"></label>
-          <label>Attack Bonus <input name="attackBonus" type="number" step="any" value="0"></label>
-          <label>Attack Increase <span>multiplier (%)</span><input name="attackIncrease" type="number" min="0" step="any" value="100"></label>
-          <label class="pve-only">PvE Attack Power <input name="pveAttackPower" type="number" step="any" value="0"></label>
-          <label class="boss-only">Boss Attack Power <input name="bossAttackPower" type="number" step="any" value="0"></label>
-          <label class="pve-only">Species Attack Power <input name="speciesAttackPower" type="number" step="any" value="0"></label>
-          <label>Front/Back Attack Power <input name="frontBackAttackPower" type="number" step="any" value="0"></label>
+          <label data-i18n-label="pureAttackLabel">Pure Attack <span data-i18n="pureAttackSpan">derived value, not an in-game stat</span><input name="pureAttack" type="number" min="0" step="any" value="1000"></label>
+          <div class="matchup"><label data-i18n-label="weaponDamageBoostLabel">Weapon Damage Boost <span data-i18n="weaponDamageBoostSpan">multiplier (%)</span><input name="weaponDamageBoost" type="number" min="0" step="any" value="100"></label><label class="enemy" data-i18n-label="weaponDamageToleranceLabel">Enemy Weapon Damage Tolerance (%)<input name="weaponDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <label data-i18n-label="multiHitLabel">Multi-Hit damage factor <span data-i18n="multiHitSpan">effective multiplier, not sheet proc chance (%)</span><input name="multiHit" type="number" min="0" step="any" value="100"></label>
+          <label data-i18n-label="powerShardLabel">Power Shard <span data-i18n="powerShardSpan">multiplier (%)</span><input name="powerShard" type="number" min="0" step="any" value="100"></label>
+          <label data-i18n-label="attackBonusLabel">Attack Bonus <input name="attackBonus" type="number" step="any" value="0"></label>
+          <label data-i18n-label="attackIncreaseLabel">Attack Increase <span data-i18n="attackIncreaseSpan">multiplier (%)</span><input name="attackIncrease" type="number" min="0" step="any" value="100"></label>
+          <label class="pve-only" data-i18n-label="pveAttackPowerLabel">PvE Attack Power <input name="pveAttackPower" type="number" step="any" value="0"></label>
+          <label class="boss-only" data-i18n-label="bossAttackPowerLabel">Boss Attack Power <input name="bossAttackPower" type="number" step="any" value="0"></label>
+          <label class="pve-only" data-i18n-label="speciesAttackPowerLabel">Species Attack Power <input name="speciesAttackPower" type="number" step="any" value="0"></label>
+          <label data-i18n-label="frontBackAttackPowerLabel">Front/Back Attack Power <input name="frontBackAttackPower" type="number" step="any" value="0"></label>
         </div>
       </section>
       <section class="card">
-        <h2>Skill and Defense</h2>
+        <h2 data-i18n="cardSkillDefenseTitle">Skill and Defense</h2>
         <div class="grid">
-          <label>Skill Coefficient <span>multiplier (%)</span><input name="skillCoefficient" type="number" min="0" step="any" value="100"></label>
-          <label>Skill Additional Damage <input name="skillAdditionalDamage" type="number" step="any" value="0"></label>
-          <div class="matchup"><label>Penetration<input name="penetration" type="number" min="0" step="any" value="0"></label><label class="enemy">Enemy Defense<input name="defense" type="number" min="0" step="any" value="0"></label></div>
-          <label>Skill Specialty Enhancement <span>multiplier (%)</span><input name="skillSpecialtyEnhancement" type="number" min="0" step="any" value="100"></label>
+          <label data-i18n-label="skillCoefficientLabel">Skill Coefficient <span data-i18n="skillCoefficientSpan">multiplier (%)</span><input name="skillCoefficient" type="number" min="0" step="any" value="100"></label>
+          <label data-i18n-label="skillAdditionalDamageLabel">Skill Additional Damage <input name="skillAdditionalDamage" type="number" step="any" value="0"></label>
+          <div class="matchup"><label data-i18n-label="penetrationLabel">Penetration<input name="penetration" type="number" min="0" step="any" value="0"></label><label class="enemy" data-i18n-label="defenseLabel">Enemy Defense<input name="defense" type="number" min="0" step="any" value="0"></label></div>
+          <label data-i18n-label="skillSpecialtyEnhancementLabel">Skill Specialty Enhancement <span data-i18n="skillSpecialtyEnhancementSpan">multiplier (%)</span><input name="skillSpecialtyEnhancement" type="number" min="0" step="any" value="100"></label>
         </div>
       </section>
       <section class="card">
-        <h2>Boosts and Conditions</h2>
+        <h2 data-i18n="cardBoostsTitle">Boosts and Conditions</h2>
         <div class="grid">
-          <div class="matchup"><label>Damage Boost <span>additive (%)</span><input name="damageBoost" type="number" step="any" value="100"></label><label class="enemy">Enemy Damage Tolerance (%)<input name="damageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <div class="matchup pve-only"><label>PvE Damage Boost <span>additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy PvE Damage Tolerance (%)<input name="pveDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <div class="matchup boss-only"><label>Boss Damage Boost <span>additive (%)</span><input name="bossDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy Boss Damage Tolerance (%)<input name="bossDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <div class="matchup pve-only"><label>Species Damage Boost <span>additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label><label class="enemy">Enemy Species Damage Tolerance (%)<input name="speciesDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <div class="matchup"><label>Critical Damage Boost <span>multiplier (%)</span><input name="criticalDamageBoost" type="number" min="0" step="any" value="150"></label><label class="enemy">Enemy Critical Damage Tolerance (%)<input name="criticalDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <label>Critical Hit?<select id="critical"><option value="no">No</option><option value="yes">Yes</option></select></label>
-          <label>Double Chance proc?<select id="doubleEnabled"><option value="no">No</option><option value="yes">Yes</option></select></label>
-          <label>Double damage multiplier (%) <span>PvE value; PvP proc bonus is halved</span><input name="double" type="number" min="0" step="any" value="200"></label>
-          <label>Attack position<select id="position"><option value="none">No positional boost</option><option value="front">Front</option><option value="back">Back</option></select></label>
-          <div class="matchup"><label>Front Damage Boost (%)<input name="frontBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Front Attack Damage Tolerance (%)<input name="frontDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
-          <div class="matchup"><label>Back Damage Boost (%)<input name="backBoost" type="number" min="0" step="any" value="100"></label><label class="enemy">Enemy Back Attack Damage Tolerance (%)<input name="backDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label data-i18n-label="damageBoostLabel">Damage Boost <span data-i18n="damageBoostSpan">additive (%)</span><input name="damageBoost" type="number" step="any" value="100"></label><label class="enemy" data-i18n-label="damageToleranceLabel">Enemy Damage Tolerance (%)<input name="damageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup pve-only"><label data-i18n-label="pveDamageBoostLabel">PvE Damage Boost <span data-i18n="pveDamageBoostSpan">additive (%)</span><input name="pveDamageBoost" type="number" step="any" value="0"></label><label class="enemy" data-i18n-label="pveDamageToleranceLabel">Enemy PvE Damage Tolerance (%)<input name="pveDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup boss-only"><label data-i18n-label="bossDamageBoostLabel">Boss Damage Boost <span data-i18n="bossDamageBoostSpan">additive (%)</span><input name="bossDamageBoost" type="number" step="any" value="0"></label><label class="enemy" data-i18n-label="bossDamageToleranceLabel">Enemy Boss Damage Tolerance (%)<input name="bossDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup pve-only"><label data-i18n-label="speciesDamageBoostLabel">Species Damage Boost <span data-i18n="speciesDamageBoostSpan">additive (%)</span><input name="speciesDamageBoost" type="number" step="any" value="0"></label><label class="enemy" data-i18n-label="speciesDamageToleranceLabel">Enemy Species Damage Tolerance (%)<input name="speciesDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label data-i18n-label="criticalDamageBoostLabel">Critical Damage Boost <span data-i18n="criticalDamageBoostSpan">multiplier (%)</span><input name="criticalDamageBoost" type="number" min="0" step="any" value="150"></label><label class="enemy" data-i18n-label="criticalDamageToleranceLabel">Enemy Critical Damage Tolerance (%)<input name="criticalDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <label data-i18n-label="criticalHitQuestion">Critical Hit?<select id="critical"><option value="no" data-i18n="optNo">No</option><option value="yes" data-i18n="optYes">Yes</option></select></label>
+          <label data-i18n-label="doubleProcQuestion">Double Chance proc?<select id="doubleEnabled"><option value="no" data-i18n="optNo">No</option><option value="yes" data-i18n="optYes">Yes</option></select></label>
+          <label data-i18n-label="doubleMultiplierLabel">Double damage multiplier (%) <span data-i18n="doubleMultiplierSpan">PvE value; PvP proc bonus is halved</span><input name="double" type="number" min="0" step="any" value="200"></label>
+          <label data-i18n-label="attackPositionLabel">Attack position<select id="position"><option value="none" data-i18n="posNone">No positional boost</option><option value="front" data-i18n="posFront">Front</option><option value="back" data-i18n="posBack">Back</option></select></label>
+          <div class="matchup"><label data-i18n-label="frontBoostLabel">Front Damage Boost (%)<input name="frontBoost" type="number" min="0" step="any" value="100"></label><label class="enemy" data-i18n-label="frontDamageToleranceLabel">Enemy Front Attack Damage Tolerance (%)<input name="frontDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
+          <div class="matchup"><label data-i18n-label="backBoostLabel">Back Damage Boost (%)<input name="backBoost" type="number" min="0" step="any" value="100"></label><label class="enemy" data-i18n-label="backDamageToleranceLabel">Enemy Back Attack Damage Tolerance (%)<input name="backDamageTolerance" type="number" min="0" step="any" value="0"></label></div>
         </div>
       </section>
       <section class="card pve-only" id="pve-matchups">
-        <h2>PvE / Boss · Creature-type matchups</h2>
-        <p class="reference-note">Choose the target's type to apply its Damage Boost and Damage Tolerance instead of generic Species values. Unknown or Special targets use manual Species values. Other creature stats are reference-only.</p>
-        <label class="creature-select">Creature type for damage calculation<select id="creature-type"><option value="">Manual Species values</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option></select></label>
+        <h2 data-i18n="cardCreatureTitle">PvE / Boss · Creature-type matchups</h2>
+        <p class="reference-note" data-i18n="cardCreatureNote">Choose the target's type to apply its Damage Boost and Damage Tolerance instead of generic Species values. Unknown or Special targets use manual Species values. Other creature stats are reference-only.</p>
+        <label class="creature-select" data-i18n-label="creatureTypeCalcLabel">Creature type for damage calculation<select id="creature-type"><option value="" data-i18n="creatureManualOption">Manual Species values</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option></select></label>
         <p id="creature-summary" class="reference-note" aria-live="polite"></p>
         <div id="creature-matchups"></div>
       </section>
       <section class="card">
-        <h2>Combat matchups</h2>
-        <p class="reference-note">Accuracy, block, critical chance and procs are reference-only for a selected hit. PvP damage and elemental stats remain reference-only because their exact stacking is unverified.</p>
+        <h2 data-i18n="cardMatchupsTitle">Combat matchups</h2>
+        <p class="reference-note" data-i18n="cardMatchupsNote">Accuracy, block, critical chance and procs are reference-only for a selected hit. PvP damage and elemental stats remain reference-only because their exact stacking is unverified.</p>
         <div class="grid reference-extras">
-          <label class="pve-only">PvE Accuracy <span>also counters enemy Evasion and Block against monsters</span><input name="pveAccuracy" type="number" min="0" step="any" value="0"></label>
-          <label class="enemy">Enemy Elemental Resistance <span>general reference; elemental skills have individual tolerances</span><input name="elementalResistance" type="number" min="0" step="any" value="0"></label>
+          <label class="pve-only" data-i18n-label="pveAccuracyLabel">PvE Accuracy <span data-i18n="pveAccuracySpan">also counters enemy Evasion and Block against monsters</span><input name="pveAccuracy" type="number" min="0" step="any" value="0"></label>
+          <label class="enemy" data-i18n-label="elementalResistanceLabel">Enemy Elemental Resistance <span data-i18n="elementalResistanceSpan">general reference; elemental skills have individual tolerances</span><input name="elementalResistance" type="number" min="0" step="any" value="0"></label>
         </div>
         <div id="reference-matchups"></div>
       </section>
     </form>
-    <footer>Prefilled values are examples, not official game stats. Community-derived formula; actual results depend on the client patch, skill and target.</footer>
+    <footer data-i18n="footerNote">Prefilled values are examples, not official game stats. Community-derived formula; actual results depend on the client patch, skill and target.</footer>
     </div>
     <div id="character-view" class="tab-panel" role="tabpanel" aria-labelledby="character-tab" hidden>
       <section class="card">
-        <h2>Find a character on NotMeter</h2>
-        <p>Search public character profiles by exact name. Select a region, then choose the right server if multiple characters match.</p>
+        <h2 data-i18n="findCharTitle">Find a character on NotMeter</h2>
+        <p data-i18n="findCharSubtitle">Search public character profiles by exact name. Select a region, then choose the right server if multiple characters match.</p>
         <form id="character-search" class="search-form">
-          <label>Character name<input id="character-name" type="search" maxlength="20" required placeholder="Enter a character name"></label>
-          <label>Region<select id="character-region"><option value="ww">Global</option><option value="kr">Korea</option><option value="tw">Taiwan</option></select></label>
-          <label id="global-region-label">Global region<select id="global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
-          <button type="submit">Search</button>
+          <label data-i18n-label="searchCharLabel">Character name<input id="character-name" type="search" maxlength="20" required placeholder="Enter a character name" data-i18n-placeholder="searchCharPlaceholder"></label>
+          <label data-i18n-label="regionLabel">Region<select id="character-region"><option value="ww">Global</option><option value="kr">Korea</option><option value="tw">Taiwan</option></select></label>
+          <label id="global-region-label" data-i18n-label="globalRegionLabel">Global region<select id="global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
+          <button type="submit" data-i18n="searchBtn">Search</button>
         </form>
         <p id="search-status" role="status" aria-live="polite"></p>
-        <label id="character-choice-label" hidden>Matching characters<select id="character-choice"></select></label>
+        <label id="character-choice-label" hidden data-i18n-label="matchingCharsLabel">Matching characters<select id="character-choice"></select></label>
       </section>
       <section id="profile-panel" class="card" hidden>
         <h2 class="icon-heading"><span id="profile-class-icon" class="actor-icon" hidden></span><span id="profile-title"></span></h2>
         <p id="profile-meta"></p>
         <p id="profile-status" role="status" aria-live="polite"></p>
-        <button type="button" id="import-character" disabled>Load available stats into calculator</button>
-        <p class="import-note">Character-sheet totals and explicit equipment bonuses can be loaded into the calculator. Gear-only values are partial; missing HP and target Defense remain manual.</p>
+        <button type="button" id="import-character" disabled data-i18n="importCharBtn">Load available stats into calculator</button>
+        <p class="import-note" data-i18n="importCharNote">Character-sheet totals and explicit equipment bonuses can be loaded into the calculator. Gear-only values are partial; missing HP and target Defense remain manual.</p>
         <div id="profile-dossier"></div>
       </section>
     </div>
     <div id="enemy-view" class="tab-panel" role="tabpanel" aria-labelledby="enemy-tab" hidden>
       <section class="card">
-        <h2>Find an enemy character</h2>
-        <p>Search a public character profile by name. Select a matching server when several characters share the name.</p>
+        <h2 data-i18n="findEnemyTitle">Find an enemy character</h2>
+        <p data-i18n="findEnemySubtitle">Search a public character profile by name. Select a matching server when several characters share the name.</p>
         <form id="enemy-search" class="search-form">
-          <label>Enemy character name<input id="enemy-name" type="search" maxlength="20" required placeholder="Enter a character name"></label>
-          <label>Region<select id="enemy-region"><option value="ww">Global</option><option value="kr">Korea</option><option value="tw">Taiwan</option></select></label>
-          <label id="enemy-global-region-label">Global region<select id="enemy-global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
-          <button type="submit">Search</button>
+          <label data-i18n-label="searchEnemyLabel">Enemy character name<input id="enemy-name" type="search" maxlength="20" required placeholder="Enter a character name" data-i18n-placeholder="searchCharPlaceholder"></label>
+          <label data-i18n-label="regionLabel">Region<select id="enemy-region"><option value="ww">Global</option><option value="kr">Korea</option><option value="tw">Taiwan</option></select></label>
+          <label id="enemy-global-region-label" data-i18n-label="globalRegionLabel">Global region<select id="enemy-global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
+          <button type="submit" data-i18n="searchBtn">Search</button>
         </form>
         <p id="enemy-search-status" role="status" aria-live="polite"></p>
-        <label id="enemy-choice-label" hidden>Matching characters<select id="enemy-choice"></select></label>
+        <label id="enemy-choice-label" hidden data-i18n-label="matchingCharsLabel">Matching characters<select id="enemy-choice"></select></label>
       </section>
       <section id="enemy-panel" class="card" hidden>
         <h2 class="icon-heading"><span id="enemy-class-icon" class="actor-icon" hidden></span><span id="enemy-title"></span></h2>
         <p id="enemy-meta"></p>
         <p id="enemy-profile-status" role="status" aria-live="polite"></p>
-        <button type="button" id="import-enemy" disabled>Load enemy HP and defenses into calculator</button>
-        <p class="import-note">Character-sheet HP and defenses take priority; equipped-item values are partial. NPC/boss HP and defenses cannot be inferred from player equipment.</p>
+        <button type="button" id="import-enemy" disabled data-i18n="importEnemyBtn">Load enemy HP and defenses into calculator</button>
+        <p class="import-note" data-i18n="importEnemyNote">Character-sheet HP and defenses take priority; equipped-item values are partial. NPC/boss HP and defenses cannot be inferred from player equipment.</p>
         <div id="enemy-dossier"></div>
-        <h3>Available enemy HP and defenses for import</h3>
+        <h3 data-i18n="availableEnemyStats">Available enemy HP and defenses for import</h3>
         <ul id="enemy-stats"></ul>
       </section>
     </div>
     <div id="boss-view" class="tab-panel" role="tabpanel" aria-labelledby="boss-tab" hidden>
       <section class="card">
-        <h2>Mobs &amp; Bosses</h2>
-        <p class="import-note">Search the offline NPC catalog by name and choose a specific ID. Rank, level, creature type and known location come from the client; HP and combat attributes are server-side and remain unknown.</p>
+        <h2 data-i18n="bossTitle">Mobs &amp; Bosses</h2>
+        <p class="import-note" data-i18n="bossSubtitle">Search the offline NPC catalog by name and choose a specific ID. Rank, level, creature type and known location come from the client; HP and combat attributes are server-side and remain unknown.</p>
         <div class="boss-filters">
-          <label>Opponent<select id="opponent-kind"><option value="boss">Boss (521)</option><option value="mob">Mob (3,072)</option></select></label>
-          <label id="boss-group-label">Boss group<select id="boss-group"><option value="">All bosses</option><option value="Field boss">Field bosses (79)</option><option value="Hero / legend">Hero / legend monsters (442)</option></select></label>
-          <label>Search by name, location or classification<input id="boss-search" type="search" placeholder="Name or location"></label>
-          <label>Monster<select id="boss-choice"></select></label>
+          <label data-i18n-label="opponentLabel">Opponent<select id="opponent-kind"><option value="boss" data-i18n="opponentBoss">Boss (521)</option><option value="mob" data-i18n="opponentMob">Mob (3,072)</option></select></label>
+          <label id="boss-group-label" data-i18n-label="bossGroupLabel">Boss group<select id="boss-group"><option value="" data-i18n="bossGroupAll">All bosses</option><option value="Field boss" data-i18n="bossGroupField">Field bosses (79)</option><option value="Hero / legend" data-i18n="bossGroupHero">Hero / legend monsters (442)</option></select></label>
+          <label data-i18n-label="bossSearchLabel">Search by name, location or classification<input id="boss-search" type="search" placeholder="Name or location" data-i18n-placeholder="bossSearchPlaceholder"></label>
+          <label data-i18n-label="monsterLabel">Monster<select id="boss-choice"></select></label>
         </div>
         <p id="boss-count" role="status"></p>
       </section>
       <section class="card">
-        <h2 class="icon-heading"><span id="boss-icon" class="actor-icon"></span><span id="boss-title">Select a monster</span></h2>
+        <h2 class="icon-heading"><span id="boss-icon" class="actor-icon"></span><span id="boss-title" data-i18n="selectMonster">Select a monster</span></h2>
         <div id="boss-facts" class="boss-facts" hidden></div>
         <p id="boss-details" class="import-note"></p>
         <p id="boss-source" class="import-note boss-source" hidden></p>
-        <p class="import-note">NPC skill and attack details are not in this offline snapshot; the source URL identifies the monster's page for further research. Cogni, Fera, Natura and Varian apply the corresponding creature matchup; missing HP and defenses stay manual.</p>
-        <button type="button" id="import-boss" disabled>Load target into calculator</button>
+        <p class="import-note" data-i18n="bossDetailsNote">NPC skill and attack details are not in this offline snapshot; the source URL identifies the monster's page for further research. Cogni, Fera, Natura and Varian apply the corresponding creature matchup; missing HP and defenses stay manual.</p>
+        <button type="button" id="import-boss" disabled data-i18n="importBossBtn">Load target into calculator</button>
       </section>
     </div>
   </main>

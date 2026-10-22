@@ -1,0 +1,742 @@
+
+const TRANSLATIONS = {
+  en: {
+    appEyebrow: 'AION 2 · LOCAL CALCULATOR',
+    appTitle: 'Damage Calculator',
+    windowTitle: 'AION 2 — Damage Calculator',
+    appSubtitle: 'Choose a target mode, then enter the attacker and target stats. Multipliers use 100% as neutral; additive damage bonuses use 0%.',
+    langLabel: 'Language:',
+
+    tabCalculator: 'Damage Calculator',
+    tabCharacter: 'Character Search',
+    tabEnemy: 'Enemy Character',
+    tabBoss: 'Mobs & Bosses',
+
+    targetModeLabel: 'Target mode',
+    targetModeBoss: 'PvE · Boss',
+    targetModeMonster: 'PvE · Other monster',
+    targetModePlayer: 'PvP · Player',
+    attackerTitle: 'Attacker',
+    targetTitle: 'Target',
+    charNameLabel: 'Character name',
+    charNamePlaceholder: 'Your character',
+    classLabel: 'Class',
+    classPlaceholder: 'Class',
+    targetNameLabel: 'Name',
+    targetNamePlaceholder: 'Select a boss or enter a name',
+    creatureTypeLabel: 'Creature type',
+    creatureTypeUnknown: 'Unknown / manual',
+    creatureTypeCogni: 'Cogni',
+    creatureTypeFera: 'Fera',
+    creatureTypeNatura: 'Natura',
+    creatureTypeVarian: 'Varian',
+    creatureTypeSpecial: 'Special',
+    targetClassLabel: 'Target class',
+    targetClassPlaceholder: 'Target class',
+
+    aiAssistantTitle: 'Avatarnoia Flow Engine 2.0',
+    aiAssistantNote: 'Bundled Qwen3-0.6B ONNX (Q4F16); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. WebGPU with shader-f16 is required. Calculated comparisons take precedence over AI text.',
+    aiChatHeader: 'AION 2 Combat Assistant',
+    aiQuestionPlaceholder: 'Ask about your setup (e.g. Whats the best way to up dps?)...',
+    aiAskBtn: 'Ask',
+    aiInitialStatus: 'Preparing local damage advice…',
+    aiApplyBtn: 'Apply suggested +1% upgrade',
+
+    resultStatus: 'Result of the supplied formula; in-game rounding is not included.',
+    estimatedDpsLabel: 'ESTIMATED DPS',
+    timeToDefeatLabel: 'TIME TO DEFEAT',
+
+    adviceTitle: 'Damage upgrade tips',
+    adviceSubtitle: 'Estimated gain per +1 percentage point, using your current values and the supplied formula:',
+    adviceFooter: 'Per-hit comparisons, not DPS or upgrade-cost rankings. Based on the AION 2 damage formula guide and Stats explained; results depend on target, uptime and patch.',
+
+    cardEstimateTitle: 'Estimated DPS & target HP',
+    cardEstimateNote: 'Set landed hits per second for this exact hit. This is sustained damage for an assumed constant hit, not a measured rotation or proc average. HP is not known for NPCs; enter a value only when you know it.',
+    playerHpLabel: 'Player HP',
+    playerHpSpan: 'attacker\'s character-sheet HP; does not affect outgoing damage',
+    enemyHpLabel: 'Boss HP',
+    enemyHpSpan: '0 = unknown; reset when changing targets',
+    hitsPerSecondLabel: 'Landed hits per second',
+    hitsPerSecondSpan: 'enter your observed or assumed rate',
+
+    cardAttackTitle: 'Attack',
+    pureAttackLabel: 'Pure Attack',
+    pureAttackSpan: 'derived value, not an in-game stat',
+    weaponDamageBoostLabel: 'Weapon Damage Boost',
+    weaponDamageBoostSpan: 'multiplier (%)',
+    weaponDamageToleranceLabel: 'Enemy Weapon Damage Tolerance (%)',
+    multiHitLabel: 'Multi-Hit damage factor',
+    multiHitSpan: 'effective formula multiplier, not sheet proc chance (%)',
+    powerShardLabel: 'Power Shard',
+    powerShardSpan: 'multiplier (%)',
+    attackBonusLabel: 'Attack Bonus',
+    attackIncreaseLabel: 'Attack Increase',
+    attackIncreaseSpan: 'multiplier (%)',
+    pveAttackPowerLabel: 'PvE Attack Power',
+    bossAttackPowerLabel: 'Boss Attack Power',
+    speciesAttackPowerLabel: 'Species Attack Power',
+    frontBackAttackPowerLabel: 'Front/Back Attack Power',
+
+    cardSkillDefenseTitle: 'Skill and Defense',
+    skillCoefficientLabel: 'Skill Coefficient',
+    skillCoefficientSpan: 'multiplier (%)',
+    skillAdditionalDamageLabel: 'Skill Additional Damage',
+    penetrationLabel: 'Penetration',
+    defenseLabel: 'Enemy Defense',
+    skillSpecialtyEnhancementLabel: 'Skill Specialty Enhancement',
+    skillSpecialtyEnhancementSpan: 'multiplier (%)',
+
+    cardBoostsTitle: 'Boosts and Conditions',
+    damageBoostLabel: 'Damage Boost',
+    damageBoostSpan: 'additive (%)',
+    damageToleranceLabel: 'Enemy Damage Tolerance (%)',
+    pveDamageBoostLabel: 'PvE Damage Boost',
+    pveDamageBoostSpan: 'additive (%)',
+    pveDamageToleranceLabel: 'Enemy PvE Damage Tolerance (%)',
+    bossDamageBoostLabel: 'Boss Damage Boost',
+    bossDamageBoostSpan: 'additive (%)',
+    bossDamageToleranceLabel: 'Enemy Boss Damage Tolerance (%)',
+    speciesDamageBoostLabel: 'Species Damage Boost',
+    speciesDamageBoostSpan: 'additive (%)',
+    speciesDamageToleranceLabel: 'Enemy Species Damage Tolerance (%)',
+    criticalDamageBoostLabel: 'Critical Damage Boost',
+    criticalDamageBoostSpan: 'multiplier (%)',
+    criticalDamageToleranceLabel: 'Enemy Critical Damage Tolerance (%)',
+    criticalHitQuestion: 'Critical Hit?',
+    doubleProcQuestion: 'Double Chance proc?',
+    doubleMultiplierLabel: 'Double damage multiplier (%)',
+    doubleMultiplierSpan: 'PvE value; PvP proc bonus is halved',
+    attackPositionLabel: 'Attack position',
+    posNone: 'No positional boost',
+    posFront: 'Front',
+    posBack: 'Back',
+    frontBoostLabel: 'Front Damage Boost (%)',
+    frontDamageToleranceLabel: 'Enemy Front Attack Damage Tolerance (%)',
+    backBoostLabel: 'Back Damage Boost (%)',
+    backDamageToleranceLabel: 'Enemy Back Attack Damage Tolerance (%)',
+
+    cardCreatureTitle: 'PvE / Boss · Creature-type matchups',
+    cardCreatureNote: 'Choose the target\'s type to apply its Damage Boost and Damage Tolerance instead of generic Species values. Unknown or Special targets use manual Species values. Other creature stats are reference-only.',
+    creatureTypeCalcLabel: 'Creature type for damage calculation',
+    creatureManualOption: 'Manual Species values',
+
+    cardMatchupsTitle: 'Combat matchups',
+    cardMatchupsNote: 'Accuracy, block, critical chance and procs are reference-only for a selected hit. PvP damage and elemental stats remain reference-only because their exact stacking is unverified.',
+    pveAccuracyLabel: 'PvE Accuracy',
+    pveAccuracySpan: 'also counters enemy Evasion and Block against monsters',
+    elementalResistanceLabel: 'Enemy Elemental Resistance',
+    elementalResistanceSpan: 'general reference; elemental skills have individual tolerances',
+
+    footerNote: 'Prefilled values are examples, not official game stats. Community-derived formula; actual results depend on client patch, skill and target.',
+
+    findCharTitle: 'Find a character on NotMeter',
+    findCharSubtitle: 'Search public character profiles by exact name. Select a region, then choose the right server if multiple characters match.',
+    searchCharLabel: 'Character name',
+    searchCharPlaceholder: 'Enter a character name',
+    regionLabel: 'Region',
+    globalRegionLabel: 'Global region',
+    searchBtn: 'Search',
+    matchingCharsLabel: 'Matching characters',
+    importCharBtn: 'Load available stats into calculator',
+    importCharNote: 'Character-sheet totals and explicit equipment bonuses can be loaded into the calculator. Gear-only values are partial; missing HP and target Defense remain manual.',
+
+    findEnemyTitle: 'Find an enemy character',
+    findEnemySubtitle: 'Search a public character profile by name. Select a matching server when several characters share the name.',
+    searchEnemyLabel: 'Enemy character name',
+    importEnemyBtn: 'Load defenses into enemy setup',
+    importEnemyNote: 'Public sheet defenses and explicit defensive gear can be loaded into the calculator. Gear-only values are partial; offensive and missing values remain unchanged.',
+
+    bossTitle: 'Mobs & Bosses',
+    bossSubtitle: 'Search the offline NPC catalog by name and choose a specific ID. Rank, level, creature type and known location come from the client; HP and combat attributes are server-side and remain unknown.',
+    bossGroupLabel: 'Boss group',
+    bossGroupAll: 'All bosses',
+    bossGroupField: 'Field bosses (79)',
+    bossGroupHero: 'Hero / legend monsters (442)',
+    bossSearchLabel: 'Search by name, location or classification',
+    bossSearchPlaceholder: 'Name or location',
+    monsterLabel: 'Monster',
+    importBossBtn: 'Load target into calculator',
+    opponentLabel: 'Opponent',
+    opponentBoss: 'Boss (521)',
+    opponentMob: 'Mob (3,072)',
+    selectMonster: 'Select a monster',
+    bossDetailsNote: 'NPC skill and attack details are not in this offline snapshot; the source URL identifies the monster page for further research. Cogni, Fera, Natura and Varian apply the corresponding creature matchup; missing HP and defenses stay manual.',
+    availableEnemyStats: 'Available enemy HP and defenses for import',
+
+    resultBoss: 'PVE · BOSS · ESTIMATED HIT',
+    resultMonster: 'PVE · MONSTER · ESTIMATED HIT',
+    resultPlayer: 'PVP · PLAYER · ESTIMATED HIT',
+    bossHp: 'Boss HP',
+    mobHp: 'Mob HP',
+    enemyPlayerHp: 'Enemy player HP',
+    modePlayerNote: 'PvE, Boss and Species bonuses are excluded. PvP Defense uses 1% per point instead of 10%; a Double proc and the critical base bonus use their PvP values. PvP-specific Attack, Boost and Tolerance remain reference-only because their exact stacking is unverified.',
+    modeBossNote: 'PvE and Boss attack and damage bonuses apply. Boss Damage Tolerance offsets Boss Damage Boost in the additive bucket.',
+    modeMonsterNote: 'PvE and Species terms apply; Boss attack and damage bonuses are excluded against non-boss monsters.',
+    modeSwitchNote: 'Switching target modes clears enemy defenses; offensive values stay entered.',
+    estimateNeedRate: 'Enter a positive landed-hit rate to estimate DPS. Zero means unknown, not zero damage per second.',
+    estimateNeedHp: 'Enter target HP to estimate time to defeat; zero means unknown. NPC HP is not published in the client data.',
+    estimateAssumptions: 'Assumes constant landed hits, no misses, procs, healing, downtime, phase changes or in-game rounding.',
+    creatureGeneric: 'Generic Species values are used until a creature type is selected.',
+    creatureSelected: '{type}: {boost}% Damage Boost versus {tolerance}% enemy Damage Tolerance replaces the generic Species values.',
+    noPositiveBaseline: 'A positive damage baseline is required to compare percentage gains.',
+    criticalComparisonHint: 'Critical Damage Boost applies only to critical hits; select Critical Hit to compare it.',
+    positionComparisonHint: 'Select Front or Back to compare a positional boost.',
+    positionUptimeHint: 'Positional gains apply only when attacks land from the selected side.',
+    procHint: 'Double Chance is a proc rate, not a guaranteed multiplier; proc chance and resistance are not modeled.',
+    communityPvpStatus: 'Community PvP estimate: 1% Defense per point; PvP-specific Attack/Boost/Tolerance not included.',
+    communityFormulaStatus: 'Community formula estimate; in-game rounding is not included.',
+    communityCreatureStatus: 'Community formula estimate; {type} creature matchup replaces generic Species values. In-game rounding is not included.',
+    damageGain: '+{percent}% damage',
+    searchingProfiles: 'Searching public NotMeter profiles… (can take several seconds)',
+    searchAgain: 'Search again after changing the region.',
+    searchStillProcessing: 'Search is still processing. Try again shortly.',
+    noCharacters: 'No characters found.',
+    charactersFound: '{count} matching character(s) found{extra}.',
+    moreMayAppear: ' (more may still appear)',
+    selectCharacter: 'Select a character',
+    searchFailed: 'Search failed: {error}',
+    loadingProfile: 'Loading attributes, gear and skills from NotMeter… (can take several seconds)',
+    loadingDefenses: 'Loading defensive attributes from NotMeter… (can take several seconds)',
+    partialProfile: 'Partial public profile: some equipment details may still be loading.',
+    profileLoaded: 'Public profile loaded. Stats shown here may lag behind the game.',
+    profileFailed: 'Profile failed: {error}',
+    importCoverage: 'Imported {formula} calculator fields and {references} matchup stats. Still manual: {manual}.',
+    importManualFallback: 'skill/rotation, Pure Attack and unavailable totals',
+    aiLoading: 'Loading bundled Avatarnoia Flow Engine 2.0…',
+    aiReading: 'Reading embedded model: {progress}%',
+    aiGenerating: 'Analyzing setup and calculating advice…',
+    aiNoSuggestion: 'The model did not return a suggestion. Use the calculated comparison below.',
+    aiUnavailable: 'AI unavailable: {error}. Use the calculated comparison below.',
+    aiFailedStart: 'Local model failed to start. Use the calculated comparison below.',
+    aiGuide: 'Online guide: {url}',
+    aiGuideUnavailable: 'Guide unavailable ({error}); local calculator values remain available.',
+    aiGeneratingLocal: 'Generating AION 2 advice locally…',
+    aiYou: 'You',
+    aiApplyDynamic: 'Apply +1% {label} ({gain})',
+    requiresWindows: 'Character search requires the Windows app.',
+    enemyPartialProfile: 'Partial profile: equipment-only values may be incomplete.',
+    enemyProfileLoaded: 'Public profile loaded. Equipment-only values are partial; NPC and boss defenses differ.',
+    enemyImportResult: 'Imported {count} available defenses from {name}. {hp} Equipment-only values are partial; missing values are unknown. This is a player profile, not an NPC or boss.',
+    enemyHpUnknown: 'Enemy HP is unknown.',
+    enemyHpKnown: 'Enemy character-sheet HP: {hp}.',
+    characterSheetSource: 'character sheet',
+    equipmentPartialSource: 'equipment only; partial',
+    noDefenses: 'No matching defensive attributes in this public profile.',
+    unknownItem: 'Unknown item',
+    equipment: 'Equipment',
+    gradeUnknown: 'Grade unknown',
+    bonusSuffix: 'bonus',
+    baseOptions: 'Base & bonus options',
+    soulBind: 'Soul Bind',
+    manastones: 'Manastones',
+    theostones: 'Theostones',
+    soulSkills: 'Soul Bind skills',
+    skill: 'Skill',
+    detailsUnavailable: 'Detailed options not available in this profile.',
+    level: 'Level',
+    equipped: 'Equipped',
+    raceUnknown: 'Race unknown',
+    serverUnknown: 'Server unknown',
+    combatPower: 'Combat Power',
+    legion: 'Legion',
+    characterDetails: 'Character details',
+    tabEquipment: 'Equipment',
+    tabSkills: 'Skills',
+    tabAttributes: 'Attributes',
+    tabProgression: 'Progression',
+    equippedItems: 'Equipped items',
+    piecesPublished: '{count} pieces · explicit options only',
+    activeSkills: 'Active skills',
+    passiveSkills: 'Passive skills',
+    stigmaSkills: 'Stigma skills',
+    learnedCount: '{count} learned',
+    sheetAttributes: 'Character-sheet attributes',
+    noInferredTotals: 'No equipment totals inferred',
+    equippedTitles: 'Equipped titles',
+    publishedCount: '{count} published',
+    title: 'Title',
+    daevanionBoards: 'Daevanion boards',
+    nodesOpen: '{open} / {total} nodes open',
+    arcana: 'Arcana',
+    equippedCount: '{count} equipped',
+    board: 'Board',
+    mount: 'Mount',
+    wings: 'Wings',
+
+    catalogCount: '{shown} of {total} {kind} shown.',
+    bosses: 'bosses',
+    mobs: 'mobs',
+    factLevel: 'Level',
+    factRank: 'Rank',
+    factCreatureType: 'Creature type',
+    factEncounter: 'Encounter',
+    factHp: 'HP',
+    factDefense: 'Defense',
+    unknownServerSide: 'Unknown · server-side',
+    source: 'Source',
+    targetSelected: '{name} (Lv {level}, {type}, {kind}) selected. Previous enemy defenses were cleared; target Defense and tolerances remain unknown until entered manually.',
+    creatureBonusesApplied: '{type} creature bonuses now replace generic Species values.',
+    specialCreatureManual: 'Special has no creature-specific matchup; generic Species values remain manual.',
+
+    optYes: 'Yes',
+    optNo: 'No'
+  },
+
+  pt: {
+    appEyebrow: 'AION 2 · CALCULADORA LOCAL',
+    appTitle: 'Calculadora de Dano',
+    windowTitle: 'AION 2 — Calculadora de Dano',
+    appSubtitle: 'Escolha um modo de alvo e insira os atributos do atacante e do alvo. Multiplicadores usam 100% como neutro; bônus aditivos de dano usam 0%.',
+    langLabel: 'Idioma:',
+
+    tabCalculator: 'Calculadora de Dano',
+    tabCharacter: 'Buscar Personagem',
+    tabEnemy: 'Buscar Inimigo',
+    tabBoss: 'Monstros e Chefes',
+
+    targetModeLabel: 'Modo de alvo',
+    targetModeBoss: 'PvE · Chefe',
+    targetModeMonster: 'PvE · Outro monstro',
+    targetModePlayer: 'PvP · Jogador',
+    attackerTitle: 'Atacante',
+    targetTitle: 'Alvo',
+    charNameLabel: 'Nome do personagem',
+    charNamePlaceholder: 'Seu personagem',
+    classLabel: 'Classe',
+    classPlaceholder: 'Classe',
+    targetNameLabel: 'Nome',
+    targetNamePlaceholder: 'Selecione um chefe ou insira um nome',
+    creatureTypeLabel: 'Gênero de criatura',
+    creatureTypeUnknown: 'Desconhecido / manual',
+    creatureTypeCogni: 'Cogni',
+    creatureTypeFera: 'Fera',
+    creatureTypeNatura: 'Natura',
+    creatureTypeVarian: 'Varian',
+    creatureTypeSpecial: 'Especial',
+    targetClassLabel: 'Classe do alvo',
+    targetClassPlaceholder: 'Classe do alvo',
+
+    aiAssistantTitle: 'Motor Avatarnoia Flow 2.0',
+    aiAssistantNote: 'Modelo Qwen3-0.6B ONNX (Q4F16) integrado localmente; sem download externo. Dicas acompanham o cálculo ativo. O aplicativo pode pesquisar guias online do AION 2; nomes e valores permanecem locais. WebGPU com shader-f16 é necessário.',
+    aiChatHeader: 'Assistente de Combate AION 2',
+    aiQuestionPlaceholder: 'Pergunte sobre sua build (ex: Qual a melhor forma de subir o dps?)...',
+    aiAskBtn: 'Perguntar',
+    aiInitialStatus: 'Preparando recomendações locais de combate…',
+    aiApplyBtn: 'Aplicar melhoria sugerida de +1%',
+
+    resultStatus: 'Resultado da fórmula fornecida; arredondamentos internos do jogo não inclusos.',
+    estimatedDpsLabel: 'DPS ESTIMADO',
+    timeToDefeatLabel: 'TEMPO DE DERROTA',
+
+    adviceTitle: 'Dicas de melhoria de dano',
+    adviceSubtitle: 'Ganho estimado por +1 ponto percentual, usando seus valores atuais e a fórmula comunitária:',
+    adviceFooter: 'Comparações por golpe, não ranqueamento de DPS ou custo. Baseado em guias da comunidade e wikis do AION 2; os resultados dependem do alvo e versão do jogo.',
+
+    cardEstimateTitle: 'DPS Estimado & HP do Alvo',
+    cardEstimateNote: 'Defina a taxa de golpes por segundo para este ataque. Este é o dano contínuo assumindo acertos constantes, não uma média de rotação. O HP de NPCs pode ser manual caso você conheça o valor.',
+    playerHpLabel: 'HP do Jogador',
+    playerHpSpan: 'HP da ficha do atacante; não afeta o dano causado',
+    enemyHpLabel: 'HP do Chefe',
+    enemyHpSpan: '0 = desconhecido; redefine ao trocar de alvo',
+    hitsPerSecondLabel: 'Golpes acertados por segundo',
+    hitsPerSecondSpan: 'insira sua taxa observada ou estimada',
+
+    cardAttackTitle: 'Ataque',
+    pureAttackLabel: 'Ataque Puro',
+    pureAttackSpan: 'soma derivada de Ataque antes dos multiplicadores; não é um atributo exibido no jogo',
+    weaponDamageBoostLabel: 'Aumento de Dano da Arma',
+    weaponDamageBoostSpan: 'multiplicador (%)',
+    weaponDamageToleranceLabel: 'Tolerância a Dano de Arma Inimiga (%)',
+    multiHitLabel: 'Fator de dano de Golpe Múltiplo',
+    multiHitSpan: 'multiplicador efetivo da fórmula, não a chance exibida na ficha (%)',
+    powerShardLabel: 'Power Shard (Cristal de Poder)',
+    powerShardSpan: 'multiplicador (%)',
+    attackBonusLabel: 'Bônus de Ataque',
+    attackIncreaseLabel: 'Aumento de Ataque',
+    attackIncreaseSpan: 'multiplicador (%)',
+    pveAttackPowerLabel: 'Poder de Ataque PvE',
+    bossAttackPowerLabel: 'Poder de Ataque contra Chefes',
+    speciesAttackPowerLabel: 'Poder de Ataque por Espécie',
+    frontBackAttackPowerLabel: 'Poder de Ataque Frontal/Traseiro',
+
+    cardSkillDefenseTitle: 'Habilidade e Defesa',
+    skillCoefficientLabel: 'Coeficiente da Habilidade',
+    skillCoefficientSpan: 'multiplicador (%)',
+    skillAdditionalDamageLabel: 'Dano Adicional da Habilidade',
+    penetrationLabel: 'Penetração',
+    defenseLabel: 'Defesa Inimiga',
+    skillSpecialtyEnhancementLabel: 'Especialização de Habilidade',
+    skillSpecialtyEnhancementSpan: 'multiplicador (%)',
+
+    cardBoostsTitle: 'Aumentos e Condições',
+    damageBoostLabel: 'Aumento de Dano',
+    damageBoostSpan: 'aditivo (%)',
+    damageToleranceLabel: 'Tolerância a Dano Inimiga (%)',
+    pveDamageBoostLabel: 'Aumento de Dano PvE',
+    pveDamageBoostSpan: 'aditivo (%)',
+    pveDamageToleranceLabel: 'Tolerância a Dano PvE Inimiga (%)',
+    bossDamageBoostLabel: 'Aumento de Dano contra Chefes',
+    bossDamageBoostSpan: 'aditivo (%)',
+    bossDamageToleranceLabel: 'Tolerância a Dano de Chefes Inimiga (%)',
+    speciesDamageBoostLabel: 'Aumento de Dano por Espécie',
+    speciesDamageBoostSpan: 'aditivo (%)',
+    speciesDamageToleranceLabel: 'Tolerância a Dano por Espécie Inimiga (%)',
+    criticalDamageBoostLabel: 'Aumento de Dano Crítico',
+    criticalDamageBoostSpan: 'multiplicador (%)',
+    criticalDamageToleranceLabel: 'Tolerância a Dano Crítico Inimiga (%)',
+    criticalHitQuestion: 'Acerto Crítico?',
+    doubleProcQuestion: 'Ativação de Chance Dupla?',
+    doubleMultiplierLabel: 'Multiplicador de dano duplo (%)',
+    doubleMultiplierSpan: 'valor PvE; bônus em PvP é reduzido pela metade',
+    attackPositionLabel: 'Posição de ataque',
+    posNone: 'Sem bônus posicional',
+    posFront: 'Frente',
+    posBack: 'Costas',
+    frontBoostLabel: 'Aumento de Dano Frontal (%)',
+    frontDamageToleranceLabel: 'Tolerância a Dano Frontal Inimiga (%)',
+    backBoostLabel: 'Aumento de Dano Traseiro (%)',
+    backDamageToleranceLabel: 'Tolerância a Dano Traseiro Inimiga (%)',
+
+    cardCreatureTitle: 'PvE / Chefe · Confrontos por Gênero de Criatura',
+    cardCreatureNote: 'Escolha o tipo do alvo para aplicar os aumentos específicos de gênero. Alvos Especiais ou Desconhecidos usam valores manuais.',
+    creatureTypeCalcLabel: 'Gênero de criatura para o cálculo de dano',
+    creatureManualOption: 'Valores manuais de Espécie',
+
+    cardMatchupsTitle: 'Confrontos de Combate',
+    cardMatchupsNote: 'Accuracy, Block, Crítico e Procs são referências de acerto. Dano PvP e elemental permanecem como referência.',
+    pveAccuracyLabel: 'PvE Accuracy',
+    pveAccuracySpan: 'também combate a Evasion e Block contra monstros',
+    elementalResistanceLabel: 'Resistência Elemental Inimiga',
+    elementalResistanceSpan: 'referência geral; habilidades elementais possuem tolerâncias próprias',
+
+    footerNote: 'Valores pré-preenchidos são ilustrativos. Fórmula derivada pela comunidade; resultados reais variam conforme patch, alvo e habilidade.',
+
+    findCharTitle: 'Buscar personagem no NotMeter',
+    findCharSubtitle: 'Pesquise perfis públicos de personagens pelo nome exato. Selecione a região e escolha o servidor correspondente.',
+    searchCharLabel: 'Nome do personagem',
+    searchCharPlaceholder: 'Insira o nome do personagem',
+    regionLabel: 'Região',
+    globalRegionLabel: 'Região Global',
+    searchBtn: 'Buscar',
+    matchingCharsLabel: 'Personagens encontrados',
+    importCharBtn: 'Carregar atributos na calculadora',
+    importCharNote: 'Totais da ficha e bônus de equipamentos são carregados na calculadora. Atributos ausentes na API podem ser ajustados manualmente.',
+
+    findEnemyTitle: 'Buscar personagem inimigo',
+    findEnemySubtitle: 'Pesquise perfis de inimigos pelo nome público. Selecione o servidor caso haja nomes repetidos.',
+    searchEnemyLabel: 'Nome do personagem inimigo',
+    importEnemyBtn: 'Carregar defesas na configuração inimiga',
+    importEnemyNote: 'Defesas públicas da ficha e equipamentos de defesa serão importados para o alvo.',
+
+    bossTitle: 'Monstros e Chefes',
+    bossSubtitle: 'Pesquise o catálogo offline de NPCs por nome e escolha um ID específico. Rank, nível, gênero e localização vêm do cliente; HP e atributos de combate ficam no servidor e permanecem desconhecidos.',
+    bossGroupLabel: 'Grupo de chefes',
+    bossGroupAll: 'Todos os chefes',
+    bossGroupField: 'Chefes de campo (79)',
+    bossGroupHero: 'Monstros heroicos / lendários (442)',
+    bossSearchLabel: 'Pesquisar por nome, localização ou classificação',
+    bossSearchPlaceholder: 'Nome ou localização',
+    monsterLabel: 'Monstro',
+    importBossBtn: 'Carregar alvo na calculadora',
+    opponentLabel: 'Oponente',
+    opponentBoss: 'Chefe (521)',
+    opponentMob: 'Monstro (3.072)',
+    selectMonster: 'Selecione um monstro',
+    bossDetailsNote: 'Habilidades e ataques do NPC não estão neste snapshot offline; a URL da fonte identifica a página do monstro para pesquisa. Cogni, Fera, Natura e Varian aplicam o confronto correspondente; HP e defesas ausentes continuam manuais.',
+    availableEnemyStats: 'HP e defesas disponíveis para importação',
+
+    resultBoss: 'PVE · CHEFE · GOLPE ESTIMADO',
+    resultMonster: 'PVE · MONSTRO · GOLPE ESTIMADO',
+    resultPlayer: 'PVP · JOGADOR · GOLPE ESTIMADO',
+    bossHp: 'HP do chefe',
+    mobHp: 'HP do monstro',
+    enemyPlayerHp: 'HP do jogador inimigo',
+    modePlayerNote: 'Bônus PvE, de Chefe e de Espécie são excluídos. Defesa PvP usa 1% por ponto em vez de 10%; golpe Duplo e a base crítica usam os valores PvP. Ataque, aumento e tolerância específicos de PvP ficam apenas como referência porque o empilhamento exato não foi verificado.',
+    modeBossNote: 'Bônus de ataque e dano PvE e de Chefe são aplicados. Tolerância a Dano de Chefe compensa o Aumento de Dano de Chefe no grupo aditivo.',
+    modeMonsterNote: 'Termos PvE e de Espécie são aplicados; bônus de Chefe são excluídos contra monstros comuns.',
+    modeSwitchNote: 'Trocar o modo do alvo limpa as defesas inimigas; os valores ofensivos permanecem.',
+    estimateNeedRate: 'Informe uma taxa positiva de golpes acertados para estimar o DPS. Zero significa desconhecido, não DPS zero.',
+    estimateNeedHp: 'Informe o HP do alvo para estimar o tempo de derrota; zero significa desconhecido. O HP de NPCs não é publicado nos dados do cliente.',
+    estimateAssumptions: 'Pressupõe golpes constantes, sem erros, procs, cura, pausas, mudanças de fase ou arredondamento interno do jogo.',
+    creatureGeneric: 'Valores genéricos de Espécie são usados até um gênero de criatura ser selecionado.',
+    creatureSelected: '{type}: {boost}% de Aumento de Dano contra {tolerance}% de Tolerância inimiga substitui os valores genéricos de Espécie.',
+    noPositiveBaseline: 'É necessário dano-base positivo para comparar ganhos percentuais.',
+    criticalComparisonHint: 'Aumento de Dano Crítico só vale em críticos; selecione Acerto Crítico para compará-lo.',
+    positionComparisonHint: 'Selecione Frente ou Costas para comparar um bônus posicional.',
+    positionUptimeHint: 'Ganhos posicionais só valem quando os ataques acertam pelo lado selecionado.',
+    procHint: 'Chance Dupla é uma taxa de ativação, não um multiplicador garantido; chance e resistência não são modeladas.',
+    communityPvpStatus: 'Estimativa PvP comunitária: 1% de Defesa por ponto; Ataque/Aumento/Tolerância específicos de PvP não inclusos.',
+    communityFormulaStatus: 'Estimativa por fórmula comunitária; arredondamento interno do jogo não incluso.',
+    communityCreatureStatus: 'Estimativa por fórmula comunitária; o confronto {type} substitui os valores genéricos de Espécie. Arredondamento interno do jogo não incluso.',
+    damageGain: '+{percent}% de dano',
+    searchingProfiles: 'Buscando perfis públicos no NotMeter… (pode levar alguns segundos)',
+    searchAgain: 'Pesquise novamente após alterar a região.',
+    searchStillProcessing: 'A busca ainda está sendo processada. Tente novamente em instantes.',
+    noCharacters: 'Nenhum personagem encontrado.',
+    charactersFound: '{count} personagem(ns) correspondente(s) encontrado(s){extra}.',
+    moreMayAppear: ' (outros ainda podem aparecer)',
+    selectCharacter: 'Selecione um personagem',
+    searchFailed: 'Falha na busca: {error}',
+    loadingProfile: 'Carregando atributos, equipamentos e habilidades do NotMeter… (pode levar alguns segundos)',
+    loadingDefenses: 'Carregando atributos defensivos do NotMeter… (pode levar alguns segundos)',
+    partialProfile: 'Perfil público parcial: alguns detalhes de equipamento ainda podem estar carregando.',
+    profileLoaded: 'Perfil público carregado. Os atributos podem estar atrasados em relação ao jogo.',
+    profileFailed: 'Falha no perfil: {error}',
+    importCoverage: 'Importados {formula} campos da calculadora e {references} atributos de confronto. Ainda manuais: {manual}.',
+    importManualFallback: 'habilidade/rotação, Ataque Puro e totais indisponíveis',
+    aiLoading: 'Carregando o Avatarnoia Flow Engine 2.0 integrado…',
+    aiReading: 'Lendo modelo integrado: {progress}%',
+    aiGenerating: 'Analisando a configuração e calculando recomendações…',
+    aiNoSuggestion: 'O modelo não retornou uma sugestão. Use a comparação calculada abaixo.',
+    aiUnavailable: 'IA indisponível: {error}. Use a comparação calculada abaixo.',
+    aiFailedStart: 'Falha ao iniciar o modelo local. Use a comparação calculada abaixo.',
+    aiGuide: 'Guia online: {url}',
+    aiGuideUnavailable: 'Guia indisponível ({error}); os valores locais da calculadora continuam disponíveis.',
+    aiGeneratingLocal: 'Gerando recomendação local de AION 2…',
+    aiYou: 'Você',
+    aiApplyDynamic: 'Aplicar +1% em {label} ({gain})',
+    requiresWindows: 'A busca de personagens requer o aplicativo Windows.',
+    enemyPartialProfile: 'Perfil parcial: valores apenas de equipamento podem estar incompletos.',
+    enemyProfileLoaded: 'Perfil público carregado. Valores apenas de equipamento são parciais; defesas de NPCs e chefes são diferentes.',
+    enemyImportResult: 'Importadas {count} defesas disponíveis de {name}. {hp} Valores apenas de equipamento são parciais; valores ausentes são desconhecidos. Este é um perfil de jogador, não de NPC ou chefe.',
+    enemyHpUnknown: 'O HP do inimigo é desconhecido.',
+    enemyHpKnown: 'HP da ficha do inimigo: {hp}.',
+    characterSheetSource: 'ficha do personagem',
+    equipmentPartialSource: 'somente equipamento; parcial',
+    noDefenses: 'Nenhum atributo defensivo correspondente neste perfil público.',
+    unknownItem: 'Item desconhecido',
+    equipment: 'Equipamento',
+    gradeUnknown: 'Grau desconhecido',
+    bonusSuffix: 'bônus',
+    baseOptions: 'Opções básicas e bônus',
+    soulBind: 'Vínculo de Alma',
+    manastones: 'Pedras de mana',
+    theostones: 'Teostones',
+    soulSkills: 'Habilidades de Vínculo de Alma',
+    skill: 'Habilidade',
+    detailsUnavailable: 'Opções detalhadas indisponíveis neste perfil.',
+    level: 'Nível',
+    equipped: 'Equipado',
+    raceUnknown: 'Raça desconhecida',
+    serverUnknown: 'Servidor desconhecido',
+    combatPower: 'Poder de Combate',
+    legion: 'Legião',
+    characterDetails: 'Detalhes do personagem',
+    tabEquipment: 'Equipamento',
+    tabSkills: 'Habilidades',
+    tabAttributes: 'Atributos',
+    tabProgression: 'Progressão',
+    equippedItems: 'Itens equipados',
+    piecesPublished: '{count} peças · somente opções explícitas',
+    activeSkills: 'Habilidades ativas',
+    passiveSkills: 'Habilidades passivas',
+    stigmaSkills: 'Habilidades de Estigma',
+    learnedCount: '{count} aprendidas',
+    sheetAttributes: 'Atributos da ficha',
+    noInferredTotals: 'Sem inferir totais de equipamento',
+    equippedTitles: 'Títulos equipados',
+    publishedCount: '{count} publicados',
+    title: 'Título',
+    daevanionBoards: 'Quadros de Daevanion',
+    nodesOpen: '{open} / {total} nós abertos',
+    arcana: 'Arcana',
+    equippedCount: '{count} equipados',
+    board: 'Quadro',
+    mount: 'Montaria',
+    wings: 'Asas',
+
+    catalogCount: '{shown} de {total} {kind} exibidos.',
+    bosses: 'chefes',
+    mobs: 'monstros',
+    factLevel: 'Nível',
+    factRank: 'Rank',
+    factCreatureType: 'Gênero de criatura',
+    factEncounter: 'Encontro',
+    factHp: 'HP',
+    factDefense: 'Defesa',
+    unknownServerSide: 'Desconhecido · servidor',
+    source: 'Fonte',
+    targetSelected: '{name} (Nv {level}, {type}, {kind}) selecionado. As defesas anteriores foram limpas; Defesa e tolerâncias do alvo continuam desconhecidas até serem informadas manualmente.',
+    creatureBonusesApplied: 'Bônus do gênero {type} agora substituem os valores genéricos de Espécie.',
+    specialCreatureManual: 'Especial não possui confronto específico; os valores genéricos de Espécie continuam manuais.',
+
+    optYes: 'Sim',
+    optNo: 'Não'
+  }
+};
+
+const PT_STAT_REPLACEMENTS = [
+  ['Skill Specialty Enhancement', 'Especialização de Habilidade'],
+  ['Skill Additional Damage', 'Dano Adicional da Habilidade'],
+  ['Skill Coefficient', 'Coeficiente da Habilidade'],
+  ['Landed Hits Per Second', 'Golpes Acertados por Segundo'],
+  ['Enemy / Boss HP', 'HP do Inimigo / Chefe'],
+  ['Player HP', 'HP do Jogador'],
+  ['Pure Attack', 'Ataque Puro'],
+  ['Attack Bonus', 'Bônus de Ataque'],
+  ['Attack Increase', 'Aumento de Ataque'],
+  ['Power Shard', 'Power Shard'],
+  ['Multi-Hit Multiplier', 'Fator de Golpe Múltiplo'],
+  ['Critical Damage Tolerance', 'Tolerância a Dano Crítico'],
+  ['Weapon Damage Tolerance', 'Tolerância a Dano de Arma'],
+  ['Damage Tolerance', 'Tolerância a Dano'],
+  ['Critical Damage Boost', 'Aumento de Dano Crítico'],
+  ['Weapon Damage Boost', 'Aumento de Dano de Arma'],
+  ['Damage Boost', 'Aumento de Dano'],
+  ['Critical Hit Resist', 'Resistência a Acerto Crítico'],
+  ['Critical Hit', 'Acerto Crítico'],
+  ['Block Penetration', 'Penetração de Bloqueio'],
+  ['Endurance Penetration', 'Penetração de Endurance'],
+  ['Regeneration Penetration', 'Penetração de Regeneration'],
+  ['Penetration', 'Penetração'],
+  ['Multi-hit Chance', 'Chance de Golpe Múltiplo'],
+  ['Multi-hit Resist', 'Resistência a Golpe Múltiplo'],
+  ['Double Chance', 'Chance Dupla'],
+  ['Double Resist', 'Resistência Dupla'],
+  ['Perfect Chance', 'Chance de Perfect'],
+  ['Perfect Resist', 'Resistência a Perfect'],
+  ['Critical Damage Defense', 'Defesa contra Dano Crítico'],
+  ['Front Attack', 'Ataque Frontal'],
+  ['Back Attack', 'Ataque Traseiro'],
+  ['Fire Tolerance', 'Tolerância a Fogo'],
+  ['Water Tolerance', 'Tolerância a Água'],
+  ['Wind Tolerance', 'Tolerância a Vento'],
+  ['Earth Tolerance', 'Tolerância a Terra'],
+  ['Fire Boost', 'Aumento de Fogo'],
+  ['Water Boost', 'Aumento de Água'],
+  ['Wind Boost', 'Aumento de Vento'],
+  ['Earth Boost', 'Aumento de Terra'],
+  ['Accuracy', 'Precisão'],
+  ['Evasion', 'Evasão'],
+  ['Defense', 'Defesa'],
+  ['Attack', 'Ataque'],
+  ['Block', 'Bloqueio']
+];
+
+const I18N = {
+  currentLang: (typeof window !== 'undefined' && window.localStorage?.getItem('aion2_calculator_lang')) || 'pt',
+  listeners: [],
+
+  onLanguageChange(listener) {
+    if (typeof listener === 'function') {
+      this.listeners.push(listener);
+    }
+  },
+
+  t(key, fallback = '') {
+    const langObj = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+    return langObj[key] || TRANSLATIONS.en[key] || fallback || key;
+  },
+
+  format(key, values = {}) {
+    return this.t(key).replace(/\{(\w+)\}/g, (_, name) =>
+      Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : `{${name}}`);
+  },
+
+  statLabel(label) {
+    if (this.currentLang !== 'pt') return label;
+    return PT_STAT_REPLACEMENTS.reduce((text, [source, translated]) =>
+      text.replaceAll(source, translated), label);
+  },
+
+  setLanguage(lang) {
+    if (lang !== 'en' && lang !== 'pt') lang = 'pt';
+    this.currentLang = lang;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('aion2_calculator_lang', lang);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+      document.title = this.t('windowTitle');
+      this.applyTranslations();
+    }
+    for (const listener of this.listeners) {
+      try {
+        listener(lang);
+      } catch (err) {
+        console.error('Error in language change listener:', err);
+      }
+    }
+  },
+
+  applyTranslations() {
+    if (typeof document === 'undefined') return;
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const text = this.t(key);
+      if (text) el.textContent = text;
+    });
+
+    document.querySelectorAll('[data-i18n-label]').forEach(el => {
+      const key = el.getAttribute('data-i18n-label');
+      let textNode = [...el.childNodes].find(node =>
+        node.nodeType === 3 && node.textContent.trim());
+      if (!textNode) {
+        textNode = document.createTextNode('');
+        el.prepend(textNode);
+      }
+      textNode.textContent = `${this.t(key)} `;
+    });
+
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      const key = el.getAttribute('data-i18n-html');
+      const html = this.t(key);
+      if (html) el.innerHTML = html;
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      const placeholder = this.t(key);
+      if (placeholder) el.placeholder = placeholder;
+    });
+
+    const criticalSelect = document.querySelector('#critical');
+    if (criticalSelect) {
+      criticalSelect.options[0].text = this.t('optNo');
+      criticalSelect.options[1].text = this.t('optYes');
+    }
+    const doubleSelect = document.querySelector('#doubleEnabled');
+    if (doubleSelect) {
+      doubleSelect.options[0].text = this.t('optNo');
+      doubleSelect.options[1].text = this.t('optYes');
+    }
+    const posSelect = document.querySelector('#position');
+    if (posSelect) {
+      posSelect.options[0].text = this.t('posNone');
+      posSelect.options[1].text = this.t('posFront');
+      posSelect.options[2].text = this.t('posBack');
+    }
+    const targetModeSelect = document.querySelector('#target-mode');
+    if (targetModeSelect) {
+      targetModeSelect.options[0].text = this.t('targetModeBoss');
+      targetModeSelect.options[1].text = this.t('targetModeMonster');
+      targetModeSelect.options[2].text = this.t('targetModePlayer');
+    }
+
+    const langSelector = document.querySelector('#lang-select');
+    if (langSelector && langSelector.value !== this.currentLang) {
+      langSelector.value = this.currentLang;
+    }
+  }
+};
+
+if (typeof document !== 'undefined') {
+  const initializeI18n = () => {
+    const selector = document.querySelector('#lang-select');
+    if (selector) {
+      selector.value = I18N.currentLang;
+      selector.addEventListener('change', () => I18N.setLanguage(selector.value));
+    }
+    I18N.setLanguage(I18N.currentLang);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeI18n);
+  } else {
+    initializeI18n();
+  }
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { I18N, TRANSLATIONS };
+}
