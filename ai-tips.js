@@ -2,13 +2,41 @@ const aiQuestion = document.querySelector('#ai-question');
 const aiAnswer = document.querySelector('#ai-answer');
 const aiSource = document.querySelector('#ai-source');
 const aiApply = document.querySelector('#ai-apply');
+const aiChatDialog = document.querySelector('#ai-chat-dialog');
+const aiSend = document.querySelector('#ai-send');
+
 let aiWorker;
 let aiStartup;
 let aiTimer;
 let aiRevision = 0;
+let currentPendingTarget = aiAnswer;
+const conversationHistory = [];
 let researchRequest = -1;
 const researchPending = new Map();
 const guideCache = new Map();
+
+function scrollChatToBottom() {
+  if (aiChatDialog) {
+    aiChatDialog.scrollTo({ top: aiChatDialog.scrollHeight, behavior: 'smooth' });
+  }
+}
+
+function appendChatMessage(role, author, text) {
+  if (!aiChatDialog) return null;
+  const msg = document.createElement('div');
+  msg.className = `ai-msg ai-msg-${role}`;
+  const authorSpan = document.createElement('span');
+  authorSpan.className = 'ai-msg-author';
+  authorSpan.textContent = author;
+  const bodyDiv = document.createElement('div');
+  bodyDiv.className = 'ai-msg-body';
+  bodyDiv.textContent = text;
+  msg.appendChild(authorSpan);
+  msg.appendChild(bodyDiv);
+  aiChatDialog.appendChild(msg);
+  scrollChatToBottom();
+  return bodyDiv;
+}
 
 function guideTopic(question) {
   if (/creature|species|cogni|fera|natura|varian/i.test(question)) return 'creature';
@@ -20,18 +48,27 @@ function guideTopic(question) {
 
 function currentAiContext() {
   const important = new Set(['pureAttack', 'weaponDamageBoost', 'damageBoost', 'skillCoefficient',
-    'criticalDamageBoost', 'defense', 'penetration', 'enemyHp', 'hitsPerSecond']);
+    'criticalDamageBoost', 'defense', 'penetration', 'hitsPerSecond', 'enemyHp']);
   const fields = [...document.querySelectorAll('#calculator input')]
-    .filter(input => input.name && (important.has(input.name) || input.value !== input.defaultValue && input.value !== '0'))
+    .filter(input => input.name && (important.has(input.name) || (input.value !== input.defaultValue && input.value !== '0')))
     .sort((a, b) => Number(important.has(b.name)) - Number(important.has(a.name)))
-    .slice(0, 12).map(input => `${input.name} ${input.value}`);
-  const attacker = document.querySelector('#attacker-name').value || 'unnamed attacker';
-  const target = document.querySelector('#target-name').value || 'unnamed target';
-  return `${attacker} (${document.querySelector('#attacker-class').value || 'unknown class'}) versus ${target} (${document.querySelector('#target-mode').value}, ${document.querySelector('#creature-type-header').value || 'unknown creature'}). `
-    + `Estimated hit ${document.querySelector('#result').textContent}; DPS ${document.querySelector('#estimated-dps').textContent}. `
-    + `Critical ${document.querySelector('#critical').value}; position ${document.querySelector('#position').value}. `
-    + `Best +1% gains: ${document.querySelector('#upgrade-list').textContent.slice(0, 110) || 'unknown'}. `
-    + `Current fields: ${fields.join(', ')}.`;
+    .slice(0, 10).map(input => `${input.name}: ${input.value}`);
+  const attacker = document.querySelector('#attacker-name').value || 'Player';
+  const aClass = document.querySelector('#attacker-class').value || 'Unspecified class';
+  const target = document.querySelector('#target-name').value || 'Target';
+  const tMode = document.querySelector('#target-mode').value;
+  const cType = document.querySelector('#creature-type-header').value || 'Standard';
+  const hit = document.querySelector('#result').textContent || '0';
+  const dps = document.querySelector('#estimated-dps').textContent || '0';
+  const crit = document.querySelector('#critical').value;
+  const pos = document.querySelector('#position').value;
+  const topUpgrades = [...document.querySelectorAll('#upgrade-list li')]
+    .slice(0, 3).map(li => li.textContent.trim()).join(' | ') || 'None';
+
+  return `Attacker: ${attacker} (${aClass}) vs Target: ${target} (${tMode}, ${cType})\n`
+    + `Calculated Hit: ${hit} | Estimated DPS: ${dps} (Crit: ${crit}, Position: ${pos})\n`
+    + `Top Math Upgrades (+1%): ${topUpgrades}\n`
+    + `Key Stats: ${fields.join(', ')}`;
 }
 
 function requestGuide(topic) {
@@ -41,6 +78,7 @@ function requestGuide(topic) {
     window.chrome.webview.postMessage({ id, kind: 'research', topic });
   });
 }
+
 if (window.chrome?.webview) {
   window.chrome.webview.addEventListener('message', ({ data }) => {
     const pending = researchPending.get(data?.id);
@@ -70,20 +108,35 @@ async function ensureAiWorker() {
     aiWorker = new Worker('ai-worker.bundle.js', { type: 'module' });
     aiWorker.onmessage = ({ data }) => {
       if (data.id !== aiRevision) return;
-      if (data.state === 'loading') aiAnswer.textContent = 'Loading bundled Avatarnoia Flow Engine 2.0…';
-      if (data.state === 'downloading') aiAnswer.textContent = `Reading embedded model: ${data.progress}%`;
-      if (data.state === 'done') aiAnswer.textContent = data.text || 'The model did not return a suggestion. Use the calculated comparison below.';
-      if (data.state === 'error') aiAnswer.textContent = `AI unavailable: ${data.error}. Use the calculated comparison below.`;
+      const target = currentPendingTarget || aiAnswer;
+      if (data.state === 'loading') target.textContent = 'Loading bundled Avatarnoia Flow Engine 2.0…';
+      if (data.state === 'downloading') target.textContent = `Reading embedded model: ${data.progress}%`;
+      if (data.state === 'generating') target.textContent = 'Analyzing setup and calculating advice…';
+      if (data.state === 'done') {
+        target.textContent = data.text || 'The model did not return a suggestion. Use the calculated comparison below.';
+        if (target !== aiAnswer) {
+          conversationHistory.push({ role: 'assistant', content: target.textContent });
+          if (conversationHistory.length > 6) conversationHistory.splice(0, conversationHistory.length - 6);
+        }
+        scrollChatToBottom();
+      }
+      if (data.state === 'error') {
+        target.textContent = `AI unavailable: ${data.error}. Use the calculated comparison below.`;
+        scrollChatToBottom();
+      }
     };
     aiWorker.onerror = () => {
-      aiAnswer.textContent = 'Local model failed to start. Use the calculated comparison below.';
+      const target = currentPendingTarget || aiAnswer;
+      target.textContent = 'Local model failed to start. Use the calculated comparison below.';
+      scrollChatToBottom();
     };
   })();
   return aiStartup;
 }
 
-async function generateAiTip(id) {
-  const question = aiQuestion.value.trim();
+async function dispatchAiRequest(question, targetElem) {
+  const id = ++aiRevision;
+  currentPendingTarget = targetElem;
   const context = currentAiContext();
   let research = '';
   aiSource.textContent = '';
@@ -104,21 +157,42 @@ async function generateAiTip(id) {
   try {
     await ensureAiWorker();
     if (id !== aiRevision) return;
-    aiAnswer.textContent = 'Generating AION 2 advice locally…';
-    aiWorker.postMessage({ id, question, context, research });
+    targetElem.textContent = 'Generating AION 2 advice locally…';
+    scrollChatToBottom();
+    aiWorker.postMessage({ id, question, context, research, history: conversationHistory });
   } catch (error) {
-    if (id === aiRevision) aiAnswer.textContent = `${error.message} Use the calculated comparison below.`;
+    if (id === aiRevision) {
+      targetElem.textContent = `${error.message} Use the calculated comparison below.`;
+      scrollChatToBottom();
+    }
   }
+}
+
+function submitUserQuestion() {
+  const question = aiQuestion.value.trim();
+  if (!question) return;
+  aiQuestion.value = '';
+
+  appendChatMessage('user', 'You', question);
+  conversationHistory.push({ role: 'user', content: question });
+  if (conversationHistory.length > 6) conversationHistory.splice(0, conversationHistory.length - 6);
+
+  const assistantTarget = appendChatMessage('assistant', 'Avatarnoia Flow', 'Analyzing setup and calculating advice…');
+  scrollChatToBottom();
+
+  void dispatchAiRequest(question, assistantTarget);
 }
 
 function scheduleAiTips() {
   clearTimeout(aiTimer);
-  const id = ++aiRevision;
   const suggestion = recommendedUpgrade();
   aiApply.hidden = !suggestion;
   if (suggestion) aiApply.textContent = `Apply +1% ${suggestion.label} (${suggestion.gain})`;
-  aiTimer = setTimeout(() => void generateAiTip(id), 850);
+  if (conversationHistory.length === 0) {
+    aiTimer = setTimeout(() => void dispatchAiRequest('', aiAnswer), 750);
+  }
 }
+
 aiApply.addEventListener('click', () => {
   const suggestion = recommendedUpgrade();
   if (!suggestion) return;
@@ -127,8 +201,22 @@ aiApply.addEventListener('click', () => {
   suggestion.input.value = String(value + 1);
   suggestion.input.dispatchEvent(new Event('input', { bubbles: true }));
 });
-aiQuestion.addEventListener('input', scheduleAiTips);
+
+if (aiSend) {
+  aiSend.addEventListener('click', submitUserQuestion);
+}
+
+aiQuestion.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitUserQuestion();
+  }
+});
+
 for (const selector of ['#attacker-name', '#attacker-class', '#target-name', '#target-class', '#target-mode', '#creature-type-header', '#critical', '#position']) {
-  document.querySelector(selector).addEventListener('input', scheduleAiTips);
-  document.querySelector(selector).addEventListener('change', scheduleAiTips);
+  const elem = document.querySelector(selector);
+  if (elem) {
+    elem.addEventListener('input', scheduleAiTips);
+    elem.addEventListener('change', scheduleAiTips);
+  }
 }

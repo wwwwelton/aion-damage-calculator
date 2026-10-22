@@ -84,10 +84,82 @@ footer { font-size: 12px; margin-top: 20px; }
 }
 .ai-assistant { border-top: 1px solid #40516a; margin-top: 18px; padding-top: 18px; }
 .ai-assistant h2 { font-size: 17px; margin: 0; }
-#ai-apply { padding: 8px 12px; border: 1px solid #69d8cc; border-radius: 8px; background: #23515b; color: #fff; font: inherit; cursor: pointer; }
 .ai-assistant .reference-note { margin: 10px 0; font-size: 13px; }
 .ai-assistant label { margin: 12px 0 6px; }
-#ai-answer { min-height: 45px; padding: 12px; background: #152537; border-radius: 8px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-chat-dialog {
+  max-height: 260px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #0f1c2b;
+  border: 1px solid #2e3e52;
+  border-radius: 8px;
+  margin: 10px 0 12px;
+}
+.ai-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.ai-msg-assistant {
+  background: #152537;
+  border-left: 3px solid #69d8cc;
+  align-self: flex-start;
+  max-width: 95%;
+}
+.ai-msg-user {
+  background: #1e3a4e;
+  border-right: 3px solid #91e6dc;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.ai-msg-author {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #69d8cc;
+}
+.ai-msg-user .ai-msg-author {
+  color: #91e6dc;
+  text-align: right;
+}
+.ai-msg-body {
+  margin: 0;
+}
+.ai-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ai-input-row input {
+  flex: 1;
+}
+#ai-send {
+  padding: 8px 18px;
+  border: 1px solid #69d8cc;
+  border-radius: 8px;
+  background: #23515b;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+#ai-send:hover {
+  background: #2e6875;
+}
+#ai-apply { padding: 8px 12px; border: 1px solid #69d8cc; border-radius: 8px; background: #23515b; color: #fff; font: inherit; cursor: pointer; }
 #ai-source { overflow-wrap: anywhere; }
 .boss-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
 .boss-filters label:last-child { grid-column: 1 / -1; }

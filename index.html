@@ -42,9 +42,17 @@
       <section class="ai-assistant" aria-labelledby="ai-title">
         <h2 id="ai-title">Avatarnoia Flow Engine 2.0</h2>
         <p class="reference-note">Bundled Qwen3-0.6B ONNX (Q4F16); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. WebGPU with shader-f16 is required. Calculated comparisons take precedence over AI text.</p>
-        <label for="ai-question">Optional AION 2 question</label>
-        <input id="ai-question" type="text" maxlength="250" placeholder="Ask about your damage setup">
-        <p id="ai-answer" role="status" aria-live="polite">Preparing local damage advice…</p>
+        <label for="ai-question">AION 2 Combat Assistant</label>
+        <div id="ai-chat-dialog" class="ai-chat-dialog" role="log" aria-live="polite">
+          <div class="ai-msg ai-msg-assistant">
+            <span class="ai-msg-author">Avatarnoia Flow</span>
+            <div id="ai-answer" class="ai-msg-body">Preparing local damage advice…</div>
+          </div>
+        </div>
+        <div class="ai-input-row">
+          <input id="ai-question" type="text" maxlength="250" placeholder="Ask about your setup (e.g. Whats the best way to up dps?)...">
+          <button type="button" id="ai-send">Ask</button>
+        </div>
         <button type="button" id="ai-apply" hidden>Apply suggested +1% upgrade</button>
         <p id="ai-source" class="reference-note"></p>
       </section>
