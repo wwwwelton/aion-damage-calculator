@@ -43,12 +43,28 @@ test('provides detailed wiki explanation for offensive and defensive mechanics',
 test('resolves genus-specific creature stats dynamically', () => {
   const cogniBlock = getStatInfo('cogniBlock');
   assert.ok(cogniBlock);
-  assert.match(cogniBlock.title, /Cogni/);
+  assert.equal(cogniBlock.title, 'Cogni Block');
   assert.match(cogniBlock.desc, /Cogni creature genus/);
 
   const feraDamage = getStatInfo('feraDamageBoost');
   assert.ok(feraDamage);
-  assert.match(feraDamage.title, /Fera/);
+  assert.equal(feraDamage.title, 'Fera Damage Boost');
+  assert.equal(getStatInfo('varianAttack').title, 'Varian Attack');
+});
+
+test('every calculator attribute has a specific Portuguese explanation', () => {
+  const { I18N } = require('./i18n');
+  global.I18N = I18N;
+  I18N.setLanguage('pt');
+  const generic = /conforme as regras de combate do AION 2\.$/;
+  const toggles = new Set(['critical', 'doubleEnabled', 'position']);
+  const missing = Object.keys(STAT_CATALOG).filter(key => !toggles.has(key) && generic.test(getStatInfo(key).desc));
+  assert.deepEqual(missing, []);
+  const cogniAttack = getStatInfo('cogniAttack');
+  assert.equal(cogniAttack.title, 'Cogni Ataque');
+  assert.match(cogniAttack.desc, /^Específico do gênero Cogni\. Ataque fixo/);
+  I18N.setLanguage('en');
+  delete global.I18N;
 });
 
 test('localizes tooltip titles and descriptions with the selected UI language', () => {

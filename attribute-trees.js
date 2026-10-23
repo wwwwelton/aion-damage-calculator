@@ -107,8 +107,8 @@ function profileStatDescription(stat) {
 
 function updateTreeTip() {
   if (selectedProfileStat) {
-    document.querySelector('#tree-tip-title').textContent = I18N.statLabel(selectedProfileStat.name);
-    document.querySelector('#tree-tip-text').textContent = profileStatDescription(selectedProfileStat);
+    document.querySelector('#tree-tip-title').textContent = selectedProfileStat.title ?? I18N.statLabel(selectedProfileStat.name);
+    document.querySelector('#tree-tip-text').textContent = selectedProfileStat.description ?? profileStatDescription(selectedProfileStat);
     return;
   }
   if (!selectedTreeStat) return;
@@ -151,35 +151,98 @@ function renderProfileStats() {
   const stats = sameProfile ? importedTreeStats : [];
   document.querySelector('#tree-profile-empty').hidden = stats.length > 0;
   list.replaceChildren(...stats.map(stat => {
-    const label = I18N.statLabel(stat.name);
     const raw = String(stat.value).trim();
     const percent = raw.endsWith('%');
     const value = `${treeFormatter.format(Number(percent ? raw.slice(0, -1) : raw))}${percent ? '%' : ''}`;
-    const description = profileStatDescription(stat);
     const item = document.createElement('li');
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.setAttribute('aria-label', `${label}: ${value}. ${description}`);
-    button.append(iconElement(attributeIcon(stat.name)));
-    const name = document.createElement('span');
-    name.textContent = label;
-    const amount = document.createElement('strong');
-    amount.textContent = value;
-    button.append(name, amount);
-    bindTreeTip(button, () => {
-      selectedProfileStat = stat;
-      selectedTreeStat = '';
-      updateTreeTip();
-    });
-    item.append(button);
+    item.append(statButton(I18N.statLabel(stat.name), value, profileStatDescription(stat), attributeIcon(stat.name), stat));
     return item;
   }));
   if (activeTreeButton && !activeTreeButton.isConnected) closeTreeTip();
   if (!stats.length) selectedProfileStat = null;
   updateTreeTip();
 }
+
+function statButton(label, value, description, icon, selection) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.setAttribute('aria-label', `${label}: ${value}. ${description}`);
+  button.append(iconElement(icon));
+  const name = document.createElement('span');
+  name.textContent = label;
+  const amount = document.createElement('strong');
+  amount.textContent = value;
+  button.append(name, amount);
+  bindTreeTip(button, () => {
+    selectedProfileStat = selection;
+    selectedTreeStat = '';
+    updateTreeTip();
+  });
+  return button;
+}
+
+const genusFields = ['DamageBoost', 'DamageTolerance', 'Attack', 'Defense', 'Accuracy', 'Evasion',
+  'BlockPenetration', 'Block', 'CriticalHit', 'CriticalHitResist'];
+const catalogGroups = [
+  ['treeGroupHit', ['accuracy', 'evasion', 'blockPenetration', 'block', 'pveAccuracy', 'pvpAccuracy', 'pvpEvasion', 'pvpBlockPenetration', 'pvpBlock']],
+  ['treeGroupAttack', ['pureAttack', 'attackBonus', 'attackIncrease', 'weaponDamageBoost', 'weaponDamageTolerance', 'powerShard', 'multiHit', 'pveAttackPower', 'bossAttackPower', 'speciesAttackPower', 'frontBackAttackPower', 'pvpAttack']],
+  ['treeGroupSkill', ['skillCoefficient', 'skillAdditionalDamage', 'skillSpecialtyEnhancement', 'penetration', 'defense', 'pvpDefense']],
+  ['treeGroupBoost', ['damageBoost', 'damageTolerance', 'pveDamageBoost', 'pveDamageTolerance', 'bossDamageBoost', 'bossDamageTolerance', 'speciesDamageBoost', 'speciesDamageTolerance', 'pvpDamageBoost', 'pvpDamageTolerance']],
+  ['treeGroupCritical', ['criticalHit', 'criticalHitResist', 'criticalDamageBoost', 'criticalDamageTolerance', 'criticalAttack', 'criticalDamageDefense', 'pvpCriticalHit', 'pvpCriticalHitResist']],
+  ['treeGroupProc', ['doubleChance', 'doubleResist', 'double', 'perfectChance', 'perfectResist', 'multiHitChance', 'multiHitResist', 'endurancePenetration', 'endurance', 'regenerationPenetration', 'regeneration']],
+  ['treeGroupPosition', ['frontBoost', 'frontDamageTolerance', 'backBoost', 'backDamageTolerance', 'frontAttack', 'frontDefense', 'backAttack', 'backDefense', 'frontCriticalHit', 'frontCriticalHitResist', 'backCriticalHit', 'backCriticalHitResist']],
+  ['treeGroupElemental', ['elementalResistance', 'fireBoost', 'fireTolerance', 'waterBoost', 'waterTolerance', 'windBoost', 'windTolerance', 'earthBoost', 'earthTolerance']],
+  ['treeGroupGenus', ['cogni', 'fera', 'natura', 'varian'].flatMap(genus => genusFields.map(field => genus + field))],
+  ['treeGroupHp', ['playerHp', 'enemyHp', 'hitsPerSecond']]
+];
+
+function catalogValue(name, percent) {
+  const input = treeInputs.elements.namedItem(name);
+  const number = parseNumericInput(input.value, input.min === '' ? -Infinity : Number(input.min));
+  return number === null ? I18N.t('treeUnknown') : `${treeFormatter.format(number)}${percent ? '%' : ''}`;
+}
+
+const catalogValues = new Map();
+// Built once per language; values are refreshed in place so open groups stay open.
+function renderCatalog() {
+  catalogValues.clear();
+  const container = document.querySelector('#tree-catalog');
+  container.replaceChildren(...catalogGroups.map(([titleKey, names]) => {
+    const group = document.createElement('details');
+    group.className = 'tree-catalog-group';
+    group.open = titleKey === 'treeGroupHit';
+    const summary = document.createElement('summary');
+    summary.textContent = `${I18N.t(titleKey)} (${names.length})`;
+    const list = document.createElement('ul');
+    list.className = 'tree-profile-list';
+    list.append(...names.map(name => {
+      const info = getStatInfo(name);
+      const label = treeInputs.elements.namedItem(name).closest('label');
+      const percent = /\(%\)/.test(label.textContent) || /\(%\)/.test(info.tag);
+      const title = `${label.classList.contains('enemy') ? `${I18N.t('treeCatalogEnemy')} · ` : ''}${info.title.replace(/\s*\(.*\)$/, '')}`;
+      const item = document.createElement('li');
+      const button = statButton(title, catalogValue(name, percent), info.desc, attributeIcon(name.replace(/([a-z])([A-Z])/g, '$1 $2')), { title, description: info.desc });
+      catalogValues.set(name, { button, percent, title, description: info.desc });
+      item.append(button);
+      return item;
+    }));
+    group.append(summary, list);
+    return group;
+  }));
+  if (activeTreeButton && !activeTreeButton.isConnected) closeTreeTip();
+}
+
+function updateCatalogValues() {
+  for (const [name, { button, percent, title, description }] of catalogValues) {
+    const value = catalogValue(name, percent);
+    button.querySelector('strong').textContent = value;
+    button.setAttribute('aria-label', `${title}: ${value}. ${description}`);
+  }
+}
 treeInputs.addEventListener('input', renderAttributeTrees);
 treeInputs.addEventListener('change', renderAttributeTrees);
+treeInputs.addEventListener('input', updateCatalogValues);
+treeInputs.addEventListener('change', updateCatalogValues);
 for (const selector of ['#attacker-name', '#attacker-class']) {
   const input = document.querySelector(selector);
   input.addEventListener('input', renderAttributeTrees);
@@ -201,6 +264,8 @@ I18N.onLanguageChange(() => {
   treeFormatter = new Intl.NumberFormat(I18N.currentLang === 'pt' ? 'pt-BR' : 'en-US', { maximumFractionDigits: 2 });
   renderAttributeTrees();
   renderProfileStats();
+  renderCatalog();
 });
 renderAttributeTrees();
 renderProfileStats();
+renderCatalog();

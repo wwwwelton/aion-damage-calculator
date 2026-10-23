@@ -50,6 +50,11 @@ const STAT_CATALOG = {
   },
 
   // Attack & Weapon Scaling
+  attack: {
+    title: 'Attack',
+    tag: 'Offense · Flat Attack',
+    desc: 'Flat attack rating from weapon, gear and buffs. Feeds Pure Attack before percentage multipliers.'
+  },
   pureAttack: {
     title: 'Pure Attack',
     tag: 'Offense · Base Scaling',
@@ -231,6 +236,26 @@ const STAT_CATALOG = {
     tag: 'PvP · Player Critical Defense',
     desc: 'Reduces enemy players\' critical strike chance in PvP combat.'
   },
+  frontCriticalHit: {
+    title: 'Front Attack Critical Hit',
+    tag: 'Offense · Positional Critical Rate',
+    desc: 'Additional critical strike chance applied only when attacking the target from the front.'
+  },
+  frontCriticalHitResist: {
+    title: 'Front Attack Critical Hit Resist',
+    tag: 'Defense · Positional Critical Defense',
+    desc: 'Reduces the critical strike chance of attacks that land on your front.'
+  },
+  backCriticalHit: {
+    title: 'Back Attack Critical Hit',
+    tag: 'Offense · Positional Critical Rate',
+    desc: 'Additional critical strike chance applied only when attacking the target from behind.'
+  },
+  backCriticalHitResist: {
+    title: 'Back Attack Critical Hit Resist',
+    tag: 'Defense · Positional Critical Defense',
+    desc: 'Reduces the critical strike chance of attacks that land on your back.'
+  },
 
   // Procs, Doubles & Recovery
   double: {
@@ -392,24 +417,79 @@ const PT_STAT_DESCRIPTIONS = {
   criticalDamageTolerance: 'Reduz o multiplicador de dano crítico do atacante.',
   double: 'Multiplicador de um proc de Chance Dupla: 2× no PvE e 1,5× no PvP.',
   doubleChance: 'Chance de ativar um golpe Duplo, reduzida pela Resistência Dupla do alvo.',
+  attack: 'Ataque fixo de arma, equipamentos e buffs. Alimenta o Ataque Puro antes dos multiplicadores percentuais.',
   frontBoost: 'Multiplica o dano quando o golpe acerta pela frente.',
   backBoost: 'Multiplica o dano quando o golpe acerta pelas costas; ataques traseiros também ignoram Bloqueio.',
   skillSpecialtyEnhancement: 'Multiplicador final fornecido pela especialização da habilidade.',
   playerHp: 'HP total do atacante. Não altera o dano causado.',
   enemyHp: 'HP total do alvo, usado para estimar o tempo de derrota.',
-  hitsPerSecond: 'Taxa de golpes realmente acertados, multiplicada pelo dano estimado para calcular DPS.'
+  hitsPerSecond: 'Taxa de golpes realmente acertados, multiplicada pelo dano estimado para calcular DPS.',
+  blockPenetration: 'Ignora parte da chance de Bloqueio do alvo. Importa para dano físico contra alvos com escudo ou alto Bloqueio.',
+  accuracy: 'Evita que golpes errem: compensa a Evasão e o Bloqueio do alvo. Um golpe errado causa zero dano, então manter Precisão acima da Evasão inimiga sustenta o DPS.',
+  pveAccuracy: 'Precisão aplicada apenas contra monstros e chefes; combate a Evasão e o Bloqueio altos de chefes de fim de jogo.',
+  pvpAccuracy: 'Precisão ativa apenas contra jogadores, para compensar a Evasão PvP do adversário.',
+  pvpEvasion: 'Chance de esquivar de ataques de jogadores no PvP; combatida pela Precisão PvP do atacante.',
+  pvpBlock: 'Chance de bloquear ou aparar ataques físicos e de habilidade de jogadores inimigos.',
+  pvpBlockPenetration: 'Reduz a chance de Bloqueio de jogadores inimigos no PvP.',
+  weaponDamageTolerance: 'Reduz diretamente o percentual de Aumento de Dano de Arma do atacante.',
+  pveAttackPower: 'Ataque fixo aplicado apenas contra monstros e chefes de masmorra.',
+  bossAttackPower: 'Ataque fixo aplicado apenas contra chefes de campo, de masmorra e mundiais.',
+  speciesAttackPower: 'Ataque fixo aplicado contra o gênero específico do alvo: Cogni, Fera, Natura ou Varian.',
+  frontBackAttackPower: 'Ataque fixo somado quando o golpe parte de uma posição frontal ou traseira válida.',
+  pveDamageBoost: 'Aumento percentual aditivo aplicado apenas contra monstros e chefes.',
+  pveDamageTolerance: 'Redução percentual do inimigo que compensa seu Aumento de Dano PvE.',
+  bossDamageBoost: 'Aumento percentual aditivo contra chefes; atributo importante no fim de jogo.',
+  bossDamageTolerance: 'Redução percentual de chefes que compensa diretamente o Aumento de Dano contra Chefes.',
+  speciesDamageBoost: 'Aumento percentual contra um gênero de criatura: Cogni, Fera, Natura ou Varian.',
+  speciesDamageTolerance: 'Redução percentual aplicada a dano direcionado a um gênero de criatura.',
+  criticalHit: 'Aumenta a chance de acertar um golpe crítico; é compensada pela Resistência a Crítico do alvo.',
+  criticalAttack: 'Ataque fixo somado apenas quando o golpe é crítico.',
+  criticalDamageDefense: 'Defesa fixa que reduz o bônus de Ataque Crítico recebido.',
+  pvpCriticalHit: 'Chance de crítico calculada apenas contra jogadores.',
+  pvpCriticalHitResist: 'Reduz a chance de crítico de jogadores inimigos.',
+  frontCriticalHit: 'Chance de crítico adicional apenas em ataques pela frente do alvo.',
+  frontCriticalHitResist: 'Reduz a chance de crítico de golpes recebidos pela frente.',
+  backCriticalHit: 'Chance de crítico adicional apenas em ataques pelas costas do alvo.',
+  backCriticalHitResist: 'Reduz a chance de crítico de golpes recebidos pelas costas.',
+  doubleResist: 'Reduz a chance de o inimigo ativar um golpe Duplo contra você.',
+  perfectChance: 'Chance de ativar um golpe Perfeito, que maximiza a variação de dano.',
+  perfectResist: 'Reduz a chance de o inimigo acertar um golpe Perfeito.',
+  endurance: 'Chance de ativar Endurance e reduzir o golpe recebido à metade.',
+  endurancePenetration: 'Reduz a chance de o alvo ativar Endurance.',
+  regeneration: 'Recuperação periódica de HP durante o combate.',
+  regenerationPenetration: 'Reduz a eficácia da regeneração de HP do inimigo.',
+  frontDamageTolerance: 'Reduz o dano de golpes que acertam pela frente.',
+  backDamageTolerance: 'Reduz o dano de golpes que acertam pelas costas.',
+  frontAttack: 'Ataque fixo somado ao atacar o alvo pela frente.',
+  frontDefense: 'Defesa fixa contra ataques frontais recebidos.',
+  backAttack: 'Ataque fixo somado ao atacar o alvo pelas costas.',
+  backDefense: 'Defesa fixa contra ataques recebidos pelas costas.',
+  elementalResistance: 'Reduz o dano mágico recebido de todas as categorias elementais.',
+  fireBoost: 'Aumenta o dano de habilidades de Fogo.',
+  fireTolerance: 'Reduz o dano recebido de habilidades de Fogo.',
+  waterBoost: 'Aumenta o dano de habilidades de Água/Gelo.',
+  waterTolerance: 'Reduz o dano recebido de habilidades de Água.',
+  windBoost: 'Aumenta o dano de habilidades de Vento/Raio.',
+  windTolerance: 'Reduz o dano recebido de habilidades de Vento.',
+  earthBoost: 'Aumenta o dano de habilidades de Terra/Natureza.',
+  earthTolerance: 'Reduz o dano recebido de habilidades de Terra.',
+  pvpAttack: 'Ataque fixo aplicado apenas contra jogadores.',
+  pvpDefense: 'Defesa aplicada ao dano de jogadores inimigos: 1% de redução por ponto.',
+  pvpDamageBoost: 'Aumento percentual de dano contra jogadores inimigos.',
+  pvpDamageTolerance: 'Redução percentual do dano causado por jogadores inimigos.'
 };
 
-function localizedStatInfo(name, info) {
+function localizedStatInfo(name, info, genus = '') {
   if (typeof I18N === 'undefined' || I18N.currentLang !== 'pt') return info;
   const defensive = /Tolerance|Resist|Defense|Evasion|Block|Endurance|Regeneration/i.test(info.title);
+  const description = PT_STAT_DESCRIPTIONS[name]
+    || (defensive
+      ? 'Reduz, evita ou neutraliza o efeito ofensivo correspondente conforme as regras de combate do AION 2.'
+      : 'Aumenta ou modifica o efeito ofensivo correspondente conforme as regras de combate do AION 2.');
   return {
     title: I18N.statLabel(info.title),
     tag: defensive ? 'Defesa · atributo de combate' : 'Ofensiva · atributo de combate',
-    desc: PT_STAT_DESCRIPTIONS[name]
-      || (defensive
-        ? 'Reduz, evita ou neutraliza o efeito ofensivo correspondente conforme as regras de combate do AION 2.'
-        : 'Aumenta ou modifica o efeito ofensivo correspondente conforme as regras de combate do AION 2.')
+    desc: genus ? `Específico do gênero ${genus}. ${description}` : description
   };
 }
 
@@ -424,11 +504,11 @@ function getStatInfo(name) {
     const baseName = genusMatch[2].charAt(0).toLowerCase() + genusMatch[2].slice(1);
     const baseInfo = STAT_CATALOG[baseName] || STAT_CATALOG[baseName.replace(/^[a-z]/, c => c.toLowerCase())];
     if (baseInfo) {
-      return localizedStatInfo(name, {
-        title: `${genus} ${baseInfo.title.replace(/^[^·(]+/, genus)}`,
+      return localizedStatInfo(baseName, {
+        title: `${genus} ${baseInfo.title.replace(/\s*\(.*\)$/, '')}`,
         tag: `Genus (${genus}) · ${baseInfo.tag}`,
         desc: `Specific to ${genus} creature genus. ${baseInfo.desc}`
-      });
+      }, genus);
     }
   }
 

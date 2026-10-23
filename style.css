@@ -347,6 +347,10 @@ button.tree-circle:is(:hover, :focus-visible) { border-color: #91e6dc; backgroun
 .tree-profile-list button:is(:hover, :focus-visible) { border-color: #91e6dc; outline: 2px solid #91e6dc; outline-offset: 2px; }
 .tree-profile-list button .icon { flex: none; width: 22px; height: 22px; color: #91e6dc; }
 .tree-profile-list button strong { margin-left: auto; color: #91e6dc; }
+.tree-catalog { margin-top: 24px; border-top: 1px solid #547487; padding-top: 12px; }
+.tree-catalog-group { margin-top: 10px; border: 1px solid #2f4a5c; border-radius: 8px; padding: 6px 10px; }
+.tree-catalog-group summary { cursor: pointer; font-weight: 600; color: #91e6dc; }
+.tree-catalog-group .tree-profile-list { margin: 10px 0 6px; }
 @media (max-width: 700px) {
   .attribute-trees { grid-template-columns: minmax(0, 1fr); }
   .attribute-tree > .tree-level { min-width: 0; }
