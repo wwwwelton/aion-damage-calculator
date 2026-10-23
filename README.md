@@ -6,7 +6,7 @@ Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaSc
 
 ### Run the Windows app
 
-Requirements: Windows x64 and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/). Run `dist/webview2/AION2-Damage-Calculator.exe` after publishing, or use a distributed executable. The app reports an error if WebView2 is unavailable. The executable includes the .NET runtime, so users do not need to install the .NET SDK. It is not digitally signed.
+Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) and about 2.5 GB of free RAM while the local assistant is active (see [Memory](#avatarnoia-flow-engine-20)). Run `dist/webview2/AION2-Damage-Calculator.exe` after publishing, or use a distributed executable. The app reports an error if WebView2 is unavailable. The executable includes the .NET runtime, so users do not need to install the .NET SDK. It is not digitally signed.
 
 ### Build from source
 
@@ -23,20 +23,19 @@ The first build downloads the pinned Qwen2.5-0.5B-Instruct ONNX q8 model from Hu
 
 ### Development and checks
 
-Node.js runs the JavaScript tests and builds the AI assets. From the repository root:
-
-```bash
-node --test *.test.js
-```
-
-To change `ai-worker.js` or update Transformers.js, regenerate the bundled worker and local WebAssembly runtime before publishing:
+Node.js runs the JavaScript tests and builds the AI assets. The full local verification chain, in order, is:
 
 ```bash
 npm ci
-npm run build:ai
+npm run build:ai          # download/convert the model, bundle the worker (idempotent)
+node --test *.test.js     # 32 fast regression tests
+node ai-model.smoke.mjs   # real offline CPU inference in English and Portuguese
+dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
 ```
 
-`package-lock.json` pins the development dependencies; normal users do not need Node.js or npm. After `npm run build:ai`, `node ai-model.smoke.mjs` runs real offline CPU inference with the bundled model in English and Portuguese; it is not part of the fast test suite. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>). Character search and online guide retrieval use the WebView2-to-.NET bridge and work only in the Windows app. Verify those interactions and desktop behavior in the published executable.
+The published single-file executable is about 661 MB (660,673,762 bytes at the last verified build). `build:ai` reuses the converted model when its checksums match, so a rerun does not download again.
+
+Changing `ai-worker.js` or updating Transformers.js requires rerunning `npm run build:ai` before publishing. `package-lock.json` pins the development dependencies; normal users do not need Node.js or npm. The smoke check is not part of the fast test suite. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>). Character search and online guide retrieval use the WebView2-to-.NET bridge and work only in the Windows app. Verify those interactions and desktop behavior in the published executable.
 
 ### Project layout
 
