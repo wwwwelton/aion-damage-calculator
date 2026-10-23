@@ -29,7 +29,8 @@ function profileImage(url, kind = 'stat', label = '') {
     && parsed.pathname.startsWith('/static-aion2-gamedata/resources/');
   const portrait = parsed.hostname === 'profileimg.plaync.com'
     && parsed.pathname.startsWith('/game_profile_images/');
-  if (parsed.protocol !== 'https:' || (!gameAsset && !portrait)) return iconElement(kind, label);
+  const monster = parsed.hostname === 'aion2data.com' && parsed.pathname.startsWith('/game/monsters/');
+  if (parsed.protocol !== 'https:' || (!gameAsset && !portrait && !monster)) return iconElement(kind, label);
   const image = document.createElement('img');
   image.className = 'icon remote-icon';
   image.alt = '';

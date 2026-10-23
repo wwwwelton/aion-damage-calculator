@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; style-src 'self'; img-src 'self' https://assets.playnccdn.com https://profileimg.plaync.com https://fizz-download.playnccdn.com">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; style-src 'self'; img-src 'self' https://assets.playnccdn.com https://profileimg.plaync.com https://fizz-download.playnccdn.com https://aion2data.com">
   <title>AION 2 — Damage Calculator</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="i18n.js"></script>
@@ -218,6 +218,7 @@
         <h2 class="icon-heading"><span id="boss-icon" class="actor-icon"></span><span id="boss-title" data-i18n="selectMonster">Select a monster</span></h2>
         <div id="boss-facts" class="boss-facts" hidden></div>
         <p id="boss-details" class="import-note"></p>
+        <div id="boss-skills" class="boss-skills" hidden></div>
         <p id="boss-source" class="import-note boss-source" hidden></p>
         <p class="import-note" data-i18n="bossDetailsNote">NPC skill and attack details are not in this offline snapshot; the source URL identifies the monster's page for further research. Cogni, Fera, Natura and Varian apply the corresponding creature matchup; missing HP and defenses stay manual.</p>
         <button type="button" id="import-boss" disabled data-i18n="importBossBtn">Load target into calculator</button>

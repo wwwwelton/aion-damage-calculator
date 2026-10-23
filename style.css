@@ -30,7 +30,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .icon-heading .actor-icon { margin: 0; }
 #enemy-stats li { display: flex; align-items: flex-start; gap: 8px; }
 #enemy-stats li .icon { margin-top: 1px; }
-#calculator label { position: relative; }
+#calculator label { position: relative; padding-right: 46px; }
+#calculator label > input, #calculator label > select { margin-right: -46px; width: calc(100% + 46px); }
 #calculator label > .icon { position: absolute; right: 0; top: 0; width: 16px; height: 16px; opacity: .8; }
 .stat-tip-trigger {
   position: absolute;
@@ -301,6 +302,12 @@ footer { font-size: 12px; margin-top: 20px; }
   .boss-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .boss-source { overflow-wrap: anywhere; user-select: text; }
+.boss-skills h3 { margin: 18px 0 8px; color: #91e6dc; }
+.boss-skill-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.boss-skill-table th, .boss-skill-table td { padding: 6px 8px; border-bottom: 1px solid #2f4a5c; text-align: left; }
+.boss-skill-table th { color: #aebfd1; font-weight: 600; }
+.boss-skill-table td:not(:first-child), .boss-skill-table th:not(:first-child) { white-space: nowrap; }
+#boss-icon .remote-icon { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
 .encounter { border-color: #346f79; }
 .encounter > label { max-width: 340px; margin-bottom: 18px; }
 .combatants { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }

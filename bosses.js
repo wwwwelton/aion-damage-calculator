@@ -29,14 +29,28 @@ function showBoss() {
   const boss = visibleBosses.find(item => item.id === bossChoice.value);
   bossImport.disabled = !boss;
   document.querySelector('#boss-title').textContent = boss?.name ?? I18N.t('selectMonster');
-  setDisplayIcon(document.querySelector('#boss-icon'), opponentKind.value === 'boss' ? 'boss' : 'mob');
+  const iconHolder = document.querySelector('#boss-icon');
+  if (boss?.portrait) {
+    iconHolder.replaceChildren(profileImage(`https://aion2data.com${boss.portrait}`, opponentKind.value === 'boss' ? 'boss' : 'mob'));
+    iconHolder.hidden = false;
+  } else {
+    setDisplayIcon(iconHolder, opponentKind.value === 'boss' ? 'boss' : 'mob');
+  }
   const facts = document.querySelector('#boss-facts');
   facts.hidden = !boss;
   facts.replaceChildren();
   if (boss) {
+    const attack = boss.attack
+      ? I18N.format('basicAttackSummary', {
+        type: I18N.t(boss.attack.type === 'magic' ? 'attackMagic' : boss.attack.type === 'physical' ? 'attackPhysical' : 'attackUnknown'),
+        reach: boss.attack.reach ?? '?', interval: boss.attack.interval ?? '?'
+      })
+      : null;
     for (const [label, value] of [[I18N.t('factLevel'), boss.level], [I18N.t('factRank'), boss.rank],
       [I18N.t('factCreatureType'), boss.type], [I18N.t('factEncounter'), boss.group ?? I18N.t('mobs')],
-      [I18N.t('factHp'), I18N.t('unknownServerSide')], [I18N.t('factDefense'), I18N.t('unknownServerSide')]]) {
+      [I18N.t('factHp'), I18N.t('unknownServerSide')], [I18N.t('factDefense'), I18N.t('unknownServerSide')],
+      ...(boss.spawnPoints !== undefined ? [[I18N.t('factSpawnPoints'), boss.spawnPoints]] : []),
+      ...(attack ? [[I18N.t('factBasicAttack'), attack]] : [])]) {
       const card = document.createElement('div');
       card.className = 'boss-fact';
       const caption = document.createElement('small');
@@ -50,6 +64,40 @@ function showBoss() {
   document.querySelector('#boss-details').textContent = boss
     ? `NPC ${boss.id}${boss.location ? ` · ${boss.location}` : ''}${boss.subtitle ? ` · ${boss.subtitle}` : ''}`
     : '';
+  const skills = document.querySelector('#boss-skills');
+  skills.hidden = !boss;
+  skills.replaceChildren();
+  if (boss) {
+    const heading = document.createElement('h3');
+    heading.textContent = I18N.format('bossSkillsTitle', { count: boss.skills?.length ?? 0 });
+    skills.append(heading);
+    if (boss.skills?.length) {
+      const table = document.createElement('table');
+      table.className = 'boss-skill-table';
+      const head = table.createTHead().insertRow();
+      for (const key of ['skillName', 'skillDamage', 'skillCast', 'skillCooldown', 'skillRange']) {
+        const cell = document.createElement('th');
+        cell.textContent = I18N.t(key);
+        head.append(cell);
+      }
+      const body = table.createTBody();
+      for (const skill of boss.skills) {
+        const row = body.insertRow();
+        const damage = I18N.t(skill.damage === 'Magic' ? 'attackMagic' : skill.damage === 'Physical' ? 'attackPhysical' : skill.damage);
+        for (const value of [skill.name, damage, skill.cast, skill.cooldown, skill.range]) row.insertCell().textContent = value;
+      }
+      skills.append(table);
+      const note = document.createElement('p');
+      note.className = 'import-note';
+      note.textContent = I18N.t('bossSkillsNote');
+      skills.append(note);
+    } else {
+      const empty = document.createElement('p');
+      empty.className = 'import-note';
+      empty.textContent = I18N.t('noSkillData');
+      skills.append(empty);
+    }
+  }
   const source = document.querySelector('#boss-source');
   source.hidden = !boss;
   if (boss) source.textContent = `${I18N.t('source')}: https://aion2data.com/monsters/${boss.id}-${boss.slug}`;

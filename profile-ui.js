@@ -79,8 +79,16 @@ function renderDossier(container, view) {
   summary.append(portrait);
   const summaryText = dossierNode('div');
   summaryText.append(dossierNode('strong', '', `${view.name} · ${view.className}`),
-    dossierNode('small', '', `${dossierText('level')} ${view.level || '—'} · ${view.race || dossierText('raceUnknown')} · ${view.server || dossierText('serverUnknown')}`),
-    dossierNode('small', '', `${dossierText('combatPower')} ${view.combatPower || '—'}${view.legion ? ` · ${dossierText('legion')} ${view.legion}` : ''}`));
+    dossierNode('small', '', [`${dossierText('level')} ${view.level || '—'}`, view.race || dossierText('raceUnknown'),
+      view.gender, view.server || dossierText('serverUnknown')].filter(Boolean).join(' · ')),
+    dossierNode('small', '', [`${dossierText('combatPower')} ${view.combatPower || '—'}`,
+      view.itemLevel ? `${dossierText('itemLevel')} ${view.itemLevel}` : '',
+      view.legion ? `${dossierText('legion')} ${view.legion}` : ''].filter(Boolean).join(' · ')));
+  if (view.titleName || view.titlesOwned !== null) {
+    summaryText.append(dossierNode('small', '', [view.titleName ? `${dossierText('equippedTitle')} ${view.titleName}` : '',
+      view.titlesOwned !== null ? dossierFormat('titlesOwned', { owned: view.titlesOwned, total: view.titlesTotal ?? '?' }) : '']
+      .filter(Boolean).join(' · ')));
+  }
   summary.append(summaryText);
   const tabs = dossierNode('div', 'dossier-tabs');
   tabs.setAttribute('role', 'tablist');
@@ -110,7 +118,7 @@ function renderDossier(container, view) {
         const card = dossierNode('article', 'attribute-card');
         card.append(iconElement(attributeIcon(stat.name)));
         const text = dossierNode('div');
-        text.append(dossierNode('span', '', stat.name), dossierNode('strong', '', stat.value));
+        text.append(dossierNode('span', '', stat.type === 'ItemLevel' ? dossierText('itemLevel') : stat.name), dossierNode('strong', '', stat.value));
         for (const effect of stat.statSecondList || []) text.append(dossierNode('small', '', effect));
         card.append(text);
         grid.append(card);
@@ -123,8 +131,10 @@ function renderDossier(container, view) {
       const titleGrid = dossierNode('div', 'progression-grid');
       for (const title of view.titles) {
         const card = dossierNode('article', 'progression-card');
-        card.append(dossierNode('strong', '', title.name), dossierNode('small', '', title.equipCategory || dossierText('title')));
+        card.append(dossierNode('strong', '', title.name),
+          dossierNode('small', '', [title.equipCategory || dossierText('title'), title.grade].filter(Boolean).join(' · ')));
         for (const stat of title.equipStatList || []) card.append(dossierNode('p', '', stat.desc));
+        for (const stat of title.statList || []) card.append(dossierNode('p', 'title-owned-bonus', `${dossierText('titleOwnedBonus')}: ${stat.desc}`));
         titleGrid.append(card);
       }
       section.append(titleGrid);
@@ -146,11 +156,14 @@ function renderDossier(container, view) {
       arcana.append(...view.arcana.map(gearCard));
       section.append(arcana);
       const companions = dossierNode('div', 'progression-grid');
-      for (const [label, value] of [[dossierText('mount'), view.pet], [dossierText('wings'), view.wing]]) {
+      for (const [label, value, detail] of [
+        [dossierText('mount'), view.pet, view.pet?.level ? `${dossierText('level')} ${view.pet.level}` : ''],
+        [dossierText('wings'), view.wing, [view.wing?.grade, view.wing?.enchantLevel ? `+${view.wing.enchantLevel}` : ''].filter(Boolean).join(' · ')]
+      ]) {
         if (!value?.name) continue;
         const card = dossierNode('article', 'progression-card');
         card.append(profileImage(value.icon, 'stat'), dossierNode('strong', '', value.name),
-          dossierNode('small', '', label));
+          dossierNode('small', '', detail ? `${label} · ${detail}` : label));
         companions.append(card);
       }
       section.append(companions);

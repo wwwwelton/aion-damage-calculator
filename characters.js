@@ -76,11 +76,15 @@ function formulaImportCoverage(profile) {
 function extractCharacter(data) {
   const profile = data?.info?.profile || {};
   const gear = equippedDetails(data);
+  const stats = data?.info?.stat?.statList || [];
   return { name: profile.characterName || '', server: profile.serverName || '',
     className: profile.className || '', level: profile.characterLevel || '',
     combatPower: profile.combatPower || '', race: profile.raceName || '',
+    gender: profile.genderName || '', titleName: profile.titleName || '',
+    itemLevel: Number(stats.find(stat => stat.type === 'ItemLevel')?.value) || null,
+    titlesOwned: data?.info?.title?.ownedCount ?? null, titlesTotal: data?.info?.title?.totalCount ?? null,
     legion: profile.regionName || '', portrait: profile.profileImage || '',
-    stats: (data?.info?.stat?.statList || []).filter(stat => {
+    stats: stats.filter(stat => {
       const value = String(stat.value ?? '').trim();
       return stat.name && value !== ''
         && Number.isFinite(Number(value.endsWith('%') ? value.slice(0, -1) : value));
