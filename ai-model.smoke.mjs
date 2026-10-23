@@ -1,13 +1,13 @@
 import { pipeline, env } from '@huggingface/transformers';
 import { resolve } from 'node:path';
 
-const root = resolve(process.argv[2] || 'assets/ai/models');
+const root = resolve(process.argv[2] || 'assets/ai/models/external');
 const model = 'onnx-community/Qwen2.5-0.5B-Instruct';
 env.allowLocalModels = true;
 env.allowRemoteModels = false;
 env.localModelPath = `${root}/`;
 
-const generator = await pipeline('text-generation', model, { device: 'cpu', dtype: 'q8' });
+const generator = await pipeline('text-generation', model, { device: 'cpu', dtype: 'q8', use_external_data_format: true });
 for (const [language, question] of [
   ['English', 'Which combat stat should I prioritize for damage? Answer in one short English sentence.'],
   ['Português', 'Qual atributo de combate devo priorizar para causar mais dano? Responda em uma frase curta em português brasileiro.']

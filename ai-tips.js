@@ -71,7 +71,7 @@ function currentAiContext() {
     if (input.closest('[hidden]') || (tMode === 'player' && input.closest('.pve-only, .boss-only'))
         || (tMode === 'monster' && input.closest('.boss-only, .player-only'))
         || (tMode === 'boss' && input.closest('.player-only'))) continue;
-    if (!input.value || (input.value === '0' && input.name !== 'defense')) continue;
+    if (!input.value || input.value === '0' || input.value === input.defaultValue) continue;
     const stat = `${input.name}: ${input.value}`;
     (input.closest('label.enemy') ? enemyStats : characterStats).push(stat);
   }

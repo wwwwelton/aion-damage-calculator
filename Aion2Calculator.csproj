@@ -28,9 +28,9 @@
     <EmbeddedResource Include="attribute-trees.js" LogicalName="attribute-trees.js" />
     <EmbeddedResource Include="ai-worker.bundle.js" LogicalName="ai-worker.bundle.js" />
     <EmbeddedResource Include="assets/ai/*" LogicalName="assets/ai/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/*.json" LogicalName="assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx" LogicalName="assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx" />
-    <EmbeddedResource Include="assets/classes/*.webp" LogicalName="assets/classes/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/*.json" LogicalName="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx" LogicalName="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx" />
+    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data" LogicalName="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data" />
     <EmbeddedResource Include="matchups.js" LogicalName="matchups.js" />
     <EmbeddedResource Include="boss-data.js" LogicalName="boss-data.js" />
     <EmbeddedResource Include="mob-data.js" LogicalName="mob-data.js" />
@@ -45,6 +45,7 @@
     </ItemGroup>
   </Target>
   <Target Name="CheckLocalModel" BeforeTargets="PrepareForBuild">
-    <Error Condition="!Exists('assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx')" Text="Run npm ci and npm run build:ai to bundle Qwen2.5-0.5B q8 before publishing." />
+    <Error Condition="!Exists('assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx')" Text="Run npm ci and npm run build:ai to bundle Qwen2.5-0.5B q8 before publishing." />
+    <Error Condition="!Exists('assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data')" Text="Run npm ci and npm run build:ai to bundle Qwen2.5-0.5B q8 before publishing." />
   </Target>
 </Project>

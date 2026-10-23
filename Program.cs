@@ -33,11 +33,12 @@ internal sealed class CalculatorWindow : Form
         ["attribute-trees.js"] = "text/javascript; charset=utf-8",
         ["assets/ai/ort-wasm-simd-threaded.jsep.mjs"] = "text/javascript; charset=utf-8",
         ["assets/ai/ort-wasm-simd-threaded.jsep.wasm"] = "application/wasm",
-        ["assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/config.json"] = "application/json",
-        ["assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/tokenizer_config.json"] = "application/json",
-        ["assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/tokenizer.json"] = "application/json",
-        ["assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/generation_config.json"] = "application/json",
-        ["assets/ai/models/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx"] = "application/octet-stream",
+        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/config.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/tokenizer_config.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/tokenizer.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/generation_config.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx"] = "application/octet-stream",
+        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data"] = "application/octet-stream",
         ["profile-ui.js"] = "text/javascript; charset=utf-8",
         ["stat-tooltips.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
@@ -156,10 +157,8 @@ internal sealed class CalculatorWindow : Form
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
             if (stream is not null)
             {
-                var cacheControl = name.StartsWith("assets/ai/", StringComparison.Ordinal)
-                    ? "public, max-age=31536000, immutable" : "no-store";
                 e.Response = view.CoreWebView2.Environment.CreateWebResourceResponse(
-                    stream, 200, "OK", $"Content-Type: {type}\r\nCache-Control: {cacheControl}");
+                    stream, 200, "OK", $"Content-Type: {type}\r\nCache-Control: no-store");
                 return;
             }
         }

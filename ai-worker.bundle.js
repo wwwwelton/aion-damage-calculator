@@ -47958,11 +47958,13 @@ var __webpack_exports__zeros_like = __webpack_exports__.zeros_like;
 var MODEL = "onnx-community/Qwen2.5-0.5B-Instruct";
 __webpack_exports__env.allowLocalModels = true;
 __webpack_exports__env.allowRemoteModels = false;
-__webpack_exports__env.localModelPath = new URL("assets/ai/models/", self.location.href).href;
+__webpack_exports__env.useBrowserCache = false;
+__webpack_exports__env.localModelPath = new URL("assets/ai/models/external/", self.location.href).href;
 __webpack_exports__env.backends.onnx.wasm.wasmPaths = new URL("assets/ai/", self.location.href).href;
 var generator;
 var pending;
 var running = false;
+var MAX_PROMPT_TOKENS = 320;
 async function generate() {
   if (running) return;
   running = true;
@@ -47975,6 +47977,7 @@ async function generate() {
         generator = await __webpack_exports__pipeline("text-generation", MODEL, {
           device: "wasm",
           dtype: "q8",
+          use_external_data_format: true,
           progress_callback: (progress) => {
             if (progress.status === "progress") postMessage({ id: id2, state: "downloading", progress: Math.round(progress.progress) });
           }
@@ -47982,26 +47985,34 @@ async function generate() {
       }
       postMessage({ id: id2, state: "generating" });
       const portuguese = language === "pt";
-      const systemPrompt = portuguese ? `Voc\xEA \xE9 o consultor de combate Avatarnoia Flow para AION 2. Responda somente em portugu\xEAs brasileiro, de forma direta e concisa.
+      const turns = (Array.isArray(history) ? history : []).filter((item) => item?.role && item?.content).slice(-6);
+      const query = question || "Como melhorar minha build ou DPS";
+      if (turns.at(-1)?.content !== query) turns.push({ role: "user", content: query });
+      const buildMessages = (buildContext2, note2) => [{
+        role: "system",
+        content: portuguese ? `Voc\xEA \xE9 o consultor de combate Avatarnoia Flow para AION 2. Responda somente em portugu\xEAs brasileiro, de forma direta e concisa.
 C\xE1lculo ativo da configura\xE7\xE3o:
-${context}
-` + (research ? `Nota de guia do AION 2: ${research}
+${buildContext2}
+` + (note2 ? `Nota de guia do AION 2: ${note2}
 ` : "") + "Responda \xE0 pergunta com uma recomenda\xE7\xE3o de jogo em uma ou duas frases de prosa. Cite a melhor melhoria calculada e um atributo do inimigo quando forem relevantes. N\xE3o escreva c\xF3digo, listas de programa\xE7\xE3o ou dados inventados. Valores iniciais s\xE3o exemplos, n\xE3o dados confirmados do jogador." : `You are the Avatarnoia Flow combat advisor for AION 2. Answer only in concise English.
 Active build calculation:
-${context}
-` + (research ? `AION 2 Guide Note: ${research}
-` : "") + "Answer the question with a gameplay recommendation in one or two prose sentences. Mention the top calculated upgrade and a relevant enemy stat when available. Do not write code or invent stats. Prefilled values are examples, not confirmed player data.";
-      const messages = [{ role: "system", content: systemPrompt }];
-      if (Array.isArray(history)) {
-        for (const item of history.slice(-6)) {
-          if (item?.role && item?.content) {
-            messages.push({ role: item.role, content: item.content });
-          }
-        }
-      }
-      const query = question || "Como melhorar minha build ou DPS";
-      if (!history || history.length === 0 || history[history.length - 1]?.content !== query) {
-        messages.push({ role: "user", content: query });
+${buildContext2}
+` + (note2 ? `AION 2 Guide Note: ${note2}
+` : "") + "Answer the question with a gameplay recommendation in one or two prose sentences. Mention the top calculated upgrade and a relevant enemy stat when available. Do not write code or invent stats. Prefilled values are examples, not confirmed player data."
+      }, ...turns];
+      const promptTokens = (messages2) => generator.tokenizer.apply_chat_template(
+        messages2,
+        { tokenize: true, add_generation_prompt: true, return_tensor: false }
+      ).length;
+      let note = research;
+      let buildContext = context;
+      let messages = buildMessages(buildContext, note);
+      while (promptTokens(messages) > MAX_PROMPT_TOKENS) {
+        if (turns.length > 1) turns.splice(0, turns.length > 2 ? 2 : 1);
+        else if (note) note = "";
+        else if (buildContext.length > 200) buildContext = buildContext.slice(0, Math.floor(buildContext.length / 2));
+        else break;
+        messages = buildMessages(buildContext, note);
       }
       const output = await generator(messages, {
         max_new_tokens: 120,
