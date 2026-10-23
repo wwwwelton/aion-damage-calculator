@@ -113,13 +113,6 @@ for (const node of attributeTree.querySelectorAll('.tree-node')) {
     node.after(hint);
   }
 }
-// Narrow screens scroll the trees horizontally; start centred on the root node.
-document.querySelector('#attributes-tab').addEventListener('click', () => {
-  for (const tree of attributeTree.querySelectorAll('.attribute-tree')) {
-    tree.scrollLeft = (tree.scrollWidth - tree.clientWidth) / 2;
-  }
-});
-
 function profileStatDescription(stat) {
   if (stat.type === 'STR') return I18N.t('treeTipMight');
   const key = stat.name.replace(/[^a-zA-Z0-9]+([a-zA-Z0-9])/g, (_, letter) => letter.toUpperCase())
