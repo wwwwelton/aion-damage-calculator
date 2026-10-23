@@ -9,6 +9,7 @@ let aiWorker;
 let aiStartup;
 let aiTimer;
 let aiRevision = 0;
+let currentPendingTarget;
 let aiActiveRequest = null; // Track current active request ID to prevent orphaned chat bubbles
 const conversationHistory = [];
 let researchRequest = -1;
@@ -205,6 +206,7 @@ async function dispatchAiRequest(question, targetElem) {
       aiActiveRequest = null;
       return;
     }
+    currentPendingTarget = targetElem;
     targetElem.textContent = 'Generating AION 2 advice locally…';
     scrollChatToBottom();
     aiWorker.postMessage({ id, question, context, research, history: conversationHistory });

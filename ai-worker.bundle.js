@@ -47975,6 +47975,7 @@ async function generate() {
         generator = await __webpack_exports__pipeline("text-generation", MODEL, {
           device: "webgpu",
           dtype: "q4f16",
+          subfolder: "",
           progress_callback: (progress) => {
             if (progress.status === "progress") postMessage({ id: id2, state: "downloading", progress: Math.round(progress.progress) });
           }
