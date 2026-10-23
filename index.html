@@ -18,6 +18,7 @@
   <script defer src="bosses.js"></script>
   <script defer src="characters.js"></script>
   <script defer src="stat-tooltips.js"></script>
+  <script defer src="attribute-trees.js"></script>
   <script defer src="ai-tips.js"></script>
   <script defer src="renderer.js"></script>
 </head>
@@ -40,6 +41,7 @@
       <button type="button" id="character-tab" role="tab" aria-controls="character-view" class="tab" data-tab="character-view" aria-selected="false" data-i18n="tabCharacter">Character Search</button>
       <button type="button" id="enemy-tab" role="tab" aria-controls="enemy-view" class="tab" data-tab="enemy-view" aria-selected="false" data-i18n="tabEnemy">Enemy Character</button>
       <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false" data-i18n="tabBoss">Mobs &amp; Bosses</button>
+      <button type="button" id="attributes-tab" role="tab" aria-controls="attributes-view" class="tab" data-tab="attributes-view" aria-selected="false" data-i18n="tabAttributes">Attribute Trees</button>
     </nav>
     <div id="calculator-view" class="tab-panel" role="tabpanel" aria-labelledby="calculator-tab">
     <section class="card encounter" aria-label="Combat scenario">
@@ -50,7 +52,7 @@
       </div>
       <section class="ai-assistant" aria-labelledby="ai-title">
         <h2 id="ai-title" data-i18n="aiAssistantTitle">Avatarnoia Flow Engine 2.0</h2>
-        <p class="reference-note" data-i18n="aiAssistantNote">Bundled Qwen3-0.6B ONNX (Q4F16); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. WebGPU with shader-f16 is required. Calculated comparisons take precedence over AI text.</p>
+        <p class="reference-note" data-i18n="aiAssistantNote">Bundled Qwen2.5-0.5B-Instruct ONNX (q8); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. Runs on CPU without WebGPU. Calculated comparisons take precedence over AI text.</p>
         <label for="ai-question" data-i18n="aiChatHeader">AION 2 Combat Assistant</label>
         <div id="ai-chat-dialog" class="ai-chat-dialog" role="log" aria-live="polite">
           <div class="ai-msg ai-msg-assistant">
@@ -219,6 +221,66 @@
         <p id="boss-source" class="import-note boss-source" hidden></p>
         <p class="import-note" data-i18n="bossDetailsNote">NPC skill and attack details are not in this offline snapshot; the source URL identifies the monster's page for further research. Cogni, Fera, Natura and Varian apply the corresponding creature matchup; missing HP and defenses stay manual.</p>
         <button type="button" id="import-boss" disabled data-i18n="importBossBtn">Load target into calculator</button>
+      </section>
+    </div>
+    <div id="attributes-view" class="tab-panel" role="tabpanel" aria-labelledby="attributes-tab" hidden>
+      <section class="card">
+        <h2 data-i18n="treesTitle">Combat attribute trees</h2>
+        <p class="reference-note" data-i18n="treesNote">The trees show the current calculator values and defensive attributes from the imported character profile. Default calculator values are examples, not confirmed character stats. Select a node to learn what it does and why it matters.</p>
+        <div class="attribute-trees">
+          <section class="attribute-tree" aria-labelledby="offense-tree-title">
+            <h3 id="offense-tree-title" data-i18n="offenseTree">Damage</h3>
+            <ul class="tree-level">
+              <li><span class="tree-node" data-tree-icon="damage" data-i18n="treeOutgoing">Outgoing damage</span>
+                <ul class="tree-level">
+                  <li><span class="tree-node" data-tree-icon="attack" data-i18n="treeAttack">Attack power</span>
+                    <ul class="tree-level">
+                      <li data-tree-stat="pureAttack"><span class="tree-node" data-i18n="pureAttackLabel">Pure Attack</span></li>
+                      <li data-tree-stat="penetration"><span class="tree-node" data-i18n="penetrationLabel">Penetration</span></li>
+                    </ul>
+                  </li>
+                  <li><span class="tree-node" data-tree-icon="damage" data-i18n="treeMultipliers">Damage multipliers</span>
+                    <ul class="tree-level">
+                      <li data-tree-stat="damageBoost"><span class="tree-node" data-i18n="damageBoostLabel">Damage Boost</span></li>
+                      <li data-tree-stat="criticalDamageBoost"><span class="tree-node" data-i18n="criticalDamageBoostLabel">Critical Damage Boost</span></li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+          <section class="attribute-tree" aria-labelledby="defense-tree-title">
+            <h3 id="defense-tree-title" data-i18n="defenseTree">Defense</h3>
+            <ul class="tree-level">
+              <li><span class="tree-node" data-tree-icon="health" data-i18n="treeSurvival">Survivability</span>
+                <ul class="tree-level">
+                  <li><span class="tree-node" data-tree-icon="defense" data-i18n="treeMitigation">Damage mitigation</span>
+                    <ul class="tree-level">
+                      <li data-tree-stat="defense"><span class="tree-node" data-i18n="treeDefense">Defense</span></li>
+                      <li data-tree-stat="damageTolerance"><span class="tree-node" data-i18n="treeTolerance">Damage Tolerance</span></li>
+                    </ul>
+                  </li>
+                  <li><span class="tree-node" data-tree-icon="chance" data-i18n="treeAvoidance">Avoidance &amp; health</span>
+                    <ul class="tree-level">
+                      <li data-tree-stat="evasion"><span class="tree-node" data-i18n="treeEvasion">Evasion</span></li>
+                      <li data-tree-stat="playerHp"><span class="tree-node" data-i18n="playerHpLabel">Player HP</span></li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+        </div>
+        <p id="tree-value-note" class="reference-note" aria-live="polite"></p>
+        <div id="tree-tip" class="tree-tip" role="tooltip" hidden>
+          <strong id="tree-tip-title"></strong>
+          <p id="tree-tip-text"></p>
+        </div>
+        <section class="tree-profile" aria-labelledby="tree-profile-title">
+          <h3 id="tree-profile-title" data-i18n="treeProfileTitle">Imported character sheet</h3>
+          <p id="tree-profile-empty" class="reference-note" data-i18n="treeProfileEmpty">Import a character from Character Search to see all published sheet attributes here.</p>
+          <ul id="tree-profile-list" class="tree-profile-list"></ul>
+        </section>
       </section>
     </div>
   </main>

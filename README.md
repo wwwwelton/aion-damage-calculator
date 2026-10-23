@@ -1,6 +1,6 @@
 # AION 2 Damage Calculator
 
-Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaScript, the inference runtime and Qwen3-0.6B Q4F16 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from NotMeter; the assistant can fetch a current AION 2 guide by topic.
+Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaScript, the inference runtime and Qwen2.5-0.5B-Instruct q8 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from NotMeter; the assistant can fetch a current AION 2 guide by topic.
 
 ## Get started
 
@@ -19,7 +19,7 @@ dotnet restore Aion2Calculator.csproj
 dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
 ```
 
-The first build downloads the pinned Qwen3-0.6B ONNX model from Hugging Face and verifies its SHA-256 checksum; **users running the published executable do not download a model**. The ONNX weight file is excluded from Git because it exceeds GitHub's 100 MB file limit. The build requires NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable (about 250 MB). Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
+The first build downloads the pinned Qwen2.5-0.5B-Instruct ONNX q8 model from Hugging Face and verifies SHA-256 checksums of the weights and tokenizer assets; **users running the published executable do not download a model**. The ONNX weight file is excluded from Git because it exceeds GitHub's 100 MB file limit. The build requires NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable (about 660 MB). Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
 
 ### Development and checks
 
@@ -36,7 +36,7 @@ npm ci
 npm run build:ai
 ```
 
-`package-lock.json` pins the development dependencies; normal users do not need Node.js or npm. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>). Character search and online guide retrieval use the WebView2-to-.NET bridge and work only in the Windows app. Verify those interactions and desktop behavior in the published executable.
+`package-lock.json` pins the development dependencies; normal users do not need Node.js or npm. After `npm run build:ai`, `node ai-model.smoke.mjs` runs real offline CPU inference with the bundled model in English and Portuguese; it is not part of the fast test suite. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>). Character search and online guide retrieval use the WebView2-to-.NET bridge and work only in the Windows app. Verify those interactions and desktop behavior in the published executable.
 
 ### Project layout
 
@@ -45,16 +45,18 @@ npm run build:ai
 | `Aion2Calculator.csproj`, `Program.cs` | Windows build, embedded files and WebView2 host |
 | `NotMeterClient.cs`, `GuideResearch.cs` | Public character lookup and opt-in wiki-guide retrieval through the native host |
 | `index.html`, `style.css`, `i18n.js`, `renderer.js`, `profile-ui.js`, `ai-tips.js` | Bilingual interface, character dossier and contextual assistant |
+| `attribute-trees.js`, `stat-tooltips.js` | Attribute tree nodes with imported sheet values and bilingual stat explanations |
 | `calculator.js`, `matchups.js`, `recommendations.js`, `numeric-input.js` | Damage calculation, matchup rules, tips and number parsing |
 | `characters.js`, `bosses.js`, `boss-data.js`, `mob-data.js` | Profile imports and offline NPC catalog |
 | `*.test.js` | Node.js regression tests |
-| `ai-worker.js`, `build-ai.mjs`, `ai-worker.bundle.js`, `assets/ai/` | Transformers.js worker source, build script, bundled worker and local inference runtime |
+| `ai-worker.js`, `build-ai.mjs`, `ai-model.smoke.mjs`, `ai-worker.bundle.js`, `assets/ai/` | Transformers.js worker source, build script, inference smoke check, bundled worker and local inference runtime |
 
 ## Calculation scope
 
 Multipliers are entered as percentages: 100% = ×1, 150% = ×1.5. The additive Damage Boost bucket starts at 100%; PvE, Boss and Species bonuses start at zero. Critical Hit, Double Chance procs and attack position apply only when selected. Presets are illustrative, not official values. Pure Attack is a derived formula term. This community-derived model follows the tested attack → skill → Defense → boost → critical/Double/position order, caps effective Defense and each damage stage at zero, uses Defense ×0.1 in PvE and ×0.01 in PvP, uses a ×2 Double proc in PvE versus ×1.5 in PvP, and changes the base critical multiplier from ×1.5 in PvE to ×1.25 in PvP. Internal game rounding is not modeled.
 
 The header language selector switches the interface between Portuguese and English and persists the choice locally. Static labels, dynamic calculation messages, profile views, matchup sections, stat tips and future assistant replies follow the selected language; game-provided character, item, skill and NPC names remain as published by their source.
+The **Attribute Trees** tab shows two binary maps of circular icon nodes: outgoing damage (attack power and multipliers) and survivability (mitigation and avoidance/health). Leaf values follow the current calculator; after **Load attributes into calculator** in Character Search, the tab also displays imported character-sheet stats and defensive values, not the enemy’s defense. Unavailable profile stats are marked as such; calculator defaults are examples. Hovering or focusing any attribute button shows a bilingual tooltip explaining what the stat does and why it matters; clicking pins it, and Escape or clicking elsewhere closes it. The trees are category maps, not a universal stat priority; use the calculator's upgrade comparisons for your current target.
 
 ## Icons
 
@@ -110,7 +112,7 @@ Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.
 
 ### Avatarnoia Flow Engine 2.0
 
-The assistant beneath the attacker and target names starts automatically and refreshes advice as the calculator or opponent changes. Questions are optional. It runs the bundled [onnx-community/Qwen3-0.6B-ONNX](https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX) Q4F16 model locally through Transformers.js. WebGPU with `shader-f16` support and a current WebView2 Runtime are required for generation; the deterministic damage ranking remains available if the GPU lacks that feature. No model weights are downloaded when the program runs. Each request carries the selected UI language, and the system prompt requires Portuguese or English accordingly; conversation history is bounded and responses are capped to keep local generation responsive.
+The assistant beneath the attacker and target names starts automatically with “Como melhorar minha build ou DPS” and refreshes advice as the calculator or opponent changes. Questions are optional. Requests include the character and enemy classes (when available), their nonzero attributes, active scenario, calculated hit, estimated DPS and top +1% upgrades. It runs the bundled [onnx-community/Qwen2.5-0.5B-Instruct](https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct) q8 model locally on CPU through Transformers.js; WebGPU is not required. No model weights are downloaded when the program runs. Each request carries the selected UI language, and the system prompt requires Portuguese or English accordingly; conversation history is bounded and responses are capped to keep local generation responsive. Check real inference offline with `node ai-model.smoke.mjs` after `npm run build:ai`; the small model can produce inaccurate or off-topic responses even with full context, so prefer the deterministic comparisons for numeric advice.
 
 The Windows app may automatically request one whitelisted [Aion 2 Maps combat guide](https://aion2maps.com/guides/stats-explained/) by topic and display its URL. Only a guide category is sent to the guide website; character names, calculator values and questions stay on the device. If the internet is unavailable, local advice still runs. This is guided lookup, not unrestricted web search.
 

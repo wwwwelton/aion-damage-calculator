@@ -47955,7 +47955,7 @@ var __webpack_exports__zeros = __webpack_exports__.zeros;
 var __webpack_exports__zeros_like = __webpack_exports__.zeros_like;
 
 // ai-worker.js
-var MODEL = "onnx-community/Qwen3-0.6B-ONNX";
+var MODEL = "onnx-community/Qwen2.5-0.5B-Instruct";
 __webpack_exports__env.allowLocalModels = true;
 __webpack_exports__env.allowRemoteModels = false;
 __webpack_exports__env.localModelPath = new URL("assets/ai/models/", self.location.href).href;
@@ -47973,9 +47973,8 @@ async function generate() {
       if (!generator) {
         postMessage({ id: id2, state: "loading" });
         generator = await __webpack_exports__pipeline("text-generation", MODEL, {
-          device: "webgpu",
-          dtype: "q4f16",
-          subfolder: "",
+          device: "wasm",
+          dtype: "q8",
           progress_callback: (progress) => {
             if (progress.status === "progress") postMessage({ id: id2, state: "downloading", progress: Math.round(progress.progress) });
           }
@@ -47987,11 +47986,11 @@ async function generate() {
 C\xE1lculo ativo da configura\xE7\xE3o:
 ${context}
 ` + (research ? `Nota de guia do AION 2: ${research}
-` : "") + "Priorize atributos, coeficientes de habilidade e mitiga\xE7\xE3o com base nos n\xFAmeros fornecidos. N\xE3o mostre racioc\xEDnio interno nem tags <think>." : `You are the Avatarnoia Flow combat advisor for AION 2. Answer only in concise English.
+` : "") + "Responda \xE0 pergunta com uma recomenda\xE7\xE3o de jogo em uma ou duas frases de prosa. Cite a melhor melhoria calculada e um atributo do inimigo quando forem relevantes. N\xE3o escreva c\xF3digo, listas de programa\xE7\xE3o ou dados inventados. Valores iniciais s\xE3o exemplos, n\xE3o dados confirmados do jogador." : `You are the Avatarnoia Flow combat advisor for AION 2. Answer only in concise English.
 Active build calculation:
 ${context}
 ` + (research ? `AION 2 Guide Note: ${research}
-` : "") + "Prioritize stats, skill coefficients and mitigation from the supplied numbers. Do not show internal reasoning or <think> tags.";
+` : "") + "Answer the question with a gameplay recommendation in one or two prose sentences. Mention the top calculated upgrade and a relevant enemy stat when available. Do not write code or invent stats. Prefilled values are examples, not confirmed player data.";
       const messages = [{ role: "system", content: systemPrompt }];
       if (Array.isArray(history)) {
         for (const item of history.slice(-6)) {
@@ -48000,24 +47999,18 @@ ${context}
           }
         }
       }
-      const query = question || (portuguese ? "Qual atributo devo melhorar agora para aumentar meu DPS?" : "Which stat should I improve right now to increase my DPS?");
+      const query = question || "Como melhorar minha build ou DPS";
       if (!history || history.length === 0 || history[history.length - 1]?.content !== query) {
         messages.push({ role: "user", content: query });
       }
       const output = await generator(messages, {
-        max_new_tokens: 180,
+        max_new_tokens: 120,
         repetition_penalty: 1.15,
-        do_sample: false,
-        chat_template_kwargs: { enable_thinking: false }
+        do_sample: false
       });
       const raw = output[0]?.generated_text?.at(-1)?.content || "";
-      let text = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-      if (!text && raw.includes("<think>")) {
-        text = raw.replace(/<\/?think>/gi, "").trim();
-      }
-      if (!text) {
-        text = portuguese ? "Priorize o primeiro atributo da compara\xE7\xE3o calculada abaixo para maximizar seu DPS." : "Prioritize the top stat listed in the calculated upgrades below to maximize your DPS.";
-      }
+      const text = raw.trim();
+      if (!text) throw new Error("Local model returned an empty response.");
       postMessage({ id: id2, state: "done", text });
     } catch (error) {
       console.error("AI Worker error:", error);

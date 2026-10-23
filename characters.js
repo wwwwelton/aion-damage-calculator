@@ -80,7 +80,11 @@ function extractCharacter(data) {
     className: profile.className || '', level: profile.characterLevel || '',
     combatPower: profile.combatPower || '', race: profile.raceName || '',
     legion: profile.regionName || '', portrait: profile.profileImage || '',
-    stats: (data?.info?.stat?.statList || []).filter(stat => stat.name && Number.isFinite(Number(stat.value))),
+    stats: (data?.info?.stat?.statList || []).filter(stat => {
+      const value = String(stat.value ?? '').trim();
+      return stat.name && value !== ''
+        && Number.isFinite(Number(value.endsWith('%') ? value.slice(0, -1) : value));
+    }),
     gear,
     arcana: (data?.equipment?.equipment?.equipmentList || [])
       .filter(item => String(item.slotPosName).startsWith('Arcana'))
@@ -383,6 +387,9 @@ if (typeof document !== 'undefined') {
     document.querySelector('#attacker-class').value = document.querySelector('#profile-meta').textContent.split(' · ')[0];
     form.elements.namedItem('playerHp').value = String(characterHp(loaded) ?? 0);
     form.dispatchEvent(new Event('input', { bubbles: true }));
+    document.dispatchEvent(new CustomEvent('character-imported', {
+      detail: { name: attacker.name, defenses: enemyDefenses(loaded), stats: attacker.stats }
+    }));
     const coverage = formulaImportCoverage(loaded);
     const manual = coverage.manual.map(field => {
       const input = form.elements.namedItem(field);

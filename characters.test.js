@@ -24,10 +24,12 @@ test('groups real gear options, learned abilities and progression without invent
   data.equipment.equipment.equipmentList[0].icon = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/mace.png';
   data.itemDetails['1'].subSkills = [{ name: 'Bolt', level: 1 }];
   data.itemDetails['1'].magicStoneStat = [{ name: 'HP', value: '+100' }];
+  data.info.stat.statList.push({ name: 'Damage Tolerance', value: '12.5%' },
+    { name: 'Attack Modifier', value: '-2' }, { name: 'Unavailable', value: 'unknown' });
   data.equipment.skill.skillList[0].icon = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/bolt.png';
   const view = extractCharacter(data);
   assert.equal(view.name, 'Kanon');
-  assert.deepEqual(view.stats.map(stat => stat.name), ['Might']);
+  assert.deepEqual(view.stats.map(stat => stat.name), ['Might', 'Damage Tolerance', 'Attack Modifier']);
   assert.equal(view.gear[0].item.name, 'Mace');
   assert.equal(view.gear[0].detail.subStats[0].value, '5.6%');
   assert.equal(view.gear[0].detail.subSkills[0].name, 'Bolt');

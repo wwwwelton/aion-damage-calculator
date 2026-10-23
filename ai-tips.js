@@ -59,17 +59,22 @@ function guideTopic(question) {
 }
 
 function currentAiContext() {
-  const important = new Set(['pureAttack', 'weaponDamageBoost', 'damageBoost', 'skillCoefficient',
-    'criticalDamageBoost', 'defense', 'penetration', 'hitsPerSecond', 'enemyHp']);
-  const fields = [...document.querySelectorAll('#calculator input')]
-    .filter(input => input.name && (important.has(input.name) || (input.value !== input.defaultValue && input.value !== '0')))
-    .sort((a, b) => Number(important.has(b.name)) - Number(important.has(a.name)))
-    .slice(0, 10).map(input => `${input.name}: ${input.value}`);
   const attacker = document.querySelector('#attacker-name').value || 'Player';
   const aClass = document.querySelector('#attacker-class').value || 'Unspecified class';
   const target = document.querySelector('#target-name').value || 'Target';
   const tMode = document.querySelector('#target-mode').value;
-  const cType = document.querySelector('#creature-type-header').value || 'Standard';
+  const cType = document.querySelector('#creature-type-header').value || 'Unknown';
+  const targetClass = tMode === 'player' ? document.querySelector('#target-class').value || 'Unspecified class' : '';
+  const characterStats = [];
+  const enemyStats = [];
+  for (const input of document.querySelectorAll('#calculator input[name]')) {
+    if (input.closest('[hidden]') || (tMode === 'player' && input.closest('.pve-only, .boss-only'))
+        || (tMode === 'monster' && input.closest('.boss-only, .player-only'))
+        || (tMode === 'boss' && input.closest('.player-only'))) continue;
+    if (!input.value || (input.value === '0' && input.name !== 'defense')) continue;
+    const stat = `${input.name}: ${input.value}`;
+    (input.closest('label.enemy') ? enemyStats : characterStats).push(stat);
+  }
   const hit = document.querySelector('#result').textContent || '0';
   const dps = document.querySelector('#estimated-dps').textContent || '0';
   const crit = document.querySelector('#critical').value;
@@ -77,10 +82,12 @@ function currentAiContext() {
   const topUpgrades = [...document.querySelectorAll('#upgrade-list li')]
     .slice(0, 3).map(li => li.textContent.trim()).join(' | ') || 'None';
 
-  return `Attacker: ${attacker} (${aClass}) vs Target: ${target} (${tMode}, ${cType})\n`
-    + `Calculated Hit: ${hit} | Estimated DPS: ${dps} (Crit: ${crit}, Position: ${pos})\n`
-    + `Top Math Upgrades (+1%): ${topUpgrades}\n`
-    + `Key Stats: ${fields.join(', ')}`;
+  return `Personagem: ${attacker}; classe: ${aClass}\n`
+    + `Inimigo: ${target}; modo: ${tMode}; tipo: ${cType}${targetClass ? `; classe: ${targetClass}` : ''}\n`
+    + `Atributos do personagem: ${characterStats.join(', ')}\n`
+    + `Atributos do inimigo: ${enemyStats.join(', ')}\n`
+    + `Golpe calculado: ${hit}; DPS estimado: ${dps}; crítico: ${crit}; posição: ${pos}\n`
+    + `Melhorias calculadas (+1%): ${topUpgrades}`;
 }
 
 function requestGuide(topic) {
@@ -139,8 +146,6 @@ async function getAiTips() {
 async function ensureAiWorker() {
   if (aiStartup) return aiStartup;
   aiStartup = (async () => {
-    const adapter = await navigator.gpu?.requestAdapter();
-    if (!adapter?.features.has('shader-f16')) throw new Error('Q4F16 requires WebGPU with shader-f16 support.');
     aiWorker = new Worker('ai-worker.bundle.js', { type: 'module' });
     aiWorker.onmessage = ({ data }) => {
       if (data.id !== aiRevision) return;
@@ -172,6 +177,11 @@ async function ensureAiWorker() {
 
 async function dispatchAiRequest(question, targetElem) {
   const id = ++aiRevision;
+  if (currentPendingTarget && currentPendingTarget !== aiAnswer && currentPendingTarget !== targetElem
+      && /^(Analyzing setup|Generating AION|Reading embedded|Loading bundled)/.test(currentPendingTarget.textContent)) {
+    currentPendingTarget.textContent = 'Superseded by a newer request.';
+  }
+  currentPendingTarget = targetElem;
   // Cancel any pending request - prevents orphaned chat bubbles
   aiActiveRequest = id;
   const context = currentAiContext();
@@ -206,10 +216,9 @@ async function dispatchAiRequest(question, targetElem) {
       aiActiveRequest = null;
       return;
     }
-    currentPendingTarget = targetElem;
     targetElem.textContent = 'Generating AION 2 advice locally…';
     scrollChatToBottom();
-    aiWorker.postMessage({ id, question, context, research, history: conversationHistory });
+    aiWorker.postMessage({ id, question, context, research, history: conversationHistory, language: I18N.currentLang });
   } catch (error) {
     if (id === aiRevision) {
       targetElem.textContent = `${error.message} Use the calculated comparison below.`;
@@ -223,6 +232,7 @@ async function dispatchAiRequest(question, targetElem) {
 function submitUserQuestion() {
   const question = aiQuestion.value.trim();
   if (!question) return;
+  clearTimeout(aiTimer);
   aiQuestion.value = '';
 
   appendChatMessage('user', 'You', question);
@@ -240,9 +250,7 @@ function scheduleAiTips() {
   const suggestion = recommendedUpgrade();
   aiApply.hidden = !suggestion;
   if (suggestion) aiApply.textContent = `Apply +1% ${suggestion.label} (${suggestion.gain})`;
-  if (conversationHistory.length === 0) {
-    aiTimer = setTimeout(() => void dispatchAiRequest('', aiAnswer), 750);
-  }
+  aiTimer = setTimeout(() => void dispatchAiRequest('Como melhorar minha build ou DPS', aiAnswer), 750);
 }
 
 async function dispatchAiTips() {
