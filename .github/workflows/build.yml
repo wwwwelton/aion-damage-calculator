@@ -1,0 +1,114 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  MODEL_DIR: assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx
+
+jobs:
+  test:
+    name: JavaScript tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  build:
+    name: Windows executable
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: npm ci
+
+      # build-ai.mjs verifies the pinned SHA-256 of the converted model files
+      # and skips the 488 MB download when they already match, so a cache hit
+      # costs nothing and a stale or corrupt cache is simply rebuilt.
+      - name: Restore converted model
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.MODEL_DIR }}
+          key: qwen25-q8-external-${{ hashFiles('build-ai.mjs', 'onnx-external-data.mjs') }}
+
+      - name: Download, convert and bundle AI assets
+        run: npm run build:ai
+
+      - name: Real offline inference check
+        run: node ai-model.smoke.mjs
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "value=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=1.0.0-ci.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: dotnet restore Aion2Calculator.csproj
+      - name: Publish
+        run: dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2 --no-restore -p:Version=${{ steps.version.outputs.value }}
+
+      - name: Checksum
+        shell: bash
+        run: |
+          cd dist/webview2
+          sha256sum AION2-Damage-Calculator.exe > AION2-Damage-Calculator.exe.sha256
+          cat AION2-Damage-Calculator.exe.sha256
+          ls -la
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AION2-Damage-Calculator-${{ steps.version.outputs.value }}
+          path: |
+            dist/webview2/AION2-Damage-Calculator.exe
+            dist/webview2/AION2-Damage-Calculator.exe.sha256
+          if-no-files-found: error
+          compression-level: 0
+
+  release:
+    name: GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: AION2-Damage-Calculator-*
+          merge-multiple: true
+          path: release
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/AION2-Damage-Calculator.exe
+            release/AION2-Damage-Calculator.exe.sha256
+          generate_release_notes: true
+          body: |
+            Self-contained Windows x64 executable (about 660 MB) with the embedded Qwen2.5-0.5B-Instruct q8 model.
+            Requirements: Windows x64, Microsoft Edge WebView2 Runtime, about 2.5 GB of free RAM while the local assistant is active.
+            Verify the download with the attached SHA-256 file. The executable is not digitally signed.

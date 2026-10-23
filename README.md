@@ -6,7 +6,7 @@ Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaSc
 
 ### Run the Windows app
 
-Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) and about 2.5 GB of free RAM while the local assistant is active (see [Memory](#avatarnoia-flow-engine-20)). Run `dist/webview2/AION2-Damage-Calculator.exe` after publishing, or use a distributed executable. The app reports an error if WebView2 is unavailable. The executable includes the .NET runtime, so users do not need to install the .NET SDK. It is not digitally signed.
+Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) and about 2.5 GB of free RAM while the local assistant is active (see [Memory](#avatarnoia-flow-engine-20)). Download `AION2-Damage-Calculator.exe` from the [GitHub Releases](https://github.com/wwwwelton/aion-damage-calculator/releases) page (verify it with the attached `.sha256` file), or run `dist/webview2/AION2-Damage-Calculator.exe` after publishing locally. The app reports an error if WebView2 is unavailable. The executable includes the .NET runtime, so users do not need to install the .NET SDK. It is not digitally signed.
 
 ### Build from source
 
@@ -20,6 +20,10 @@ dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
 ```
 
 The first build downloads the pinned Qwen2.5-0.5B-Instruct ONNX q8 model from Hugging Face, verifies its SHA-256 checksum and rewrites it into the ONNX external-data layout (`model_quantized.onnx` plus `model_quantized.onnx_data`, see `onnx-external-data.mjs`); the converted files are checksum-pinned too. **Users running the published executable do not download a model.** The weight files are excluded from Git because they exceed GitHub's 100 MB file limit. The build requires NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable (about 660 MB). Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
+
+### Continuous integration and releases
+
+`.github/workflows/build.yml` runs on every push and pull request to `main`: the JavaScript tests on Ubuntu, then on Windows `npm run build:ai` (the converted model is cached between runs and re-verified by checksum), the real offline inference check, `dotnet publish` and an uploaded artifact containing the executable and its SHA-256. Pushing a tag such as `v1.1.0` additionally creates a GitHub Release with those two files, generated release notes and the version baked into the executable (`-p:Version=1.1.0`). To release: `git tag v1.1.0 && git push origin v1.1.0`.
 
 ### Development and checks
 
