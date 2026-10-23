@@ -231,18 +231,38 @@
           <section class="attribute-tree" aria-labelledby="offense-tree-title">
             <h3 id="offense-tree-title" data-i18n="offenseTree">Damage</h3>
             <ul class="tree-level">
-              <li><span class="tree-node" data-tree-icon="damage" data-i18n="treeOutgoing">Outgoing damage</span>
+              <li><span class="tree-node" data-tree-icon="damage" data-tree-hint="treeHintOutgoing" data-i18n="treeOutgoing">Outgoing damage</span>
                 <ul class="tree-level">
-                  <li><span class="tree-node" data-tree-icon="attack" data-i18n="treeAttack">Attack power</span>
+                  <li><span class="tree-node" data-tree-icon="attack" data-tree-hint="treeHintAttack" data-i18n="treeAttack">Attack power</span>
                     <ul class="tree-level">
-                      <li data-tree-stat="pureAttack"><span class="tree-node" data-i18n="pureAttackLabel">Pure Attack</span></li>
-                      <li data-tree-stat="penetration"><span class="tree-node" data-i18n="penetrationLabel">Penetration</span></li>
+                      <li><span class="tree-node" data-tree-icon="attack" data-tree-hint="treeHintBase" data-i18n="treeBase">Base attack</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="pureAttack"><span class="tree-node" data-i18n="pureAttackLabel">Pure Attack</span></li>
+                          <li data-tree-stat="attackIncrease"><span class="tree-node" data-i18n="treeAttackIncrease">Attack Increase</span></li>
+                        </ul>
+                      </li>
+                      <li><span class="tree-node" data-tree-icon="chance" data-tree-hint="treeHintLanding" data-i18n="treeLanding">Landing hits</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="penetration"><span class="tree-node" data-i18n="penetrationLabel">Penetration</span></li>
+                          <li data-tree-stat="accuracy"><span class="tree-node" data-i18n="treeAccuracy">Accuracy</span></li>
+                        </ul>
+                      </li>
                     </ul>
                   </li>
-                  <li><span class="tree-node" data-tree-icon="damage" data-i18n="treeMultipliers">Damage multipliers</span>
+                  <li><span class="tree-node" data-tree-icon="damage" data-tree-hint="treeHintMultipliers" data-i18n="treeMultipliers">Damage multipliers</span>
                     <ul class="tree-level">
-                      <li data-tree-stat="damageBoost"><span class="tree-node" data-i18n="damageBoostLabel">Damage Boost</span></li>
-                      <li data-tree-stat="criticalDamageBoost"><span class="tree-node" data-i18n="criticalDamageBoostLabel">Critical Damage Boost</span></li>
+                      <li><span class="tree-node" data-tree-icon="damage" data-tree-hint="treeHintBoosts" data-i18n="treeBoosts">Damage boosts</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="damageBoost"><span class="tree-node" data-i18n="damageBoostLabel">Damage Boost</span></li>
+                          <li data-tree-stat="weaponDamageBoost"><span class="tree-node" data-i18n="treeWeaponBoost">Weapon Damage Boost</span></li>
+                        </ul>
+                      </li>
+                      <li><span class="tree-node" data-tree-icon="chance" data-tree-hint="treeHintCritical" data-i18n="treeCritical">Critical hits</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="criticalHit"><span class="tree-node" data-i18n="treeCriticalHit">Critical Hit</span></li>
+                          <li data-tree-stat="criticalDamageBoost"><span class="tree-node" data-i18n="criticalDamageBoostLabel">Critical Damage Boost</span></li>
+                        </ul>
+                      </li>
                     </ul>
                   </li>
                 </ul>
@@ -252,18 +272,38 @@
           <section class="attribute-tree" aria-labelledby="defense-tree-title">
             <h3 id="defense-tree-title" data-i18n="defenseTree">Defense</h3>
             <ul class="tree-level">
-              <li><span class="tree-node" data-tree-icon="health" data-i18n="treeSurvival">Survivability</span>
+              <li><span class="tree-node" data-tree-icon="health" data-tree-hint="treeHintSurvival" data-i18n="treeSurvival">Survivability</span>
                 <ul class="tree-level">
-                  <li><span class="tree-node" data-tree-icon="defense" data-i18n="treeMitigation">Damage mitigation</span>
+                  <li><span class="tree-node" data-tree-icon="defense" data-tree-hint="treeHintMitigation" data-i18n="treeMitigation">Damage mitigation</span>
                     <ul class="tree-level">
-                      <li data-tree-stat="defense"><span class="tree-node" data-i18n="treeDefense">Defense</span></li>
-                      <li data-tree-stat="damageTolerance"><span class="tree-node" data-i18n="treeTolerance">Damage Tolerance</span></li>
+                      <li><span class="tree-node" data-tree-icon="defense" data-tree-hint="treeHintReduction" data-i18n="treeReduction">Damage reduction</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="defense"><span class="tree-node" data-i18n="treeDefense">Defense</span></li>
+                          <li data-tree-stat="damageTolerance"><span class="tree-node" data-i18n="treeTolerance">Damage Tolerance</span></li>
+                        </ul>
+                      </li>
+                      <li><span class="tree-node" data-tree-icon="chance" data-tree-hint="treeHintCriticalDefense" data-i18n="treeCriticalDefense">Critical defense</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="criticalHitResist"><span class="tree-node" data-i18n="treeCriticalResist">Critical Hit Resist</span></li>
+                          <li data-tree-stat="criticalDamageTolerance"><span class="tree-node" data-i18n="treeCriticalTolerance">Critical Damage Tolerance</span></li>
+                        </ul>
+                      </li>
                     </ul>
                   </li>
-                  <li><span class="tree-node" data-tree-icon="chance" data-i18n="treeAvoidance">Avoidance &amp; health</span>
+                  <li><span class="tree-node" data-tree-icon="health" data-tree-hint="treeHintAvoidance" data-i18n="treeAvoidance">Avoidance &amp; health</span>
                     <ul class="tree-level">
-                      <li data-tree-stat="evasion"><span class="tree-node" data-i18n="treeEvasion">Evasion</span></li>
-                      <li data-tree-stat="playerHp"><span class="tree-node" data-i18n="playerHpLabel">Player HP</span></li>
+                      <li><span class="tree-node" data-tree-icon="chance" data-tree-hint="treeHintAvoid" data-i18n="treeAvoid">Avoiding hits</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="evasion"><span class="tree-node" data-i18n="treeEvasion">Evasion</span></li>
+                          <li data-tree-stat="block"><span class="tree-node" data-i18n="treeBlock">Block</span></li>
+                        </ul>
+                      </li>
+                      <li><span class="tree-node" data-tree-icon="health" data-tree-hint="treeHintHealth" data-i18n="treeHealth">Health</span>
+                        <ul class="tree-level">
+                          <li data-tree-stat="playerHp"><span class="tree-node" data-i18n="playerHpLabel">Player HP</span></li>
+                          <li data-tree-stat="endurance"><span class="tree-node" data-i18n="treeEndurance">Endurance</span></li>
+                        </ul>
+                      </li>
                     </ul>
                   </li>
                 </ul>

@@ -1,14 +1,25 @@
 const attributeTree = document.querySelector('#attributes-view');
 const treeInputs = document.querySelector('#calculator');
+// `tip` keys carry a bespoke "why it matters" explanation; leaves without one
+// use the stat catalog description. `profile` leaves read the imported
+// character's defensive sheet instead of the calculator's enemy-side input.
 const treeFields = {
-  pureAttack: { icon: 'attack', tip: 'treeTipPureAttack' },
-  penetration: { icon: 'attack', tip: 'treeTipPenetration' },
-  damageBoost: { icon: 'damage', tip: 'treeTipDamageBoost', percent: true },
-  criticalDamageBoost: { icon: 'damage', tip: 'treeTipCriticalDamageBoost', percent: true },
-  defense: { icon: 'defense', tip: 'treeTipDefense', profile: true },
-  damageTolerance: { icon: 'defense', tip: 'treeTipDamageTolerance', profile: true, percent: true },
-  evasion: { icon: 'chance', tip: 'treeTipEvasion', profile: true },
-  playerHp: { icon: 'health', tip: 'treeTipPlayerHp' }
+  pureAttack: { icon: 'attack', tip: 'treeTipPureAttack', hint: 'treeHintPureAttack' },
+  attackIncrease: { icon: 'attack', hint: 'treeHintAttackIncrease', percent: true },
+  penetration: { icon: 'attack', tip: 'treeTipPenetration', hint: 'treeHintPenetration' },
+  accuracy: { icon: 'chance', hint: 'treeHintAccuracy' },
+  damageBoost: { icon: 'damage', tip: 'treeTipDamageBoost', hint: 'treeHintDamageBoost', percent: true },
+  weaponDamageBoost: { icon: 'damage', hint: 'treeHintWeaponBoost', percent: true },
+  criticalHit: { icon: 'chance', hint: 'treeHintCriticalHit' },
+  criticalDamageBoost: { icon: 'damage', tip: 'treeTipCriticalDamageBoost', hint: 'treeHintCriticalDamageBoost', percent: true },
+  defense: { icon: 'defense', tip: 'treeTipDefense', hint: 'treeHintDefense', profile: true },
+  damageTolerance: { icon: 'defense', tip: 'treeTipDamageTolerance', hint: 'treeHintDamageTolerance', profile: true, percent: true },
+  criticalHitResist: { icon: 'defense', hint: 'treeHintCriticalResist', profile: true },
+  criticalDamageTolerance: { icon: 'defense', hint: 'treeHintCriticalTolerance', profile: true, percent: true },
+  evasion: { icon: 'chance', tip: 'treeTipEvasion', hint: 'treeHintEvasion', profile: true },
+  block: { icon: 'defense', hint: 'treeHintBlock', profile: true },
+  playerHp: { icon: 'health', tip: 'treeTipPlayerHp', hint: 'treeHintPlayerHp' },
+  endurance: { icon: 'health', hint: 'treeHintEndurance', profile: true, percent: true }
 };
 const treeFieldEntries = Object.entries(treeFields);
 let treeFormatter = new Intl.NumberFormat(I18N.currentLang === 'pt' ? 'pt-BR' : 'en-US', { maximumFractionDigits: 2 });
@@ -86,18 +97,29 @@ for (const node of attributeTree.querySelectorAll('.tree-node')) {
   node.before(circle);
   node.classList.remove('tree-node');
   node.classList.add('tree-caption');
+  const hint = document.createElement('small');
+  hint.className = 'tree-hint';
+  hint.dataset.hintKey = stat ? treeFields[stat].hint : node.dataset.treeHint;
   if (stat) {
     const value = document.createElement('span');
     value.className = 'tree-value';
-    node.after(value);
-    const showTip = () => {
+    node.after(value, hint);
+    bindTreeTip(circle, () => {
       selectedTreeStat = stat;
       selectedProfileStat = null;
       updateTreeTip();
-    };
-    bindTreeTip(circle, showTip);
+    });
+  } else {
+    node.after(hint);
   }
 }
+// Narrow screens scroll the trees horizontally; start centred on the root node.
+document.querySelector('#attributes-tab').addEventListener('click', () => {
+  for (const tree of attributeTree.querySelectorAll('.attribute-tree')) {
+    tree.scrollLeft = (tree.scrollWidth - tree.clientWidth) / 2;
+  }
+});
+
 function profileStatDescription(stat) {
   if (stat.type === 'STR') return I18N.t('treeTipMight');
   const key = stat.name.replace(/[^a-zA-Z0-9]+([a-zA-Z0-9])/g, (_, letter) => letter.toUpperCase())
@@ -112,11 +134,13 @@ function updateTreeTip() {
     return;
   }
   if (!selectedTreeStat) return;
-  const field = treeFields[selectedTreeStat];
   const leaf = attributeTree.querySelector(`[data-tree-stat="${selectedTreeStat}"]`);
-  const title = leaf.querySelector('.tree-caption').textContent.trim();
-  document.querySelector('#tree-tip-title').textContent = title;
-  document.querySelector('#tree-tip-text').textContent = I18N.t(field.tip);
+  document.querySelector('#tree-tip-title').textContent = leaf.querySelector('.tree-caption').textContent.trim();
+  document.querySelector('#tree-tip-text').textContent = treeTipText(selectedTreeStat);
+}
+function treeTipText(stat) {
+  const field = treeFields[stat];
+  return field.tip ? I18N.t(field.tip) : getStatInfo(stat).desc;
 }
 
 function renderAttributeTrees() {
@@ -134,8 +158,9 @@ function renderAttributeTrees() {
     leaf.querySelector('.tree-value').textContent = label;
     const title = leaf.querySelector('.tree-caption').textContent.trim();
     const button = leaf.querySelector('button');
-    button.setAttribute('aria-label', `${title}: ${label}. ${I18N.t(field.tip)}`);
+    button.setAttribute('aria-label', `${title}: ${label}. ${treeTipText(stat)}`);
   }
+  for (const hint of attributeTree.querySelectorAll('.tree-hint')) hint.textContent = I18N.t(hint.dataset.hintKey);
   const note = document.querySelector('#tree-value-note');
   note.textContent = sameProfile
     ? I18N.format('treeImportedFrom', { name: importedTreeCharacter })
