@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>AION2-Damage-Calculator</AssemblyName>
     <ApplicationTitle>AION 2 Damage Calculator</ApplicationTitle>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -28,9 +28,9 @@
     <EmbeddedResource Include="attribute-trees.js" LogicalName="attribute-trees.js" />
     <EmbeddedResource Include="ai-worker.bundle.js" LogicalName="ai-worker.bundle.js" />
     <EmbeddedResource Include="assets/ai/*" LogicalName="assets/ai/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/*.json" LogicalName="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx" LogicalName="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx" />
-    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data" LogicalName="assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data" />
+    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/*.json" LogicalName="assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx" LogicalName="assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx" />
+    <EmbeddedResource Include="assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx_data" LogicalName="assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx_data" />
     <EmbeddedResource Include="assets/classes/*.webp" LogicalName="assets/classes/%(Filename)%(Extension)" />
     <EmbeddedResource Include="matchups.js" LogicalName="matchups.js" />
     <EmbeddedResource Include="boss-data.js" LogicalName="boss-data.js" />
@@ -46,7 +46,7 @@
     </ItemGroup>
   </Target>
   <Target Name="CheckLocalModel" BeforeTargets="PrepareForBuild">
-    <Error Condition="!Exists('assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx')" Text="Run npm ci and npm run build:ai to bundle Qwen2.5-0.5B q8 before publishing." />
-    <Error Condition="!Exists('assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data')" Text="Run npm ci and npm run build:ai to bundle Qwen2.5-0.5B q8 before publishing." />
+    <Error Condition="!Exists('assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx')" Text="Run npm ci and npm run build:ai to bundle Qwen3-0.6B q8 before publishing." />
+    <Error Condition="!Exists('assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx_data')" Text="Run npm ci and npm run build:ai to bundle Qwen3-0.6B q8 before publishing." />
   </Target>
 </Project>

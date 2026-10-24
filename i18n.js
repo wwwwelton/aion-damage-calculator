@@ -123,7 +123,7 @@ const TRANSLATIONS = {
     targetClassPlaceholder: 'Target class',
 
     aiAssistantTitle: 'Avatarnoia Flow Engine 2.0',
-    aiAssistantNote: 'Bundled Qwen2.5-0.5B-Instruct ONNX (q8); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. Runs on CPU without WebGPU. Calculated comparisons take precedence over AI text.',
+    aiAssistantNote: 'Bundled Qwen3-0.6B ONNX (q8, reasoning disabled); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. Runs on CPU without WebGPU. Calculated comparisons take precedence over AI text.',
     aiChatHeader: 'AION 2 Combat Assistant',
     aiQuestionPlaceholder: 'Ask about your setup (e.g. Whats the best way to up dps?)...',
     aiAskBtn: 'Ask',
@@ -217,7 +217,7 @@ const TRANSLATIONS = {
 
     footerNote: 'Prefilled values are examples, not official game stats. Community-derived formula; actual results depend on client patch, skill and target.',
 
-    findCharTitle: 'Find a character on NotMeter',
+    findCharTitle: 'Find a character on the official AION 2 site',
     findCharSubtitle: 'Search public character profiles by exact name. Select a region, then choose the right server if multiple characters match.',
     searchCharLabel: 'Character name',
     searchCharPlaceholder: 'Enter a character name',
@@ -275,7 +275,7 @@ const TRANSLATIONS = {
     communityFormulaStatus: 'Community formula estimate; in-game rounding is not included.',
     communityCreatureStatus: 'Community formula estimate; {type} creature matchup replaces generic Species values. In-game rounding is not included.',
     damageGain: '+{percent}% damage',
-    searchingProfiles: 'Searching public NotMeter profiles… (can take several seconds)',
+    searchingProfiles: 'Searching public character profiles… (can take several seconds)',
     searchAgain: 'Search again after changing the region.',
     searchStillProcessing: 'Search is still processing. Try again shortly.',
     noCharacters: 'No characters found.',
@@ -283,8 +283,8 @@ const TRANSLATIONS = {
     moreMayAppear: ' (more may still appear)',
     selectCharacter: 'Select a character',
     searchFailed: 'Search failed: {error}',
-    loadingProfile: 'Loading attributes, gear and skills from NotMeter… (can take several seconds)',
-    loadingDefenses: 'Loading defensive attributes from NotMeter… (can take several seconds)',
+    loadingProfile: 'Loading attributes, gear and skills from the official site… (can take several seconds)',
+    loadingDefenses: 'Loading defensive attributes from the official site… (can take several seconds)',
     partialProfile: 'Partial public profile: some equipment details may still be loading.',
     profileLoaded: 'Public profile loaded. Stats shown here may lag behind the game.',
     profileFailed: 'Profile failed: {error}',
@@ -513,7 +513,7 @@ const TRANSLATIONS = {
     targetClassPlaceholder: 'Classe do alvo',
 
     aiAssistantTitle: 'Motor Avatarnoia Flow 2.0',
-    aiAssistantNote: 'Modelo Qwen2.5-0.5B-Instruct ONNX (q8) integrado localmente; sem download externo. Dicas acompanham o cálculo ativo. O aplicativo pode pesquisar guias online do AION 2; nomes e valores permanecem locais. Funciona em CPU sem WebGPU. As comparações calculadas têm prioridade.',
+    aiAssistantNote: 'Modelo Qwen3-0.6B ONNX (q8, reasoning disabled) integrado localmente; sem download externo. Dicas acompanham o cálculo ativo. O aplicativo pode pesquisar guias online do AION 2; nomes e valores permanecem locais. Funciona em CPU sem WebGPU. As comparações calculadas têm prioridade.',
     aiChatHeader: 'Assistente de Combate AION 2',
     aiQuestionPlaceholder: 'Pergunte sobre sua build (ex: Qual a melhor forma de subir o dps?)...',
     aiAskBtn: 'Perguntar',
@@ -607,7 +607,7 @@ const TRANSLATIONS = {
 
     footerNote: 'Valores pré-preenchidos são ilustrativos. Fórmula derivada pela comunidade; resultados reais variam conforme patch, alvo e habilidade.',
 
-    findCharTitle: 'Buscar personagem no NotMeter',
+    findCharTitle: 'Buscar personagem no site oficial de AION 2',
     findCharSubtitle: 'Pesquise perfis públicos de personagens pelo nome exato. Selecione a região e escolha o servidor correspondente.',
     searchCharLabel: 'Nome do personagem',
     searchCharPlaceholder: 'Insira o nome do personagem',
@@ -665,7 +665,7 @@ const TRANSLATIONS = {
     communityFormulaStatus: 'Estimativa por fórmula comunitária; arredondamento interno do jogo não incluso.',
     communityCreatureStatus: 'Estimativa por fórmula comunitária; o confronto {type} substitui os valores genéricos de Espécie. Arredondamento interno do jogo não incluso.',
     damageGain: '+{percent}% de dano',
-    searchingProfiles: 'Buscando perfis públicos no NotMeter… (pode levar alguns segundos)',
+    searchingProfiles: 'Buscando perfis públicos… (pode levar alguns segundos)',
     searchAgain: 'Pesquise novamente após alterar a região.',
     searchStillProcessing: 'A busca ainda está sendo processada. Tente novamente em instantes.',
     noCharacters: 'Nenhum personagem encontrado.',
@@ -673,8 +673,8 @@ const TRANSLATIONS = {
     moreMayAppear: ' (outros ainda podem aparecer)',
     selectCharacter: 'Selecione um personagem',
     searchFailed: 'Falha na busca: {error}',
-    loadingProfile: 'Carregando atributos, equipamentos e habilidades do NotMeter… (pode levar alguns segundos)',
-    loadingDefenses: 'Carregando atributos defensivos do NotMeter… (pode levar alguns segundos)',
+    loadingProfile: 'Carregando atributos, equipamentos e habilidades do site oficial… (pode levar alguns segundos)',
+    loadingDefenses: 'Carregando atributos defensivos do site oficial… (pode levar alguns segundos)',
     partialProfile: 'Perfil público parcial: alguns detalhes de equipamento ainda podem estar carregando.',
     profileLoaded: 'Perfil público carregado. Os atributos podem estar atrasados em relação ao jogo.',
     profileFailed: 'Falha no perfil: {error}',
@@ -782,6 +782,12 @@ const TRANSLATIONS = {
 };
 
 const PT_STAT_REPLACEMENTS = [
+  ['Dexterity', 'Destreza'],
+  ['Constitution', 'Constituição'],
+  ['Intelligence', 'Inteligência'],
+  ['Willpower', 'Vontade'],
+  ['Precision', 'Precisão'],
+  ['increase', 'aumento'],
   ['Skill Specialty Enhancement', 'Especialização de Habilidade'],
   ['Skill Additional Damage', 'Dano Adicional da Habilidade'],
   ['Skill Coefficient', 'Coeficiente da Habilidade'],

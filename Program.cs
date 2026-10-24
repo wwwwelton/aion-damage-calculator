@@ -33,12 +33,12 @@ internal sealed class CalculatorWindow : Form
         ["attribute-trees.js"] = "text/javascript; charset=utf-8",
         ["assets/ai/ort-wasm-simd-threaded.jsep.mjs"] = "text/javascript; charset=utf-8",
         ["assets/ai/ort-wasm-simd-threaded.jsep.wasm"] = "application/wasm",
-        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/config.json"] = "application/json",
-        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/tokenizer_config.json"] = "application/json",
-        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/tokenizer.json"] = "application/json",
-        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/generation_config.json"] = "application/json",
-        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx"] = "application/octet-stream",
-        ["assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct/onnx/model_quantized.onnx_data"] = "application/octet-stream",
+        ["assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/config.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/tokenizer_config.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/tokenizer.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/generation_config.json"] = "application/json",
+        ["assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx"] = "application/octet-stream",
+        ["assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx_data"] = "application/octet-stream",
         ["profile-ui.js"] = "text/javascript; charset=utf-8",
         ["stat-tooltips.js"] = "text/javascript; charset=utf-8",
         ["renderer.js"] = "text/javascript; charset=utf-8",
@@ -49,7 +49,7 @@ internal sealed class CalculatorWindow : Form
     };
 
     private readonly WebView2 view = new() { Dock = DockStyle.Fill };
-    private readonly NotMeterClient notMeter = new();
+    private readonly OfficialCharacterClient characters = new();
     private readonly GuideResearch guides = new();
 
     public CalculatorWindow()
@@ -60,7 +60,7 @@ internal sealed class CalculatorWindow : Form
         MinimumSize = new Size(760, 600);
         Controls.Add(view);
         Shown += async (_, _) => await InitializeViewAsync();
-        FormClosed += (_, _) => { notMeter.Dispose(); guides.Dispose(); };
+        FormClosed += (_, _) => { characters.Dispose(); guides.Dispose(); };
     }
 
     private async Task InitializeViewAsync()
@@ -109,8 +109,8 @@ internal sealed class CalculatorWindow : Form
             var globalRegion = request.TryGetProperty("globalRegion", out var requestedGlobal) ? requestedGlobal.GetString() ?? "" : "";
             JsonElement data = kind switch
             {
-                "search" => await notMeter.SearchAsync(request.GetProperty("name").GetString() ?? "", region, globalRegion),
-                "profile" => await notMeter.ProfileAsync(request.GetProperty("serverId").GetInt32(),
+                "search" => await characters.SearchAsync(request.GetProperty("name").GetString() ?? "", region, globalRegion),
+                "profile" => await characters.ProfileAsync(request.GetProperty("serverId").GetInt32(),
                     request.GetProperty("characterId").GetString() ?? "", region, globalRegion),
                 "research" => await guides.FetchAsync(request.GetProperty("topic").GetString() ?? ""),
                 _ => throw new ArgumentException("Unknown character request.")

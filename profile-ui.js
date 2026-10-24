@@ -19,7 +19,7 @@ function statList(entries, className = 'option-list') {
   for (const entry of entries || []) {
     if (!entry?.name) continue;
     const row = dossierNode('li');
-    row.append(iconElement(attributeIcon(entry.name)), dossierNode('span', '', entry.name));
+    row.append(iconElement(attributeIcon(entry.name)), dossierNode('span', '', I18N.statLabel(entry.name)));
     const value = entry.value ?? entry.desc;
     if (value !== undefined && value !== null) row.append(dossierNode('strong', '', value));
     if (entry.extra && Number(entry.extra) !== 0) row.append(dossierNode('small', '', `+${entry.extra} ${dossierText('bonusSuffix')}`));
@@ -118,8 +118,8 @@ function renderDossier(container, view) {
         const card = dossierNode('article', 'attribute-card');
         card.append(iconElement(attributeIcon(stat.name)));
         const text = dossierNode('div');
-        text.append(dossierNode('span', '', stat.type === 'ItemLevel' ? dossierText('itemLevel') : stat.name), dossierNode('strong', '', stat.value));
-        for (const effect of stat.statSecondList || []) text.append(dossierNode('small', '', effect));
+        text.append(dossierNode('span', '', stat.type === 'ItemLevel' ? dossierText('itemLevel') : I18N.statLabel(stat.name)), dossierNode('strong', '', stat.value));
+        for (const effect of stat.statSecondList || []) text.append(dossierNode('small', '', I18N.statLabel(effect)));
         card.append(text);
         grid.append(card);
       }

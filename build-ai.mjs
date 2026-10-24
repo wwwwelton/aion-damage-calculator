@@ -5,14 +5,14 @@ import { copyFile, mkdir, rename, rm } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 import { convertToExternalData } from './onnx-external-data.mjs';
 
-const revision = '22942cb7d7ba4cc81bb4673549ca4d4614469b5e';
-const modelDir = 'assets/ai/models/external/onnx-community/Qwen2.5-0.5B-Instruct';
+const revision = '58ca03a5e7b354b480b1a82b34bde8dc7b854cc0';
+const modelDir = 'assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX';
 const sourcePath = `${modelDir}/onnx/model_quantized.source.onnx`;
-const sourceSha256 = '41834041ab1b29eff9fc592f1a29a1844133aea35832ea9fa91682be13016100';
+const sourceSha256 = 'ccf8734e59fdf7475b2dc0c117005e267a3a08342c1d951e0a79f0bce57bf62a';
 const modelPath = `${modelDir}/onnx/model_quantized.onnx`;
 const dataPath = `${modelDir}/onnx/model_quantized.onnx_data`;
-const modelSha256 = '497c8042369d8081e0b02df57ab5f36d74342cb9673a7cee5a9e55eceffbb1ba';
-const dataSha256 = '48a4aeab7e96d13ca0e9cccc9df7fbcbb4e64886f1533c94f0cc0c7e4ecef40c';
+const modelSha256 = '2e74feff0dd03ce77d54036dafffd85e75b8bcb6945e9288f0832816aacbbea0';
+const dataSha256 = '13f689fcf04480236bf928c6631d48fa6b11a30195d4851e4e526528cdba4e35';
 async function checksum(path) {
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(path)) hash.update(chunk);
@@ -26,36 +26,36 @@ const verified = async (path, expected) => checksum(path).then(actual => actual 
 });
 if (!(await verified(modelPath, modelSha256) && await verified(dataPath, dataSha256))) {
   if (!await verified(sourcePath, sourceSha256)) {
-    const url = `https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct/resolve/${revision}/onnx/model_quantized.onnx`;
+    const url = `https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX/resolve/${revision}/onnx/model_quantized.onnx`;
     const response = await fetch(url);
     if (!response.ok || !response.body) throw new Error(`Model download failed: HTTP ${response.status}`);
     const temporary = `${sourcePath}.download`;
     try {
       await pipeline(response.body, createWriteStream(temporary));
-      if (await checksum(temporary) !== sourceSha256) throw new Error('Qwen2.5 q8 model checksum mismatch.');
+      if (await checksum(temporary) !== sourceSha256) throw new Error('Qwen3 q8 model checksum mismatch.');
       await rename(temporary, sourcePath);
     } finally {
       await rm(temporary, { force: true });
     }
   }
   // ONNX Runtime Web holds the protobuf and a copy of every weight while
-  // loading a single-file model; the external-data layout removes ~0.5 GB of
+  // loading a single-file model; the external-data layout removes ~0.6 GB of
   // resident memory for this model (see onnx-external-data.mjs).
   convertToExternalData(sourcePath, modelPath, dataPath);
   if (await checksum(modelPath) !== modelSha256 || await checksum(dataPath) !== dataSha256) {
-    throw new Error('Converted Qwen2.5 q8 external-data files do not match the pinned checksums.');
+    throw new Error('Converted Qwen3 q8 external-data files do not match the pinned checksums.');
   }
   await rm(sourcePath, { force: true });
 }
 for (const [file, expected] of Object.entries({
-  'config.json': '777e01f0fbb3346eb229cb6fb278ed6533c1e4dcb9ebf4bed0f6e94ef17fa1b5',
-  'generation_config.json': 'f7e7ce458658b2d40d9eb213b91b77a8bf698845ab89360976722d7ac46928a3',
-  'tokenizer.json': 'a8506e7111b80c6d8635951a02eab0f4e1a8e4e5772da83846579e97b16f61bf',
-  'tokenizer_config.json': '6a14243f0ae04884e597b3f032c05e15de9f417318fdcac24ab4e2680e691430'
+  'config.json': '8a04114ba59cc42b47d804d35d1d5c61d746ae4634f41f796768c6e302d39b9e',
+  'generation_config.json': '9e9e031ae8bca36eefcdcdd0b35d83c61baa01e31d68d5f5a961c9ca1a4b95bf',
+  'tokenizer.json': 'e7a95fce95bf5b0946d0ddb3f9d7caa030b7e850bbe92b0edb26bcf563e9f3d5',
+  'tokenizer_config.json': '7c5194eecfd95a4dcbd6b4b502af785d2541fd65a388d1cae7ad43693c67b802'
 })) {
   const path = `${modelDir}/${file}`;
   if (await verified(path, expected)) continue;
-  const response = await fetch(`https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct/resolve/${revision}/${file}`);
+  const response = await fetch(`https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX/resolve/${revision}/${file}`);
   if (!response.ok || !response.body) throw new Error(`${file} download failed: HTTP ${response.status}`);
   const temporary = `${path}.download`;
   try {

@@ -47955,7 +47955,7 @@ var __webpack_exports__zeros = __webpack_exports__.zeros;
 var __webpack_exports__zeros_like = __webpack_exports__.zeros_like;
 
 // ai-worker.js
-var MODEL = "onnx-community/Qwen2.5-0.5B-Instruct";
+var MODEL = "onnx-community/Qwen3-0.6B-ONNX";
 __webpack_exports__env.allowLocalModels = true;
 __webpack_exports__env.allowRemoteModels = false;
 __webpack_exports__env.useBrowserCache = false;
@@ -48000,10 +48000,11 @@ ${buildContext2}
 ` + (note2 ? `AION 2 Guide Note: ${note2}
 ` : "") + "Answer the question with a gameplay recommendation in one or two prose sentences. Mention the top calculated upgrade and a relevant enemy stat when available. Do not write code or invent stats. Prefilled values are examples, not confirmed player data."
       }, ...turns];
-      const promptTokens = (messages2) => generator.tokenizer.apply_chat_template(
+      const renderPrompt = (messages2) => generator.tokenizer.apply_chat_template(
         messages2,
-        { tokenize: true, add_generation_prompt: true, return_tensor: false }
-      ).length;
+        { tokenize: false, add_generation_prompt: true, enable_thinking: false }
+      );
+      const promptTokens = (messages2) => generator.tokenizer.encode(renderPrompt(messages2)).length;
       let note = research;
       let buildContext = context;
       let messages = buildMessages(buildContext, note);
@@ -48014,12 +48015,13 @@ ${buildContext2}
         else break;
         messages = buildMessages(buildContext, note);
       }
-      const output = await generator(messages, {
+      const output = await generator(renderPrompt(messages), {
         max_new_tokens: 120,
         repetition_penalty: 1.15,
-        do_sample: false
+        do_sample: false,
+        return_full_text: false
       });
-      const raw = output[0]?.generated_text?.at(-1)?.content || "";
+      const raw = output[0]?.generated_text || "";
       const text = raw.trim();
       if (!text) throw new Error("Local model returned an empty response.");
       postMessage({ id: id2, state: "done", text });
