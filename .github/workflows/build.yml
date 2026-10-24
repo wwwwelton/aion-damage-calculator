@@ -16,7 +16,7 @@ env:
 
 jobs:
   test:
-    name: JavaScript tests
+    name: JavaScript and Rust tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,8 +24,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - run: npm ci
       - run: npm test
+      # The embed list needs the model files to exist, so the test build uses placeholders.
+      - name: Create placeholder model files for the host tests
+        run: |
+          mkdir -p "$MODEL_DIR"
+          touch "$MODEL_DIR/model_quantized.onnx" "$MODEL_DIR/model_quantized.onnx_data"
+      - run: cargo test
 
   build:
     name: Windows executable
@@ -37,9 +45,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - run: npm ci
 
       # build-ai.mjs verifies the pinned SHA-256 of the converted model files
@@ -61,20 +68,34 @@ jobs:
         id: version
         shell: bash
         run: |
+          crate=$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "value=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+            tag="${GITHUB_REF#refs/tags/v}"
+            if [[ "$tag" != "$crate" ]]; then
+              echo "Tag v$tag does not match Cargo.toml version $crate" >&2
+              exit 1
+            fi
+            echo "value=$tag" >> "$GITHUB_OUTPUT"
           else
-            echo "value=1.0.0-ci.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "value=$crate-ci.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: dotnet restore Aion2Calculator.csproj
-      - name: Publish
-        run: dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2 --no-restore -p:Version=${{ steps.version.outputs.value }}
+      - name: Build
+        run: cargo build --release
+
+      - name: Headless self-test (embedded assets, official lookup, guide fetch)
+        shell: bash
+        run: |
+          AION2_SELFTEST=selftest.json ./target/release/AION2-Damage-Calculator.exe
+          cat selftest.json
+          node -e "const r=require('./selftest.json'); if(!r.embedded.index||!r.embedded.characters_js||!r.embedded.model_data) process.exit(1)"
 
       - name: Checksum
         shell: bash
         run: |
-          cd dist/webview2
+          mkdir -p dist
+          cp target/release/AION2-Damage-Calculator.exe dist/
+          cd dist
           sha256sum AION2-Damage-Calculator.exe > AION2-Damage-Calculator.exe.sha256
           cat AION2-Damage-Calculator.exe.sha256
           ls -la
@@ -83,8 +104,8 @@ jobs:
         with:
           name: AION2-Damage-Calculator-${{ steps.version.outputs.value }}
           path: |
-            dist/webview2/AION2-Damage-Calculator.exe
-            dist/webview2/AION2-Damage-Calculator.exe.sha256
+            dist/AION2-Damage-Calculator.exe
+            dist/AION2-Damage-Calculator.exe.sha256
           if-no-files-found: error
           compression-level: 0
 
@@ -109,6 +130,6 @@ jobs:
             release/AION2-Damage-Calculator.exe.sha256
           generate_release_notes: true
           body: |
-            Self-contained Windows x64 executable (about 770 MB) with the embedded Qwen3-0.6B q8 model.
+            Native Windows x64 executable (Rust + WebView2, about 640 MB) with the embedded Qwen3-0.6B q8 model.
             Requirements: Windows x64, Microsoft Edge WebView2 Runtime, about 2.5 GB of free RAM while the local assistant is active.
             Verify the download with the attached SHA-256 file. The executable is not digitally signed.

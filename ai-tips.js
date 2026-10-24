@@ -93,12 +93,12 @@ function requestGuide(topic) {
   const id = researchRequest--;
   return new Promise((resolve, reject) => {
     researchPending.set(id, { resolve, reject });
-    window.chrome.webview.postMessage({ id, kind: 'research', topic });
+    window.aion2Host.post({ id, kind: 'research', topic });
   });
 }
 
-if (window.chrome?.webview) {
-  window.chrome.webview.addEventListener('message', ({ data }) => {
+if (window.aion2Host) {
+  window.aion2Host.onMessage(({ data }) => {
     const pending = researchPending.get(data?.id);
     if (!pending) return;
     researchPending.delete(data.id);
@@ -169,7 +169,7 @@ async function dispatchAiRequest(question, targetElem) {
   const context = currentAiContext();
   let research = '';
   aiSource.textContent = '';
-  if (window.chrome?.webview) {
+  if (window.aion2Host) {
     const topic = guideTopic(question);
     if (!guideCache.has(topic)) guideCache.set(topic, requestGuide(topic));
     try {

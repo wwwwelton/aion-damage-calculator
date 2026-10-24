@@ -1,29 +1,30 @@
 # AION 2 Damage Calculator
 
-Windows x64 damage calculator with a local WebView2 interface. HTML, CSS, JavaScript, the inference runtime and Qwen3-0.6B q8 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from the official AION 2 site (aion2.plaync.com); the assistant can fetch a current AION 2 guide by topic.
+Windows x64 damage calculator with a local WebView2 interface, hosted by a Rust executable (tao + wry). HTML, CSS, JavaScript, the inference runtime and Qwen3-0.6B q8 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from the official AION 2 site (aion2.plaync.com); the assistant can fetch a current AION 2 guide by topic.
 
 ## Get started
 
 ### Run the Windows app
 
-Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) and about 2.5 GB of free RAM while the local assistant is active (see [Memory](#avatarnoia-flow-engine-20)). Download `AION2-Damage-Calculator.exe` from the [GitHub Releases](https://github.com/wwwwelton/aion-damage-calculator/releases) page (verify it with the attached `.sha256` file), or run `dist/webview2/AION2-Damage-Calculator.exe` after publishing locally. The app reports an error if WebView2 is unavailable. The executable includes the .NET runtime, so users do not need to install the .NET SDK. It is not digitally signed.
+Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) and about 2.5 GB of free RAM while the local assistant is active (see [Memory](#avatarnoia-flow-engine-20)). Download `AION2-Damage-Calculator.exe` from the [GitHub Releases](https://github.com/wwwwelton/aion-damage-calculator/releases) page (verify it with the attached `.sha256` file), or run `dist/webview2/AION2-Damage-Calculator.exe` after publishing locally. The app reports an error if WebView2 is unavailable. The executable is a native Rust binary with no runtime to install. It is not digitally signed.
 
 ### Build from source
 
-Install the [.NET SDK 10](https://dotnet.microsoft.com/download/dotnet/10.0) and [Node.js](https://nodejs.org/) on Windows. From the repository root, run:
+Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) and [Node.js](https://nodejs.org/) on Windows. From the repository root, run:
 
 ```powershell
 npm ci
 npm run build:ai
-dotnet restore Aion2Calculator.csproj
-dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
+cargo build --release
 ```
 
-The first build downloads the pinned Qwen3-0.6B-ONNX ONNX q8 model from Hugging Face, verifies its SHA-256 checksum and rewrites it into the ONNX external-data layout (`model_quantized.onnx` plus `model_quantized.onnx_data`, see `onnx-external-data.mjs`); the converted files are checksum-pinned too. **Users running the published executable do not download a model.** The weight files are excluded from Git because they exceed GitHub's 100 MB file limit. The build requires NuGet for `Microsoft.Web.WebView2`; `NuGet.Config` uses nuget.org. The project targets `net10.0-windows` and `win-x64` and publishes a self-contained, single-file executable (about 770 MB). Open `dist/webview2/AION2-Damage-Calculator.exe` to check the desktop UI. Building from WSL with the Windows SDK requires invoking Windows `dotnet.exe`; publishing does not make the app runnable on Linux.
+The executable is written to `target/release/AION2-Damage-Calculator.exe`. From WSL or Linux, `cargo build --release --target x86_64-pc-windows-gnu` cross-compiles the same executable with the MinGW toolchain (`x86_64-w64-mingw32-gcc`).
+
+The first build downloads the pinned Qwen3-0.6B-ONNX ONNX q8 model from Hugging Face, verifies its SHA-256 checksum and rewrites it into the ONNX external-data layout (`model_quantized.onnx` plus `model_quantized.onnx_data`, see `onnx-external-data.mjs`); the converted files are checksum-pinned too. **Users running the published executable do not download a model.** The weight files are excluded from Git because they exceed GitHub's 100 MB file limit. `src/assets.rs` lists the files embedded with `rust-embed`; `cargo build` fails if a listed file is missing, and `packaging.test.js` fails if `index.html` references a file that is not listed. The window (`src/window.rs`) compiles only on Windows; `cargo test` runs the host's unit tests (asset lookup, official lookup helpers, guide extraction and message routing) on any platform. `AION2_SELFTEST=<file> AION2-Damage-Calculator.exe` runs a headless check that writes a JSON report (embedded assets, one official search and profile, one guide fetch) without opening a window.
 
 ### Continuous integration and releases
 
-`.github/workflows/build.yml` runs on every push and pull request to `main`: the JavaScript tests on Ubuntu, then on Windows `npm run build:ai` (the converted model is cached between runs and re-verified by checksum), the real offline inference check, `dotnet publish` and an uploaded artifact containing the executable and its SHA-256. Pushing a tag such as `v1.1.0` additionally creates a GitHub Release with those two files, generated release notes and the version baked into the executable (`-p:Version=1.1.0`). To release: `git tag v1.1.0 && git push origin v1.1.0`.
+`.github/workflows/build.yml` runs on every push and pull request to `main`: the JavaScript tests on Ubuntu, then on Windows `npm run build:ai` (the converted model is cached between runs and re-verified by checksum), the real offline inference check, `cargo test`, `cargo build --release` and an uploaded artifact containing the executable and its SHA-256. Pushing a tag such as `v1.1.0` additionally creates a GitHub Release with those two files, generated release notes and the version baked into the executable (the `version` in `Cargo.toml`, which must match the tag). To release: update `Cargo.toml`, then `git tag v1.1.0 && git push origin v1.1.0`.
 
 ### Development and checks
 
@@ -34,10 +35,11 @@ npm ci
 npm run build:ai          # download/convert the model, bundle the worker (idempotent)
 node --test *.test.js     # 34 fast regression tests
 node ai-model.smoke.mjs   # real offline CPU inference in English and Portuguese
-dotnet publish Aion2Calculator.csproj -c Release -o dist/webview2
+cargo test                # Rust host unit tests (any platform)
+cargo build --release     # Windows executable (on Windows, or with --target x86_64-pc-windows-gnu from Linux)
 ```
 
-The published single-file executable is about 769 MB (768,713,954 bytes for version 1.0.2). `build:ai` reuses the converted model when its checksums match, so a rerun does not download again.
+The executable is about 640 MB, almost all of it the embedded model and runtime files. `build:ai` reuses the converted model when its checksums match, so a rerun does not download again.
 
 Changing `ai-worker.js` or updating Transformers.js requires rerunning `npm run build:ai` before publishing. `package-lock.json` pins the development dependencies; normal users do not need Node.js or npm. The smoke check is not part of the fast test suite. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>). Character search and online guide retrieval use the WebView2-to-.NET bridge and work only in the Windows app. Verify those interactions and desktop behavior in the published executable.
 
@@ -45,8 +47,9 @@ Changing `ai-worker.js` or updating Transformers.js requires rerunning `npm run 
 
 | Path | Purpose |
 | --- | --- |
-| `Aion2Calculator.csproj`, `Program.cs` | Windows build, embedded files and WebView2 host |
-| `OfficialCharacterClient.cs`, `GuideResearch.cs` | Public character lookup from the official site and opt-in wiki-guide retrieval through the native host |
+| `Cargo.toml`, `src/main.rs`, `src/window.rs`, `src/assets.rs` | Rust Windows host: tao window, wry WebView2 surface, embedded files served from `https://aion2.localhost` |
+| `src/official.rs`, `src/guides.rs`, `src/protocol.rs` | Public character lookup from the official site, opt-in wiki-guide retrieval and page↔host message routing |
+| `host-bridge.js` | Injected by the host; the only API the pages use to reach it (`aion2Host.post` / `aion2Host.onMessage`) |
 | `index.html`, `style.css`, `i18n.js`, `renderer.js`, `profile-ui.js`, `ai-tips.js` | Bilingual interface, character dossier and contextual assistant |
 | `attribute-trees.js`, `stat-tooltips.js` | Attribute tree nodes with imported sheet values and bilingual stat explanations |
 | `calculator.js`, `matchups.js`, `recommendations.js`, `numeric-input.js` | Damage calculation, matchup rules, tips and number parsing |

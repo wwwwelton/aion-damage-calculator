@@ -256,8 +256,8 @@ if (typeof document !== 'undefined') {
   let previousImport = {};
   let previousReferenceImport = {};
 
-  if (window.chrome?.webview) {
-    window.chrome.webview.addEventListener('message', event => {
+  if (window.aion2Host) {
+    window.aion2Host.onMessage(event => {
       const { id, data, error } = event.data || {};
       const request = requests.get(id);
       if (!request) return;
@@ -267,11 +267,11 @@ if (typeof document !== 'undefined') {
     });
   }
   function request(kind, parameters, queryRegion = region.value, queryGlobalRegion = globalRegion.value) {
-    if (!window.chrome?.webview) return Promise.reject(new Error(ui('requiresWindows')));
+    if (!window.aion2Host) return Promise.reject(new Error(ui('requiresWindows')));
     const id = ++nextRequest;
     return new Promise((resolve, reject) => {
       requests.set(id, { resolve, reject });
-      window.chrome.webview.postMessage({ id, kind, region: queryRegion,
+      window.aion2Host.post({ id, kind, region: queryRegion,
         globalRegion: queryGlobalRegion, ...parameters });
     });
   }
