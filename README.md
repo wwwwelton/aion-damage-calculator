@@ -132,6 +132,7 @@ The Windows app may automatically request one whitelisted [Aion 2 Maps combat gu
 
 | Version | Highlights |
 | --- | --- |
+| 1.2.1 | Five bilingual BIS Genus Board tables with bundled creature symbols, attribute alternatives and the Crit/Accuracy cap note. |
 | 1.2.0 | Character import matches gear options by stable API id, adds Destruction → Attack Increase and Justice → Perfect Chance, marks sheet-included gear stats and display-only percent modifiers, groups the Attributes view into primary stats, divinities and other values with "feeds the calculator" / "display only" tags, and splits the result into a deterministic hit card and a combat estimate card that lists its assumptions. |
 | 1.1.0 | Windows host ported from C# to Rust (tao + wry); web UI, ONNX runtime and model embedded in a single executable. |
 | 1.0.2 | Character lookup from the official AION 2 site; Qwen3-0.6B q8 local assistant. |
