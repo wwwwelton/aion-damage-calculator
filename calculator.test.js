@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { calculateDamage, applyTargetMode, estimateCombat } = require('./calculator');
+const { calculateDamage, applyTargetMode, estimateCombat, estimateAssumptions } = require('./calculator');
 
 const base = {
   pureAttack: 1000, weaponDamageBoost: 1, multiHit: 1, powerShard: 1,
@@ -87,4 +87,12 @@ test('DPS and defeat time require a positive hit rate and actual target HP', () 
   assert.deepEqual(estimateCombat(1200, 2.5, 0), { dps: 3000, secondsToDefeat: null });
   assert.deepEqual(estimateCombat(1200, 0, 9000), { dps: null, secondsToDefeat: null });
   assert.deepEqual(estimateCombat(-100, 2, 9000), { dps: null, secondsToDefeat: null });
+});
+
+test('assumption list names only the probabilistic conditions the current toggles take for granted', () => {
+  assert.deepEqual(estimateAssumptions({ hitsPerSecond: 0 }, { critical: false, double: false, position: 'none' }),
+    ['positionComparisonHint', 'resistNotModelled', 'roundingNotModelled']);
+  assert.deepEqual(estimateAssumptions({ hitsPerSecond: 2 }, { critical: true, double: true, position: 'back' }),
+    ['assumeCritLands', 'assumeDoubleProcs', 'positionUptimeHint', 'assumeConstantRate',
+      'resistNotModelled', 'roundingNotModelled']);
 });

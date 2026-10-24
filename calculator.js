@@ -50,4 +50,16 @@ function calculateDamage(values) {
     * positionalMultiplier * v.skillSpecialtyEnhancement;
 }
 
-if (typeof module !== 'undefined') module.exports = { calculateDamage, applyTargetMode, estimateCombat };
+// Keys describing what the displayed hit and estimate take for granted. The hit itself is
+// deterministic; everything probabilistic (crit, procs, position uptime, cadence) is assumed, not modelled.
+function estimateAssumptions(values, { critical = false, double = false, position = 'none' } = {}) {
+  const keys = [];
+  if (critical) keys.push('assumeCritLands');
+  if (double) keys.push('assumeDoubleProcs');
+  keys.push(position === 'none' ? 'positionComparisonHint' : 'positionUptimeHint');
+  if ((values?.hitsPerSecond ?? 0) > 0) keys.push('assumeConstantRate');
+  keys.push('resistNotModelled', 'roundingNotModelled');
+  return keys;
+}
+
+if (typeof module !== 'undefined') module.exports = { calculateDamage, applyTargetMode, estimateCombat, estimateAssumptions };

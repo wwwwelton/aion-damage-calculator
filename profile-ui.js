@@ -19,10 +19,17 @@ function statList(entries, className = 'option-list') {
   for (const entry of entries || []) {
     if (!entry?.name) continue;
     const row = dossierNode('li');
+    const sheetTotal = optionName(entry) === null;
+    if (sheetTotal) row.classList.add('sheet-total');
     row.append(iconElement(attributeIcon(entry.name)), dossierNode('span', '', I18N.statLabel(entry.name)));
     const value = entry.value ?? entry.desc;
-    if (value !== undefined && value !== null) row.append(dossierNode('strong', '', value));
+    if (value !== undefined && value !== null) {
+      const amount = dossierNode('strong', '', value);
+      amount.classList.add(String(value).trim().endsWith('%') ? 'value-percent' : 'value-flat');
+      row.append(amount);
+    }
     if (entry.extra && Number(entry.extra) !== 0) row.append(dossierNode('small', '', `+${entry.extra} ${dossierText('bonusSuffix')}`));
+    if (sheetTotal) row.append(dossierNode('small', 'badge badge-display', dossierText('sheetTotalIncluded')));
     list.append(row);
   }
   return list;
@@ -113,17 +120,29 @@ function renderDossier(container, view) {
     }],
     [dossierText('tabAttributes'), section => {
       section.append(dossierHeader(dossierText('sheetAttributes'), dossierText('noInferredTotals')));
-      const grid = dossierNode('div', 'attribute-grid');
-      for (const stat of view.stats) {
-        const card = dossierNode('article', 'attribute-card');
-        card.append(iconElement(attributeIcon(stat.name)));
-        const text = dossierNode('div');
-        text.append(dossierNode('span', '', stat.type === 'ItemLevel' ? dossierText('itemLevel') : I18N.statLabel(stat.name)), dossierNode('strong', '', stat.value));
-        for (const effect of stat.statSecondList || []) text.append(dossierNode('small', '', I18N.statLabel(effect)));
-        card.append(text);
-        grid.append(card);
+      for (const [group, titleKey] of [['primary', 'statsPrimary'], ['divinity', 'statsDivinities'], ['other', 'statsOther']]) {
+        const stats = view.stats.filter(stat => statGroup(stat) === group);
+        if (!stats.length) continue;
+        section.append(dossierHeader(dossierText(titleKey), dossierFormat('publishedCount', { count: stats.length })));
+        const grid = dossierNode('div', 'attribute-grid');
+        for (const stat of stats) {
+          const card = dossierNode('article', 'attribute-card');
+          card.append(iconElement(attributeIcon(stat.name)));
+          const text = dossierNode('div');
+          const amount = dossierNode('strong', '', stat.value);
+          amount.classList.add(String(stat.value).trim().endsWith('%') ? 'value-percent' : 'value-flat');
+          text.append(dossierNode('span', '', stat.type === 'ItemLevel' ? dossierText('itemLevel') : I18N.statLabel(stat.name)), amount);
+          for (const effect of stat.statSecondList || []) {
+            const role = effectRole(effect);
+            const line = dossierNode('small', `effect effect-${role}`, I18N.statLabel(effect));
+            line.append(' ', dossierNode('span', `badge badge-${role}`, dossierText(role === 'formula' ? 'usedInFormula' : 'displayOnly')));
+            text.append(line);
+          }
+          card.append(text);
+          grid.append(card);
+        }
+        section.append(grid);
       }
-      section.append(grid);
     }],
     [dossierText('tabProgression'), section => {
       section.append(dossierHeader(dossierText('equippedTitles'),

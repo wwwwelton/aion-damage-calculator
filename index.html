@@ -70,6 +70,7 @@
       <p id="mode-note" class="reference-note"></p>
     </section>
     <section class="result" aria-live="polite">
+      <small class="result-scope" data-i18n="hitDeterministicLabel">Damage of one landed hit · deterministic</small>
       <span id="result-label">PVE · BOSS · ESTIMATED HIT</span>
       <strong id="result">0</strong>
       <small id="status" data-i18n="resultStatus">Result of the supplied formula; in-game rounding is not included.</small>
@@ -91,11 +92,13 @@
           <label class="enemy"><span id="enemy-hp-label">Boss HP</span><span data-i18n="enemyHpSpan">0 = unknown; reset when changing targets</span><input name="enemyHp" type="number" min="0" step="any" value="0"></label>
           <label data-i18n-label="hitsPerSecondLabel">Landed hits per second <span data-i18n="hitsPerSecondSpan">enter your observed or assumed rate</span><input name="hitsPerSecond" type="number" min="0" step="any" value="0"></label>
         </div>
+        <small class="result-scope" data-i18n="estimateProbabilisticLabel">Combat estimate · probabilistic assumptions</small>
         <div class="estimate-results">
           <div><span data-i18n="estimatedDpsLabel">ESTIMATED DPS</span><strong id="estimated-dps">—</strong></div>
           <div><span data-i18n="timeToDefeatLabel">TIME TO DEFEAT</span><strong id="estimated-time">—</strong></div>
         </div>
         <p id="estimate-note" class="reference-note" role="status"></p>
+        <ul id="estimate-assumptions" class="assumption-list" aria-label="Assumptions"></ul>
       </section>
       <section class="card">
         <h2 data-i18n="cardAttackTitle">Attack</h2>
@@ -321,6 +324,11 @@
           <h3 id="tree-profile-title" data-i18n="treeProfileTitle">Imported character sheet</h3>
           <p id="tree-profile-empty" class="reference-note" data-i18n="treeProfileEmpty">Import a character from Character Search to see all published sheet attributes here.</p>
           <ul id="tree-profile-list" class="tree-profile-list"></ul>
+          <div id="tree-modifier-block" hidden>
+            <h4 data-i18n="sheetModifiersTitle">Sheet modifiers (display only)</h4>
+            <p class="reference-note" data-i18n="sheetModifiersNote">Percent increases published on the character sheet. The base totals they multiply are not public, so they are not applied to calculator fields.</p>
+            <ul id="tree-modifier-list" class="tree-profile-list"></ul>
+          </div>
         </section>
         <section class="tree-catalog" aria-labelledby="tree-catalog-title">
           <h3 id="tree-catalog-title" data-i18n="treeCatalogTitle">All combat attributes</h3>
