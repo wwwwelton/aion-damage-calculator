@@ -10,11 +10,11 @@ Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://develop
 
 ### Build from source
 
-Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) and [Node.js](https://nodejs.org/) on Windows. From the repository root, run:
+Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) and [Bun](https://bun.sh/) on Windows. From the repository root, run:
 
 ```powershell
-npm ci
-npm run build:ai
+bun install --frozen-lockfile
+bun build-ai.mjs
 cargo build --release
 ```
 
@@ -132,6 +132,7 @@ The Windows app may automatically request one whitelisted [Aion 2 Maps combat gu
 
 | Version | Highlights |
 | --- | --- |
+| 1.2.2 | Windows source-build instructions use Bun; packaged application behavior is unchanged. |
 | 1.2.1 | Five bilingual BIS Genus Board tables with bundled creature symbols, attribute alternatives and the Crit/Accuracy cap note. |
 | 1.2.0 | Character import matches gear options by stable API id, adds Destruction → Attack Increase and Justice → Perfect Chance, marks sheet-included gear stats and display-only percent modifiers, groups the Attributes view into primary stats, divinities and other values with "feeds the calculator" / "display only" tags, and splits the result into a deterministic hit card and a combat estimate card that lists its assumptions. |
 | 1.1.0 | Windows host ported from C# to Rust (tao + wry); web UI, ONNX runtime and model embedded in a single executable. |
