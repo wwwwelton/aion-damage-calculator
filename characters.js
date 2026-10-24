@@ -1,3 +1,25 @@
+// Gear option ids are stable across client languages; the English names stay as a fallback for
+// older payloads and fixtures. Only ids observed in the official API are listed.
+const gearOptionNames = {
+  WeaponFixingDamage: 'Attack', WeaponAccuracy: 'Accuracy', Critical: 'Critical Hit', Block: 'Block',
+  ArmorDefense: 'Defense', ArmorEvasion: 'Evasion', CriticalResist: 'Critical Hit Resist',
+  AmplifyAllDamage: 'Damage Boost', AmplifyWeaponDamage: 'Weapon Damage Boost',
+  PvEAmplifyDamage: 'PvE Damage Boost', PvEDecreaseDamage: 'PvE Damage Tolerance',
+  DefensePierce: 'Penetration', AdditionalHitRate: 'Multi-hit Chance', Perfect: 'Perfect Chance',
+  CriticalAddDamage: 'Critical Attack', FrontAttackDefense: 'Front Defense', Restoration: 'Regeneration',
+  HPMax: 'HP', MPMax: 'MP', SealStoneAddDamage: 'Power Shard Damage Bonus'
+};
+// Primary stats and divinities printed on gear are already included in the character-sheet totals,
+// so they are never summed from equipment.
+const primaryStatTypes = ['STR', 'DEX', 'CON', 'INT', 'AGI', 'WIS'];
+const divinityTypes = ['Justice', 'Freedom', 'Illusion', 'Life', 'Time', 'Destruction', 'Death', 'Wisdom', 'Destiny', 'Space'];
+const sheetOnlyOptionIds = new Set([...primaryStatTypes, ...divinityTypes]);
+
+function optionName(option) {
+  if (sheetOnlyOptionIds.has(option?.id)) return null;
+  return gearOptionNames[option?.id] || option?.name;
+}
+
 const bonusFields = {
   'Attack Bonus': ['attackBonus', 0, false],
   'PvE Attack': ['pveAttackPower', 0, false],
@@ -15,6 +37,8 @@ const bonusFields = {
   'Back Attack Damage Boost': ['backBoost', 100, true],
   'Skill Specialty Enhancement': ['skillSpecialtyEnhancement', 100, true],
 };
+// Sheet stats whose published "Attack increase" effect feeds Attack Increase (value / 10 = percent).
+const attackIncreaseTypes = ['STR', 'Destruction'];
 
 function equippedDetails(profile) {
   const equipped = profile?.equipment?.equipment?.equipmentList || [];
@@ -23,29 +47,37 @@ function equippedDetails(profile) {
     .map(item => ({ item, detail: details[String(item.slotPos)] || {} }));
 }
 
-function equipmentBonuses(profile) {
+function collectFormulaBonuses(profile) {
   const sums = {};
+  const sources = {};
   for (const { detail } of equippedDetails(profile)) {
     for (const option of [...(detail.mainStats || []), ...(detail.subStats || [])]) {
-      const mapping = bonusFields[option.name];
+      const mapping = bonusFields[optionName(option)];
       if (!mapping) continue;
-      const [field, baseline, percentage] = mapping;
+      const [field, , percentage] = mapping;
       const text = String(option.value ?? '').trim();
       if (!(percentage ? /^\d+(?:\.\d+)?%$/ : /^\d+(?:\.\d+)?$/).test(text)) continue;
       sums[field] = (sums[field] ?? 0) + Number.parseFloat(text);
+      sources[field] = 'gear';
     }
   }
-  const might = (profile?.info?.stat?.statList || []).find(stat => stat.type === 'STR');
-  const mightValue = Number(might?.value);
-  if (Number.isFinite(mightValue) && mightValue > 0) {
-    sums.attackIncrease = (sums.attackIncrease ?? 0) + mightValue / 10;
+  for (const stat of profile?.info?.stat?.statList || []) {
+    if (!attackIncreaseTypes.includes(stat.type)) continue;
+    const amount = Number(stat.value);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    sums.attackIncrease = (sums.attackIncrease ?? 0) + amount / 10;
+    sources.attackIncrease = sources.attackIncrease === 'gear' || sources.attackIncrease === 'sheet+gear' ? 'sheet+gear' : 'sheet';
   }
   const values = {};
   for (const [name, amount] of Object.entries(sums)) {
     const baseline = Object.values(bonusFields).find(([field]) => field === name)[1];
     values[name] = Math.round((baseline + amount) * 10000) / 10000;
   }
-  return values;
+  return { values, sources };
+}
+
+function equipmentBonuses(profile) {
+  return collectFormulaBonuses(profile).values;
 }
 
 const parseHp = typeof module !== 'undefined' ? require('./numeric-input').parseNumericInput : parseNumericInput;
@@ -63,13 +95,17 @@ const importableFormulaFields = [
 ];
 
 function formulaImportCoverage(profile) {
-  const values = equipmentBonuses(profile);
+  const { values, sources } = collectFormulaBonuses(profile);
   const hp = characterHp(profile);
-  if (hp !== null) values.playerHp = hp;
+  if (hp !== null) {
+    values.playerHp = hp;
+    sources.playerHp = 'sheet';
+  }
   const imported = Object.keys(values);
   return {
     imported,
-    manual: importableFormulaFields.filter(field => !(field in values))
+    manual: importableFormulaFields.filter(field => !(field in values)),
+    sources
   };
 }
 
@@ -158,7 +194,7 @@ function gearFields(profile, mappings, percentFields) {
   const values = {};
   for (const { detail } of equippedDetails(profile)) {
     for (const stat of [...(detail.mainStats || []), ...(detail.subStats || [])]) {
-      const field = mappings[stat.name];
+      const field = mappings[optionName(stat)];
       if (!field) continue;
       const text = String(stat.value ?? '').trim();
       if (!(percentFields.has(field) ? /^\d+(?:\.\d+)?%$/ : /^\d+(?:\.\d+)?$/).test(text)) continue;
@@ -168,10 +204,12 @@ function gearFields(profile, mappings, percentFields) {
   return values;
 }
 
+// Published secondary effects of sheet stats, keyed by the language-independent stat type.
 const typedOffensiveEffects = {
   Wisdom: 'doubleChance',
   Illusion: 'endurancePenetration',
-  Death: 'regenerationPenetration'
+  Death: 'regenerationPenetration',
+  Justice: 'perfectChance'
 };
 const typedDefensiveEffects = {
   Time: 'doubleResist',
@@ -179,6 +217,28 @@ const typedDefensiveEffects = {
   Destiny: 'endurance',
   Life: 'regeneration'
 };
+// Percent-of-base increases: the sheet publishes no base totals, so these are shown, never imported.
+const sheetModifierEffects = {
+  AGI: ['accuracyIncrease', 'criticalHitIncrease'],
+  DEX: ['evasionIncrease', 'blockIncrease', 'criticalHitResistIncrease'],
+  CON: ['hpIncrease'],
+  Justice: ['defenseIncrease'],
+  Freedom: ['accuracyIncrease', 'evasionIncrease'],
+  Life: ['hpIncrease'],
+  Death: ['criticalHitIncrease'],
+  Space: ['blockIncrease']
+};
+// Effect labels (as printed in statSecondList) that map onto a calculator field.
+const formulaEffectLabels = ['Attack increase', 'Double Chance', 'Double Resist', 'Perfect Chance', 'Perfect Resist',
+  'Endurance Penetration', 'Endurance', 'Regeneration Penetration', 'Regeneration'];
+function effectRole(text) {
+  return formulaEffectLabels.some(label => String(text).startsWith(label)) ? 'formula' : 'display';
+}
+function statGroup(stat) {
+  if (primaryStatTypes.includes(stat?.type)) return 'primary';
+  if (divinityTypes.includes(stat?.type)) return 'divinity';
+  return 'other';
+}
 
 function typedPercentEffects(profile, mappings) {
   const values = {};
@@ -186,6 +246,18 @@ function typedPercentEffects(profile, mappings) {
     const field = mappings[stat.type];
     const amount = Number(stat.value) / 10;
     if (field && Number.isFinite(amount) && amount > 0) values[field] = amount;
+  }
+  return values;
+}
+
+function sheetModifiers(profile) {
+  const values = {};
+  for (const stat of profile?.info?.stat?.statList || []) {
+    const amount = Number(stat.value) / 10;
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    for (const field of sheetModifierEffects[stat.type] || []) {
+      values[field] = Math.round(((values[field] ?? 0) + amount) * 10000) / 10000;
+    }
   }
   return values;
 }
@@ -222,7 +294,7 @@ function offensiveReferences(profile) {
 }
 
 if (typeof module !== 'undefined') module.exports = { extractCharacter, equipmentBonuses, enemyDefenses,
-  offensiveReferences, characterHp, formulaImportCoverage };
+  offensiveReferences, characterHp, formulaImportCoverage, sheetModifiers, effectRole, statGroup, optionName };
 
 if (typeof document !== 'undefined') {
   const ui = key => I18N.t(key);
@@ -256,8 +328,8 @@ if (typeof document !== 'undefined') {
   let previousImport = {};
   let previousReferenceImport = {};
 
-  if (window.chrome?.webview) {
-    window.chrome.webview.addEventListener('message', event => {
+  if (window.aion2Host) {
+    window.aion2Host.onMessage(event => {
       const { id, data, error } = event.data || {};
       const request = requests.get(id);
       if (!request) return;
@@ -267,11 +339,11 @@ if (typeof document !== 'undefined') {
     });
   }
   function request(kind, parameters, queryRegion = region.value, queryGlobalRegion = globalRegion.value) {
-    if (!window.chrome?.webview) return Promise.reject(new Error(ui('requiresWindows')));
+    if (!window.aion2Host) return Promise.reject(new Error(ui('requiresWindows')));
     const id = ++nextRequest;
     return new Promise((resolve, reject) => {
       requests.set(id, { resolve, reject });
-      window.chrome.webview.postMessage({ id, kind, region: queryRegion,
+      window.aion2Host.post({ id, kind, region: queryRegion,
         globalRegion: queryGlobalRegion, ...parameters });
     });
   }
@@ -392,7 +464,8 @@ if (typeof document !== 'undefined') {
     form.elements.namedItem('playerHp').value = String(characterHp(loaded) ?? 0);
     form.dispatchEvent(new Event('input', { bubbles: true }));
     document.dispatchEvent(new CustomEvent('character-imported', {
-      detail: { name: attacker.name, defenses: enemyDefenses(loaded), stats: attacker.stats }
+      detail: { name: attacker.name, defenses: enemyDefenses(loaded), stats: attacker.stats,
+        modifiers: sheetModifiers(loaded) }
     }));
     const coverage = formulaImportCoverage(loaded);
     const manual = coverage.manual.map(field => {
@@ -401,8 +474,11 @@ if (typeof document !== 'undefined') {
       const label = text && [...text].find(node => node.nodeType === 3 && node.textContent.trim());
       return label?.textContent.trim() || field;
     }).join(', ') || ui('importManualFallback');
+    const sourceCounts = Object.values(coverage.sources);
     const coverageText = formatUi('importCoverage', {
       formula: coverage.imported.length,
+      sheet: sourceCounts.filter(source => source !== 'gear').length,
+      gear: sourceCounts.filter(source => source === 'gear').length,
       references: Object.keys(references).length,
       manual
     });

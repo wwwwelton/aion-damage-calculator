@@ -134,11 +134,18 @@ function update() {
   else notes.push(I18N.t('positionUptimeHint'));
   notes.push(I18N.t('procHint'));
   upgradeContext.textContent = notes.join(' ');
-  status.textContent = targetMode.value === 'player'
+  const doubleEnabled = document.querySelector('#doubleEnabled').value === 'yes';
+  document.querySelector('#estimate-assumptions').replaceChildren(
+    ...estimateAssumptions(values, { critical, double: doubleEnabled, position }).map(key => {
+      const item = document.createElement('li');
+      item.textContent = I18N.t(key);
+      return item;
+    }));
+  status.textContent = `${I18N.t('formulaScope')} ${targetMode.value === 'player'
     ? I18N.t('communityPvpStatus')
     : creatureType
       ? I18N.format('communityCreatureStatus', { type: creatureChoice.selectedOptions[0].textContent })
-      : I18N.t('communityFormulaStatus');
+      : I18N.t('communityFormulaStatus')}`;
   scheduleAiTips();
 }
 form.addEventListener('input', update);

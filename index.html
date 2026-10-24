@@ -52,7 +52,7 @@
       </div>
       <section class="ai-assistant" aria-labelledby="ai-title">
         <h2 id="ai-title" data-i18n="aiAssistantTitle">Avatarnoia Flow Engine 2.0</h2>
-        <p class="reference-note" data-i18n="aiAssistantNote">Bundled Qwen2.5-0.5B-Instruct ONNX (q8); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. Runs on CPU without WebGPU. Calculated comparisons take precedence over AI text.</p>
+        <p class="reference-note" data-i18n="aiAssistantNote">Bundled Qwen3-0.6B ONNX (q8, reasoning disabled); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. Runs on CPU without WebGPU. Calculated comparisons take precedence over AI text.</p>
         <label for="ai-question" data-i18n="aiChatHeader">AION 2 Combat Assistant</label>
         <div id="ai-chat-dialog" class="ai-chat-dialog" role="log" aria-live="polite">
           <div class="ai-msg ai-msg-assistant">
@@ -70,6 +70,7 @@
       <p id="mode-note" class="reference-note"></p>
     </section>
     <section class="result" aria-live="polite">
+      <small class="result-scope" data-i18n="hitDeterministicLabel">Damage of one landed hit · deterministic</small>
       <span id="result-label">PVE · BOSS · ESTIMATED HIT</span>
       <strong id="result">0</strong>
       <small id="status" data-i18n="resultStatus">Result of the supplied formula; in-game rounding is not included.</small>
@@ -91,11 +92,13 @@
           <label class="enemy"><span id="enemy-hp-label">Boss HP</span><span data-i18n="enemyHpSpan">0 = unknown; reset when changing targets</span><input name="enemyHp" type="number" min="0" step="any" value="0"></label>
           <label data-i18n-label="hitsPerSecondLabel">Landed hits per second <span data-i18n="hitsPerSecondSpan">enter your observed or assumed rate</span><input name="hitsPerSecond" type="number" min="0" step="any" value="0"></label>
         </div>
+        <small class="result-scope" data-i18n="estimateProbabilisticLabel">Combat estimate · probabilistic assumptions</small>
         <div class="estimate-results">
           <div><span data-i18n="estimatedDpsLabel">ESTIMATED DPS</span><strong id="estimated-dps">—</strong></div>
           <div><span data-i18n="timeToDefeatLabel">TIME TO DEFEAT</span><strong id="estimated-time">—</strong></div>
         </div>
         <p id="estimate-note" class="reference-note" role="status"></p>
+        <ul id="estimate-assumptions" class="assumption-list" aria-label="Assumptions"></ul>
       </section>
       <section class="card">
         <h2 data-i18n="cardAttackTitle">Attack</h2>
@@ -158,11 +161,11 @@
     </div>
     <div id="character-view" class="tab-panel" role="tabpanel" aria-labelledby="character-tab" hidden>
       <section class="card">
-        <h2 data-i18n="findCharTitle">Find a character on NotMeter</h2>
+        <h2 data-i18n="findCharTitle">Find a character on the official AION 2 site</h2>
         <p data-i18n="findCharSubtitle">Search public character profiles by exact name. Select a region, then choose the right server if multiple characters match.</p>
         <form id="character-search" class="search-form">
           <label data-i18n-label="searchCharLabel">Character name<input id="character-name" type="search" maxlength="20" required placeholder="Enter a character name" data-i18n-placeholder="searchCharPlaceholder"></label>
-          <label data-i18n-label="regionLabel">Region<select id="character-region"><option value="ww">Global</option><option value="kr">Korea</option><option value="tw">Taiwan</option></select></label>
+          <label data-i18n-label="regionLabel">Region<select id="character-region"><option value="ww">Global</option></select></label>
           <label id="global-region-label" data-i18n-label="globalRegionLabel">Global region<select id="global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
           <button type="submit" data-i18n="searchBtn">Search</button>
         </form>
@@ -184,7 +187,7 @@
         <p data-i18n="findEnemySubtitle">Search a public character profile by name. Select a matching server when several characters share the name.</p>
         <form id="enemy-search" class="search-form">
           <label data-i18n-label="searchEnemyLabel">Enemy character name<input id="enemy-name" type="search" maxlength="20" required placeholder="Enter a character name" data-i18n-placeholder="searchCharPlaceholder"></label>
-          <label data-i18n-label="regionLabel">Region<select id="enemy-region"><option value="ww">Global</option><option value="kr">Korea</option><option value="tw">Taiwan</option></select></label>
+          <label data-i18n-label="regionLabel">Region<select id="enemy-region"><option value="ww">Global</option></select></label>
           <label id="enemy-global-region-label" data-i18n-label="globalRegionLabel">Global region<select id="enemy-global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
           <button type="submit" data-i18n="searchBtn">Search</button>
         </form>
@@ -321,6 +324,11 @@
           <h3 id="tree-profile-title" data-i18n="treeProfileTitle">Imported character sheet</h3>
           <p id="tree-profile-empty" class="reference-note" data-i18n="treeProfileEmpty">Import a character from Character Search to see all published sheet attributes here.</p>
           <ul id="tree-profile-list" class="tree-profile-list"></ul>
+          <div id="tree-modifier-block" hidden>
+            <h4 data-i18n="sheetModifiersTitle">Sheet modifiers (display only)</h4>
+            <p class="reference-note" data-i18n="sheetModifiersNote">Percent increases published on the character sheet. The base totals they multiply are not public, so they are not applied to calculator fields.</p>
+            <ul id="tree-modifier-list" class="tree-profile-list"></ul>
+          </div>
         </section>
         <section class="tree-catalog" aria-labelledby="tree-catalog-title">
           <h3 id="tree-catalog-title" data-i18n="treeCatalogTitle">All combat attributes</h3>

@@ -158,3 +158,64 @@ test('imports only explicit positive character-sheet HP, never item or missing H
   player.info.stat.statList.at(-1).value = 'unknown';
   assert.equal(characterHp(player), null);
 });
+
+const { sheetModifiers, effectRole, statGroup } = require('./characters');
+
+// Trimmed from Avatarnoia's public sheet (Cleric 45, Siel): only stat types and divinities are published.
+const avatarnoia = {
+  info: { profile: { characterName: 'Avatarnoia', serverName: 'Siel', className: 'Cleric', characterLevel: 45 },
+    stat: { statList: [
+      { type: 'STR', name: 'Might', value: 4, statSecondList: ['Attack increase +0.4%'] },
+      { type: 'AGI', name: 'Precision', value: 23, statSecondList: ['Accuracy increase +2.3%', 'Critical Hit increase +2.3%'] },
+      { type: 'CON', name: 'Constitution', value: 16, statSecondList: ['HP increase +1.6%'] },
+      { type: 'Justice', name: 'Justice [Nezekan]', value: 58, statSecondList: ['Defense increase +5.8%', 'Perfect Chance +5.8%'] },
+      { type: 'Freedom', name: 'Freedom [Vaizel]', value: 52, statSecondList: ['Accuracy increase +5.2%', 'Evasion increase +5.2%'] },
+      { type: 'Destruction', name: 'Destruction [Zikel]', value: 6, statSecondList: ['Attack increase +0.6%', 'Perfect Resist +0.6%'] },
+      { type: 'ItemLevel', name: '아이템레벨', value: 2507 }
+    ] } },
+  equipment: { equipment: { equipmentList: [{ slotPos: 1, slotPosName: 'MainHand', name: 'Aulamus Mace' },
+    { slotPos: 5, slotPosName: 'Torso', name: 'Vakron Breastplate' }] } },
+  itemDetails: {
+    '1': { mainStats: [{ id: 'WeaponFixingDamage', name: 'Attack', value: '323' }],
+      subStats: [{ id: 'AmplifyAllDamage', name: '피해 증폭', value: '5.6%' },
+        { id: 'DefensePierce', name: '관통', value: '700' },
+        { id: 'AGI', name: 'Precision', value: '17' },
+        { id: 'UnknownOption', name: 'Mystery', value: '9' }] },
+    '5': { mainStats: [{ id: 'Freedom', name: 'Freedom [Vaizel]', value: '12' },
+      { id: 'PvEAmplifyDamage', name: 'PvE Damage Boost', value: '0.5%' },
+      { id: 'AdditionalHitRate', name: 'Multi-hit Chance', value: '1%' }] }
+  }
+};
+
+test('sums Might and Destruction attack increase from the sheet and reports where each field came from', () => {
+  assert.deepEqual(equipmentBonuses(avatarnoia), {
+    damageBoost: 105.6, penetration: 700, pveDamageBoost: 0.5, attackIncrease: 101
+  });
+  const coverage = formulaImportCoverage(avatarnoia);
+  assert.deepEqual(coverage.sources, {
+    damageBoost: 'gear', penetration: 'gear', pveDamageBoost: 'gear', attackIncrease: 'sheet'
+  });
+  const mixed = structuredClone(avatarnoia);
+  mixed.itemDetails['1'].subStats.push({ name: 'Attack Increase', value: '2%' });
+  assert.equal(equipmentBonuses(mixed).attackIncrease, 103);
+  assert.equal(formulaImportCoverage(mixed).sources.attackIncrease, 'sheet+gear');
+});
+
+test('imports gear options by stable id and never re-counts primary stats or divinities printed on gear', () => {
+  assert.deepEqual(offensiveReferences(avatarnoia), { multiHitChance: 1, perfectChance: 5.8 });
+  assert.deepEqual(enemyDefenses(avatarnoia), { perfectResist: 0.6 });
+  assert.equal(characterHp(avatarnoia), null);
+});
+
+test('exposes percent-of-base sheet modifiers for display without turning them into flat values', () => {
+  assert.deepEqual(sheetModifiers(avatarnoia), {
+    accuracyIncrease: 7.5, criticalHitIncrease: 2.3, hpIncrease: 1.6,
+    defenseIncrease: 5.8, evasionIncrease: 5.2
+  });
+  assert.equal(effectRole('Attack increase +0.6%'), 'formula');
+  assert.equal(effectRole('Perfect Chance +5.8%'), 'formula');
+  assert.equal(effectRole('Accuracy increase +2.3%'), 'display');
+  assert.equal(effectRole('Cooldown -1.1%'), 'display');
+  assert.deepEqual(avatarnoia.info.stat.statList.map(statGroup),
+    ['primary', 'primary', 'primary', 'divinity', 'divinity', 'divinity', 'other']);
+});

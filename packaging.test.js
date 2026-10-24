@@ -1,35 +1,36 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { readFileSync, readdirSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
 
-// Resolves the csproj EmbeddedResource globs the same way MSBuild names them
-// (LogicalName with %(Filename)%(Extension)), so the test fails when a file the
-// WebView2 host serves is no longer packaged into the executable.
-function embeddedLogicalNames() {
-  const csproj = readFileSync('Aion2Calculator.csproj', 'utf8');
-  const names = new Set();
-  for (const [, include, logical] of csproj.matchAll(/<EmbeddedResource Include="([^"]+)" LogicalName="([^"]+)"/g)) {
-    if (!include.includes('*')) { names.add(logical); continue; }
-    const dir = include.slice(0, include.lastIndexOf('/'));
-    const pattern = new RegExp(`^${include.slice(dir.length + 1).replace(/\./g, '\\.').replace(/\*/g, '.*')}$`);
-    for (const file of readdirSync(dir, { withFileTypes: true })) {
-      if (!file.isFile() || !pattern.test(file.name)) continue;
-      const dot = file.name.lastIndexOf('.');
-      names.add(logical.replace('%(Filename)', dot > 0 ? file.name.slice(0, dot) : file.name)
-        .replace('%(Extension)', dot > 0 ? file.name.slice(dot) : ''));
-    }
-  }
-  return names;
+// The Rust host embeds exactly the files listed in src/assets.rs. This test fails when a script or
+// stylesheet the page loads is missing from disk or from that embed list, so the executable would serve a 404.
+function embeddedPatterns() {
+  const source = readFileSync('src/assets.rs', 'utf8');
+  return [...source.matchAll(/#\[include = "([^"]+)"\]/g)].map(match => match[1]);
 }
 
-test('every resource the Windows host serves is embedded in the executable', () => {
-  const embedded = embeddedLogicalNames();
-  const program = readFileSync('Program.cs', 'utf8');
-  const served = [...program.matchAll(/\["([^"]+)"\] = "/g)].map(match => match[1]);
-  const classIcons = [...program.matchAll(/"(gladiator|templar|assassin|ranger|sorcerer|spiritmaster|cleric|chanter)"/g)]
-    .map(match => `assets/classes/${match[1]}.webp`);
+function isEmbedded(name, patterns) {
+  return patterns.some(pattern => {
+    if (!pattern.includes('*')) return pattern === name;
+    const expression = pattern.split('**/*').map(part => part.replace(/\*/g, '[^/]*').replace(/[.]/g, '\\.'))
+      .join('.*');
+    return new RegExp(`^${expression}$`).test(name);
+  });
+}
+
+test('every script and stylesheet the page loads is embedded in the executable', () => {
+  const patterns = embeddedPatterns();
   const html = readFileSync('index.html', 'utf8');
-  const scripts = [...html.matchAll(/<script defer src="([^"]+)"/g)].map(match => match[1]);
-  const missing = [...new Set([...served, ...classIcons, ...scripts, 'style.css'])].filter(name => !embedded.has(name));
+  const references = [...html.matchAll(/<(?:script|link)[^>]*(?:src|href)="([^"]+)"/g)]
+    .map(match => match[1])
+    .filter(name => !/^(https?:|#)/.test(name));
+  const missing = references.filter(name => !existsSync(name) || !isEmbedded(name, patterns));
   assert.deepEqual(missing, []);
+});
+
+test('the native host bridge is embedded and mentioned by the pages that use it', () => {
+  const patterns = embeddedPatterns();
+  assert.ok(isEmbedded('host-bridge.js', patterns));
+  assert.match(readFileSync('characters.js', 'utf8'), /window\.aion2Host/);
+  assert.match(readFileSync('ai-tips.js', 'utf8'), /window\.aion2Host/);
 });

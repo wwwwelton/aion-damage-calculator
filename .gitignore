@@ -5,3 +5,4 @@ dist/
 assets/ai/models/**/onnx/*.onnx
 assets/ai/models/**/onnx/*.onnx_data
 assets/ai/models/**/*.download
+target/

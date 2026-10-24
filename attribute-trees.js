@@ -27,6 +27,7 @@ let importedTreeCharacter = '';
 let importedTreeClass = '';
 let importedTreeDefenses = {};
 let importedTreeStats = [];
+let importedTreeModifiers = {};
 let selectedProfileStat = null;
 let selectedTreeStat = '';
 const treeTip = document.querySelector('#tree-tip');
@@ -113,8 +114,14 @@ for (const node of attributeTree.querySelectorAll('.tree-node')) {
     node.after(hint);
   }
 }
+const profileStatTips = {
+  STR: 'treeTipMight', AGI: 'treeTipPrecision', DEX: 'treeTipDexterity', CON: 'treeTipConstitution',
+  Justice: 'treeTipJustice', Freedom: 'treeTipFreedom', Illusion: 'treeTipIllusion', Life: 'treeTipLife',
+  Time: 'treeTipTime', Destruction: 'treeTipDestruction', Death: 'treeTipDeath', Wisdom: 'treeTipWisdom',
+  Destiny: 'treeTipDestiny', Space: 'treeTipSpace'
+};
 function profileStatDescription(stat) {
-  if (stat.type === 'STR') return I18N.t('treeTipMight');
+  if (profileStatTips[stat.type]) return I18N.t(profileStatTips[stat.type]);
   const key = stat.name.replace(/[^a-zA-Z0-9]+([a-zA-Z0-9])/g, (_, letter) => letter.toUpperCase())
     .replace(/^./, letter => letter.toLowerCase());
   return (getStatInfo(stat.name) || getStatInfo(key))?.desc || I18N.t('treeProfileNoMechanics');
@@ -174,6 +181,17 @@ function renderProfileStats() {
     const value = `${treeFormatter.format(Number(percent ? raw.slice(0, -1) : raw))}${percent ? '%' : ''}`;
     const item = document.createElement('li');
     item.append(statButton(I18N.statLabel(stat.name), value, profileStatDescription(stat), attributeIcon(stat.name), stat));
+    return item;
+  }));
+  const modifiers = sameProfile ? Object.entries(importedTreeModifiers) : [];
+  const modifierList = document.querySelector('#tree-modifier-list');
+  document.querySelector('#tree-modifier-block').hidden = !modifiers.length;
+  modifierList.replaceChildren(...modifiers.map(([field, amount]) => {
+    const title = I18N.t(`modifier${field.replace(/^./, letter => letter.toUpperCase())}`);
+    const description = I18N.t('sheetModifiersNote');
+    const item = document.createElement('li');
+    item.append(statButton(title, `${treeFormatter.format(amount)}%`, description,
+      attributeIcon(field.replace(/Increase$/, '').replace(/([a-z])([A-Z])/g, '$1 $2')), { title, description }));
     return item;
   }));
   if (activeTreeButton && !activeTreeButton.isConnected) closeTreeTip();
@@ -274,6 +292,7 @@ document.addEventListener('character-imported', ({ detail }) => {
   importedTreeClass = document.querySelector('#attacker-class').value;
   importedTreeDefenses = detail.defenses;
   importedTreeStats = detail.stats;
+  importedTreeModifiers = detail.modifiers || {};
   renderAttributeTrees();
   renderProfileStats();
 });

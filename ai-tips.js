@@ -80,25 +80,30 @@ function currentAiContext() {
   const pos = document.querySelector('#position').value;
   const topUpgrades = [...document.querySelectorAll('#upgrade-list li')]
     .slice(0, 3).map(li => li.textContent.trim()).join(' | ') || 'None';
+  const modifiers = [...document.querySelectorAll('#tree-modifier-list button')]
+    .map(button => `${button.querySelector('span').textContent} ${button.querySelector('strong').textContent}`).join(', ');
+  const assumptions = [...document.querySelectorAll('#estimate-assumptions li')].map(li => li.textContent).join(' ');
 
   return `Personagem: ${attacker}; classe: ${aClass}\n`
     + `Inimigo: ${target}; modo: ${tMode}; tipo: ${cType}${targetClass ? `; classe: ${targetClass}` : ''}\n`
     + `Atributos do personagem: ${characterStats.join(', ')}\n`
     + `Atributos do inimigo: ${enemyStats.join(', ')}\n`
     + `Golpe calculado: ${hit}; DPS estimado: ${dps}; crítico: ${crit}; posição: ${pos}\n`
-    + `Melhorias calculadas (+1%): ${topUpgrades}`;
+    + `Melhorias calculadas (+1%): ${topUpgrades}\n`
+    + `Modificadores da ficha (somente exibição, não aplicados): ${modifiers || 'nenhum'}\n`
+    + `Hipóteses do golpe e da estimativa (não é dano exato): ${assumptions}`;
 }
 
 function requestGuide(topic) {
   const id = researchRequest--;
   return new Promise((resolve, reject) => {
     researchPending.set(id, { resolve, reject });
-    window.chrome.webview.postMessage({ id, kind: 'research', topic });
+    window.aion2Host.post({ id, kind: 'research', topic });
   });
 }
 
-if (window.chrome?.webview) {
-  window.chrome.webview.addEventListener('message', ({ data }) => {
+if (window.aion2Host) {
+  window.aion2Host.onMessage(({ data }) => {
     const pending = researchPending.get(data?.id);
     if (!pending) return;
     researchPending.delete(data.id);
@@ -169,7 +174,7 @@ async function dispatchAiRequest(question, targetElem) {
   const context = currentAiContext();
   let research = '';
   aiSource.textContent = '';
-  if (window.chrome?.webview) {
+  if (window.aion2Host) {
     const topic = guideTopic(question);
     if (!guideCache.has(topic)) guideCache.set(topic, requestGuide(topic));
     try {

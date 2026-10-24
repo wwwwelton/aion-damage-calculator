@@ -1,9 +1,9 @@
 import { pipeline, env } from '@huggingface/transformers';
 
-const MODEL = 'onnx-community/Qwen2.5-0.5B-Instruct';
+const MODEL = 'onnx-community/Qwen3-0.6B-ONNX';
 env.allowLocalModels = true;
 env.allowRemoteModels = false;
-env.useBrowserCache = false; // assets are embedded; caching would duplicate 512 MB in the profile
+env.useBrowserCache = false; // assets are embedded; caching would duplicate 618 MB in the profile
 env.localModelPath = new URL('assets/ai/models/external/', self.location.href).href;
 env.backends.onnx.wasm.wasmPaths = new URL('assets/ai/', self.location.href).href;
 let generator;
@@ -48,8 +48,11 @@ async function generate() {
       // heap never shrinks, so each prompt token costs ~1.3 MB of resident
       // memory for the rest of the session. Trim oldest history first, then the
       // guide note, then the build context, until the prompt fits.
-      const promptTokens = messages => generator.tokenizer.apply_chat_template(messages,
-        { tokenize: true, add_generation_prompt: true, return_tensor: false }).length;
+      // Qwen3 writes a reasoning block unless the template skips it, so the prompt is rendered
+      // here with thinking disabled and passed to the generator as text.
+      const renderPrompt = messages => generator.tokenizer.apply_chat_template(messages,
+        { tokenize: false, add_generation_prompt: true, enable_thinking: false });
+      const promptTokens = messages => generator.tokenizer.encode(renderPrompt(messages)).length;
       let note = research;
       let buildContext = context;
       let messages = buildMessages(buildContext, note);
@@ -61,12 +64,13 @@ async function generate() {
         messages = buildMessages(buildContext, note);
       }
 
-      const output = await generator(messages, {
+      const output = await generator(renderPrompt(messages), {
         max_new_tokens: 120,
         repetition_penalty: 1.15,
-        do_sample: false
+        do_sample: false,
+        return_full_text: false
       });
-      const raw = output[0]?.generated_text?.at(-1)?.content || '';
+      const raw = output[0]?.generated_text || '';
       const text = raw.trim();
       if (!text) throw new Error('Local model returned an empty response.');
       postMessage({ id, state: 'done', text });
