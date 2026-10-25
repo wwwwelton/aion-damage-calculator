@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "aion2-calculator"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "futures",
  "html-escape",
