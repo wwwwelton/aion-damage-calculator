@@ -284,10 +284,11 @@ footer { font-size: 12px; margin-top: 20px; }
 .progression-card strong, .progression-card small { display: block; margin-top: 4px; }
 .progression-card p { margin: 6px 0 0; color: #b8c8d8; font-size: 13px; }
 @media (max-width: 900px) {
+  .gear-grid { grid-template-columns: minmax(0, 1fr); }
   .skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
-  .gear-grid, .attribute-grid, .progression-grid, .skill-grid { grid-template-columns: minmax(0, 1fr); }
+  .attribute-grid, .progression-grid, .skill-grid { grid-template-columns: minmax(0, 1fr); }
   .dossier-summary { align-items: flex-start; }
   .dossier-portrait { width: 56px; height: 56px; }
   .dossier-tab { flex: 1 1 40%; }

@@ -1,6 +1,6 @@
 [package]
 name = "aion2-calculator"
-version = "1.2.3"
+version = "1.2.4"
 edition = "2021"
 publish = false
 description = "AION 2 damage calculator with a local WebView2 interface (Windows x64)"
