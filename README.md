@@ -18,6 +18,8 @@ bun build-ai.mjs
 cargo build --release
 ```
 
+To copy the WSL project (`/home/avatar/gui-dps-aion2`) to `C:\dev\gui-dps-aion2`, build it with one Cargo job, and keep each version's executable in `dist/v<version>/`, run `pwsh -NoProfile -File C:\dev\gui-dps-aion2\build-windows.ps1` on Windows. The script preserves downloaded model files and existing Windows builds; it does not remove files deleted from the WSL source.
+
 The executable is written to `target/release/AION2-Damage-Calculator.exe`. From WSL or Linux, `cargo build --release --target x86_64-pc-windows-gnu` cross-compiles the same executable with the MinGW toolchain (`x86_64-w64-mingw32-gcc`).
 
 The first build downloads the pinned Qwen3-0.6B-ONNX ONNX q8 model from Hugging Face, verifies its SHA-256 checksum and rewrites it into the ONNX external-data layout (`model_quantized.onnx` plus `model_quantized.onnx_data`, see `onnx-external-data.mjs`); the converted files are checksum-pinned too. **Users running the published executable do not download a model.** The weight files are excluded from Git because they exceed GitHub's 100 MB file limit. `src/assets.rs` lists the files embedded with `rust-embed`; `cargo build` fails if a listed file is missing, and `packaging.test.js` fails if `index.html` references a file that is not listed. The window (`src/window.rs`) compiles only on Windows; `cargo test` runs the host's unit tests (asset lookup, official lookup helpers, guide extraction and message routing) on any platform. `AION2_SELFTEST=<file> AION2-Damage-Calculator.exe` runs a headless check that writes a JSON report (embedded assets, one official search and profile, one guide fetch) without opening a window.
@@ -132,6 +134,7 @@ The Windows app may automatically request one whitelisted [Aion 2 Maps combat gu
 
 | Version | Highlights |
 | --- | --- |
+| Unreleased | PowerShell script copies the WSL source and builds a versioned Windows executable without deleting cached assets or older builds. |
 | 1.2.4 | Equipment cards switch to one column at narrower widths so Teostones and other option labels remain readable. |
 | 1.2.3 | Version-only rebuild; application behavior is unchanged from 1.2.2. |
 | 1.2.2 | Windows source-build instructions use Bun; packaged application behavior is unchanged. |
