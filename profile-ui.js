@@ -49,6 +49,7 @@ function gearCard({ item, detail }) {
     [dossierText('theostones'), detail.godStoneStat]]) {
     if (!entries?.length) continue;
     const block = dossierNode('div', 'gear-options');
+    if (entries === detail.godStoneStat) block.classList.add('theostone-options');
     block.append(dossierNode('h4', '', label), statList(entries));
     card.append(block);
   }

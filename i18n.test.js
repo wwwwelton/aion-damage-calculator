@@ -11,8 +11,12 @@ test('language selection changes text and interpolates dynamic messages', () => 
   assert.equal(I18N.t('appTitle'), 'Calculadora de Dano');
   assert.equal(I18N.format('charactersFound', { count: 2, extra: '' }),
     '2 personagem(ns) correspondente(s) encontrado(s).');
+  assert.equal(I18N.t('genusBisTitle'), 'Linhas BIS globais de Genus');
+  assert.equal(I18N.t('genusCritAccuracy'), 'Crítico, Precisão*');
   I18N.setLanguage('en');
   assert.equal(I18N.t('appTitle'), 'Damage Calculator');
+  assert.equal(I18N.t('genusBisTitle'), 'Global BIS Genus Lines');
+  assert.equal(I18N.t('genusCritAccuracy'), 'Crit, Accuracy*');
   assert.equal(I18N.format('aiReading', { progress: 42 }), 'Reading embedded model: 42%');
 });
 

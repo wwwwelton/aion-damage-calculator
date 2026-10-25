@@ -10,13 +10,15 @@ Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://develop
 
 ### Build from source
 
-Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) and [Node.js](https://nodejs.org/) on Windows. From the repository root, run:
+Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) and [Bun](https://bun.sh/) on Windows. From the repository root, run:
 
 ```powershell
-npm ci
-npm run build:ai
+bun install --frozen-lockfile
+bun build-ai.mjs
 cargo build --release
 ```
+
+To copy the WSL project (`/home/avatar/gui-dps-aion2`) to `C:\dev\gui-dps-aion2`, build it with one Cargo job, and keep each version's executable in `dist/v<version>/`, run `pwsh -NoProfile -File C:\dev\gui-dps-aion2\build-windows.ps1` on Windows. The script preserves downloaded model files and existing Windows builds; it does not remove files deleted from the WSL source.
 
 The executable is written to `target/release/AION2-Damage-Calculator.exe`. From WSL or Linux, `cargo build --release --target x86_64-pc-windows-gnu` cross-compiles the same executable with the MinGW toolchain (`x86_64-w64-mingw32-gcc`).
 
@@ -63,6 +65,8 @@ Multipliers are entered as percentages: 100% = ×1, 150% = ×1.5. The additive D
 
 The header language selector switches the interface between Portuguese and English and persists the choice locally. Static labels, dynamic calculation messages, profile views, matchup sections, stat tips and future assistant replies follow the selected language; game-provided character, item, skill and NPC names remain as published by their source.
 The **Attribute Trees** tab shows two four-level binary maps of circular icon nodes with eight leaves each. Damage: base attack (Pure Attack, Attack Increase), landing hits (Penetration, Accuracy), damage boosts (Damage Boost, Weapon Damage Boost) and critical hits (Critical Hit, Critical Damage Boost). Defense: damage reduction (Defense, Damage Tolerance), critical defense (Critical Hit Resist, Critical Damage Tolerance), avoiding hits (Evasion, Block) and health (Player HP, Endurance). Every node carries a one-line hint of what it does; offensive leaf values follow the calculator, while defensive leaves show the imported character’s own sheet after **Load attributes into calculator** in Character Search (not the enemy’s defense) and read “Not available” otherwise. Calculator defaults are examples. The imported sheet list explains each primary stat and divinity, and a **Sheet modifiers (display only)** block lists the summed percent increases that are not applied to calculator fields. Below the trees, **All combat attributes** lists every one of the 120 attributes the calculator models (hit/evasion/block, attack, skills, boosts and tolerances, criticals, procs, positional, elemental, the four creature genera and HP/cadence) with its current calculator value; enemy-side attributes are prefixed “Enemy”. Hovering or focusing any attribute button shows a bilingual tooltip with the full explanation; clicking pins it, and Escape or clicking elsewhere closes it. The trees shrink to the window width without horizontal scrolling and switch to an indented vertical layout below 600 px. The trees are category maps, not a universal stat priority; use the calculator's upgrade comparisons for your current target.
+
+The **Attribute Trees** tab also includes five static BIS Genus Board tables with bundled Aion2Data creature symbols. The community reference lists recommended attributes by slot, preserves the Crit/Accuracy cap note, and does not change calculator values.
 
 ## Icons
 
@@ -130,6 +134,11 @@ The Windows app may automatically request one whitelisted [Aion 2 Maps combat gu
 
 | Version | Highlights |
 | --- | --- |
+| 1.2.5 | PowerShell script copies and builds the Windows app; Teostones names and long effect text now have separate lines. |
+| 1.2.4 | Equipment cards switch to one column at narrower widths. |
+| 1.2.3 | Version-only rebuild; application behavior is unchanged from 1.2.2. |
+| 1.2.2 | Windows source-build instructions use Bun; packaged application behavior is unchanged. |
+| 1.2.1 | Five bilingual BIS Genus Board tables with bundled creature symbols, attribute alternatives and the Crit/Accuracy cap note. |
 | 1.2.0 | Character import matches gear options by stable API id, adds Destruction → Attack Increase and Justice → Perfect Chance, marks sheet-included gear stats and display-only percent modifiers, groups the Attributes view into primary stats, divinities and other values with "feeds the calculator" / "display only" tags, and splits the result into a deterministic hit card and a combat estimate card that lists its assumptions. |
 | 1.1.0 | Windows host ported from C# to Rust (tao + wry); web UI, ONNX runtime and model embedded in a single executable. |
 | 1.0.2 | Character lookup from the official AION 2 site; Qwen3-0.6B q8 local assistant. |

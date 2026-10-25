@@ -27,6 +27,7 @@ use rust_embed::RustEmbed;
 #[include = "host-bridge.js"]
 #[include = "assets/ai/**/*"]
 #[include = "assets/classes/*.webp"]
+#[include = "assets/genus/*.webp"]
 struct Embedded;
 
 pub struct Asset {
@@ -77,4 +78,16 @@ mod tests {
         assert!(lookup("/Cargo.toml").is_none());
         assert!(lookup("/characters.test.js").is_none());
     }
+
+    #[test]
+    fn serves_genus_symbols_as_webp_assets() {
+        for genus in ["cogni", "fera", "natura", "varian", "special"] {
+            let path = format!("/assets/genus/{genus}.webp");
+            let asset = lookup(&path).unwrap_or_else(|| panic!("{path} is not embedded"));
+            assert_eq!(asset.content_type, "image/webp");
+            assert!(asset.data.starts_with(b"RIFF"));
+            assert_eq!(asset.data.get(8..12), Some(b"WEBP".as_slice()));
+        }
+    }
+
 }
