@@ -134,8 +134,8 @@ The Windows app may automatically request one whitelisted [Aion 2 Maps combat gu
 
 | Version | Highlights |
 | --- | --- |
-| Unreleased | PowerShell script copies the WSL source and builds a versioned Windows executable without deleting cached assets or older builds. |
-| 1.2.4 | Equipment cards switch to one column at narrower widths so Teostones and other option labels remain readable. |
+| 1.2.5 | PowerShell script copies and builds the Windows app; Teostones names and long effect text now have separate lines. |
+| 1.2.4 | Equipment cards switch to one column at narrower widths. |
 | 1.2.3 | Version-only rebuild; application behavior is unchanged from 1.2.2. |
 | 1.2.2 | Windows source-build instructions use Bun; packaged application behavior is unchanged. |
 | 1.2.1 | Five bilingual BIS Genus Board tables with bundled creature symbols, attribute alternatives and the Crit/Accuracy cap note. |

@@ -278,6 +278,8 @@ footer { font-size: 12px; margin-top: 20px; }
 .option-list li strong { text-align: right; font-weight: 650; }
 .option-list li .icon { width: 16px; height: 16px; }
 .option-list li small { white-space: nowrap; }
+.theostone-options .option-list li { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; }
+.theostone-options .option-list li :is(strong, small) { grid-column: 2; text-align: left; }
 .attribute-card strong { font-size: 20px; color: #91e6dc; }
 .attribute-card small { margin-top: 4px; color: #b8c8d8; }
 .progression-card > .icon { width: 34px; height: 34px; display: block; }
