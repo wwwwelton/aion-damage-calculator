@@ -191,11 +191,10 @@ function updateCombatReport(values) {
   const posVal = document.querySelector('#position')?.value || 'none';
   const critVal = document.querySelector('#critical')?.value || 'no';
   hitBreakdown.textContent = `DPS Estimado: ${dps} · Posição: ${posVal} · Crítico: ${critVal === 'yes' ? 'Sim' : 'Não'}`;
-  const attackerClass = (document.querySelector('#attacker-class')?.value || '').trim();
-  const matchedClass = Object.keys(CLASS_BUILDS || {}).find(cls => cls.toLowerCase() === attackerClass.toLowerCase()) || 'Gladiator';
-  const build = CLASS_BUILDS?.[matchedClass]?.[isPvp ? 'pvp' : 'pve'];
+  const attackerClass = document.querySelector('#attacker-class')?.value || '';
+  const build = window.aion2Companion?.classBuild(attackerClass, isPvp);
   if (build) {
-    buildTitle.textContent = `${matchedClass} (${isPvp ? 'PvP Meta' : 'PvE Meta'})`;
+    buildTitle.textContent = `${build.className} (${isPvp ? 'PvP Meta' : 'PvE Meta'})`;
     buildDetails.textContent = `Arma: ${build.weapon} · Estigmas: ${build.stigmas.slice(0, 4).join(', ')}`;
   } else {
     buildTitle.textContent = 'Configuração Geral';
@@ -209,3 +208,4 @@ I18N.onLanguageChange(() => {
   updateMode();
   update();
 });
+window.addEventListener('aion2-companion-ready', update);
