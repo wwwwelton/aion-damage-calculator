@@ -3,7 +3,7 @@ name = "aion2-calculator"
 version = "1.2.5"
 edition = "2021"
 publish = false
-description = "AION 2 damage calculator with a local WebView2 interface (Windows x64)"
+description = "AION 2 damage calculator with a Windows WebView2 interface"
 
 [[bin]]
 name = "AION2-Damage-Calculator"
@@ -15,7 +15,7 @@ html-escape = "0.3"
 mime_guess = "2"
 percent-encoding = "2"
 regex = "1"
-reqwest = { version = "0.13", default-features = false, features = ["rustls", "gzip"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "gzip", "json"] }
 rust-embed = { version = "8", features = ["include-exclude"] }
 serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
@@ -23,11 +23,10 @@ tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"
 [target.'cfg(windows)'.dependencies]
 rfd = "0.17"
 tao = "0.37"
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security_Credentials"] }
 wry = "0.57"
 
-# The executable embeds a 617 MB model; whole-crate optimization (LTO, a single codegen unit)
-# makes the Windows link step too heavy for CI runners and modest machines, so the release
-# profile keeps the default codegen units and no LTO. The host only serves bytes and proxies HTTP.
+# Keep release codegen parallelism modest; high whole-crate optimization can exhaust memory on Windows.
 [profile.release]
 opt-level = 2
 codegen-units = 16

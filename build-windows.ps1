@@ -15,10 +15,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Could not copy the project from WSL.' }
 
 Push-Location $destination
 try {
-    bun install --frozen-lockfile
-    if ($LASTEXITCODE -ne 0) { throw 'bun install failed.' }
-    bun build-ai.mjs
-    if ($LASTEXITCODE -ne 0) { throw 'bun build-ai.mjs failed.' }
     cargo build --release -j 1
     if ($LASTEXITCODE -ne 0) { throw 'cargo build failed.' }
 

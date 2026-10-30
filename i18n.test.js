@@ -17,7 +17,6 @@ test('language selection changes text and interpolates dynamic messages', () => 
   assert.equal(I18N.t('appTitle'), 'Damage Calculator');
   assert.equal(I18N.t('genusBisTitle'), 'Global BIS Genus Lines');
   assert.equal(I18N.t('genusCritAccuracy'), 'Crit, Accuracy*');
-  assert.equal(I18N.format('aiReading', { progress: 42 }), 'Reading embedded model: 42%');
 });
 
 test('stat labels follow the selected UI language without changing game identifiers', () => {

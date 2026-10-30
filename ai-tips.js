@@ -4,32 +4,13 @@ const aiSource = document.querySelector('#ai-source');
 const aiApply = document.querySelector('#ai-apply');
 const aiChatDialog = document.querySelector('#ai-chat-dialog');
 const aiSend = document.querySelector('#ai-send');
-
-let aiWorker;
-let aiStartup;
-let aiTimer;
-let aiRevision = 0;
-let currentPendingTarget;
+const pending = new Map();
 const conversationHistory = [];
-let researchRequest = -1;
-const researchPending = new Map();
-// Guide cache with session TTL - auto-clear on session end to avoid permanent error cache
 const guideCache = new Map();
-let guideCacheSessionId = null;
-function initGuideCache() {
-  const sessionId = localStorage.getItem('aiSessionId') || crypto.randomUUID();
-  if (guideCacheSessionId !== sessionId) {
-    guideCache.clear();
-    guideCacheSessionId = sessionId;
-  }
-}
-if (typeof window !== 'undefined') {
-  initGuideCache();
-}
+let requestId = -1000000;
+
 function scrollChatToBottom() {
-  if (aiChatDialog) {
-    aiChatDialog.scrollTo({ top: aiChatDialog.scrollHeight, behavior: 'smooth' });
-  }
+  aiChatDialog?.scrollTo({ top: aiChatDialog.scrollHeight, behavior: 'smooth' });
 }
 
 function appendChatMessage(role, author, text) {
@@ -39,15 +20,31 @@ function appendChatMessage(role, author, text) {
   const authorSpan = document.createElement('span');
   authorSpan.className = 'ai-msg-author';
   authorSpan.textContent = author;
-  const bodyDiv = document.createElement('div');
-  bodyDiv.className = 'ai-msg-body';
-  bodyDiv.textContent = text;
-  msg.appendChild(authorSpan);
-  msg.appendChild(bodyDiv);
-  aiChatDialog.appendChild(msg);
+  const body = document.createElement('div');
+  body.className = 'ai-msg-body';
+  body.textContent = text;
+  msg.append(authorSpan, body);
+  aiChatDialog.append(msg);
   scrollChatToBottom();
-  return bodyDiv;
+  return body;
 }
+
+function hostRequest(kind, values = {}) {
+  if (!window.aion2Host) return Promise.reject(new Error(I18N.t('requiresWindows')));
+  const id = ++requestId;
+  return new Promise((resolve, reject) => {
+    pending.set(id, { resolve, reject });
+    window.aion2Host.post({ id, kind, ...values });
+  });
+}
+
+window.aion2Host?.onMessage(({ data }) => {
+  const request = pending.get(data?.id);
+  if (!request) return;
+  pending.delete(data.id);
+  if (data.error) request.reject(new Error(data.error));
+  else request.resolve(data.data);
+});
 
 function guideTopic(question) {
   if (/creature|species|cogni|fera|natura|varian/i.test(question)) return 'creature';
@@ -61,61 +58,31 @@ function currentAiContext() {
   const attacker = document.querySelector('#attacker-name').value || 'Player';
   const aClass = document.querySelector('#attacker-class').value || 'Unspecified class';
   const target = document.querySelector('#target-name').value || 'Target';
-  const tMode = document.querySelector('#target-mode').value;
-  const cType = document.querySelector('#creature-type-header').value || 'Unknown';
-  const targetClass = tMode === 'player' ? document.querySelector('#target-class').value || 'Unspecified class' : '';
+  const mode = document.querySelector('#target-mode').value;
+  const type = document.querySelector('#creature-type-header').value || 'Unknown';
+  const targetClass = mode === 'player' ? document.querySelector('#target-class').value || 'Unspecified class' : '';
   const characterStats = [];
   const enemyStats = [];
   for (const input of document.querySelectorAll('#calculator input[name]')) {
-    if (input.closest('[hidden]') || (tMode === 'player' && input.closest('.pve-only, .boss-only'))
-        || (tMode === 'monster' && input.closest('.boss-only, .player-only'))
-        || (tMode === 'boss' && input.closest('.player-only'))) continue;
+    if (input.closest('[hidden]') || (mode === 'player' && input.closest('.pve-only, .boss-only'))
+        || (mode === 'monster' && input.closest('.boss-only, .player-only'))
+        || (mode === 'boss' && input.closest('.player-only'))) continue;
     if (!input.value || input.value === '0' || input.value === input.defaultValue) continue;
-    const stat = `${input.name}: ${input.value}`;
-    (input.closest('label.enemy') ? enemyStats : characterStats).push(stat);
+    (input.closest('label.enemy') ? enemyStats : characterStats).push(`${input.name}: ${input.value}`);
   }
-  const hit = document.querySelector('#result').textContent || '0';
-  const dps = document.querySelector('#estimated-dps').textContent || '0';
-  const crit = document.querySelector('#critical').value;
-  const pos = document.querySelector('#position').value;
-  const topUpgrades = [...document.querySelectorAll('#upgrade-list li')]
-    .slice(0, 3).map(li => li.textContent.trim()).join(' | ') || 'None';
-  const modifiers = [...document.querySelectorAll('#tree-modifier-list button')]
-    .map(button => `${button.querySelector('span').textContent} ${button.querySelector('strong').textContent}`).join(', ');
+  const upgrades = [...document.querySelectorAll('#upgrade-list li')].slice(0, 3).map(li => li.textContent.trim()).join(' | ') || 'None';
   const assumptions = [...document.querySelectorAll('#estimate-assumptions li')].map(li => li.textContent).join(' ');
-
-  return `Personagem: ${attacker}; classe: ${aClass}\n`
-    + `Inimigo: ${target}; modo: ${tMode}; tipo: ${cType}${targetClass ? `; classe: ${targetClass}` : ''}\n`
-    + `Atributos do personagem: ${characterStats.join(', ')}\n`
-    + `Atributos do inimigo: ${enemyStats.join(', ')}\n`
-    + `Golpe calculado: ${hit}; DPS estimado: ${dps}; crítico: ${crit}; posição: ${pos}\n`
-    + `Melhorias calculadas (+1%): ${topUpgrades}\n`
-    + `Modificadores da ficha (somente exibição, não aplicados): ${modifiers || 'nenhum'}\n`
-    + `Hipóteses do golpe e da estimativa (não é dano exato): ${assumptions}`;
+  return `Character: ${attacker}; class: ${aClass}\nTarget: ${target}; mode: ${mode}; type: ${type}${targetClass ? `; class: ${targetClass}` : ''}\nCharacter stats: ${characterStats.join(', ')}\nTarget stats: ${enemyStats.join(', ')}\nCalculated hit: ${document.querySelector('#result').textContent}; estimated DPS: ${document.querySelector('#estimated-dps').textContent}\nCalculated +1% upgrades: ${upgrades}\nEstimate assumptions: ${assumptions}`;
 }
 
-function requestGuide(topic) {
-  const id = researchRequest--;
-  return new Promise((resolve, reject) => {
-    researchPending.set(id, { resolve, reject });
-    window.aion2Host.post({ id, kind: 'research', topic });
-  });
-}
-
-if (window.aion2Host) {
-  window.aion2Host.onMessage(({ data }) => {
-    const pending = researchPending.get(data?.id);
-    if (!pending) return;
-    researchPending.delete(data.id);
-    if (data.error) {
-      // Clear failed guide from cache to allow retry
-      const topic = guideTopic(data.topic || '');
+async function requestGuide(topic) {
+  if (!guideCache.has(topic)) {
+    guideCache.set(topic, hostRequest('research', { topic }).catch(error => {
       guideCache.delete(topic);
-      pending.reject(new Error(data.error));
-    } else {
-      pending.resolve(data.data);
-    }
-  });
+      throw error;
+    }));
+  }
+  return guideCache.get(topic);
 }
 
 function recommendedUpgrade() {
@@ -129,108 +96,50 @@ function recommendedUpgrade() {
   return input ? { input, label, gain: first.split(': ')[1] } : null;
 }
 
-const pendingPattern = () => new RegExp(`^(${['aiGenerating', 'aiGeneratingLocal', 'aiReading', 'aiLoading']
-  .map(key => I18N.t(key).split('{')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`);
-
-async function ensureAiWorker() {
-  if (aiStartup) return aiStartup;
-  aiStartup = (async () => {
-    aiWorker = new Worker('ai-worker.bundle.js', { type: 'module' });
-    aiWorker.onmessage = ({ data }) => {
-      if (data.id !== aiRevision) return;
-      const target = currentPendingTarget || aiAnswer;
-      if (data.state === 'loading') target.textContent = I18N.t('aiLoading');
-      if (data.state === 'downloading') target.textContent = I18N.format('aiReading', { progress: data.progress });
-      if (data.state === 'generating') target.textContent = I18N.t('aiGenerating');
-      if (data.state === 'done') {
-        target.textContent = data.text || I18N.t('aiNoSuggestion');
-        if (target !== aiAnswer) {
-          conversationHistory.push({ role: 'assistant', content: target.textContent });
-          if (conversationHistory.length > 6) conversationHistory.splice(0, conversationHistory.length - 6);
-        }
-        scrollChatToBottom();
-      }
-      if (data.state === 'error') {
-        target.textContent = I18N.format('aiUnavailable', { error: data.error });
-        scrollChatToBottom();
-      }
-    };
-    aiWorker.onerror = () => {
-      const target = currentPendingTarget || aiAnswer;
-      target.textContent = I18N.t('aiFailedStart');
-      scrollChatToBottom();
-    };
-  })();
-  return aiStartup;
-}
-
-async function dispatchAiRequest(question, targetElem) {
-  const id = ++aiRevision;
-  if (currentPendingTarget && currentPendingTarget !== aiAnswer && currentPendingTarget !== targetElem
-      && pendingPattern().test(currentPendingTarget.textContent)) {
-    currentPendingTarget.textContent = I18N.t('aiSuperseded');
-  }
-  currentPendingTarget = targetElem;
-  const context = currentAiContext();
-  let research = '';
+async function dispatchAiRequest(question, target) {
+  aiSend.disabled = true;
+  target.textContent = I18N.t('aiGenerating');
   aiSource.textContent = '';
-  if (window.aion2Host) {
-    const topic = guideTopic(question);
-    if (!guideCache.has(topic)) guideCache.set(topic, requestGuide(topic));
+  scrollChatToBottom();
+  try {
+    let guide = '';
     try {
-      const guide = await guideCache.get(topic);
-      if (id !== aiRevision) return;
-      research = guide.excerpt.slice(0, 280);
-      aiSource.textContent = I18N.format('aiGuide', { url: guide.url });
+      const result = await requestGuide(guideTopic(question));
+      guide = result.excerpt.slice(0, 280);
+      aiSource.textContent = I18N.format('aiGuide', { url: result.url });
     } catch (error) {
-      if (id !== aiRevision) return;
       aiSource.textContent = I18N.format('aiGuideUnavailable', { error: error.message });
     }
-  }
-  if (id !== aiRevision) return;
-  try {
-    await ensureAiWorker();
-    if (id !== aiRevision) return;
-    targetElem.textContent = I18N.t('aiGeneratingLocal');
-    scrollChatToBottom();
-    lastAdviceContext = `${I18N.currentLang}\n${context}`;
-    aiWorker.postMessage({ id, question, context, research, history: conversationHistory, language: I18N.currentLang });
+    const model = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-3.5-mini';
+    const result = await hostRequest('ai_chat', { model, messages: [
+      { role: 'system', content: `You are the expert combat analyst for AION 2. All responses are generated directly by this remote model without any local inference. Deliver authoritative, high-level, mathematically sound tactical advice in ${I18N.currentLang === 'pt' ? 'Portuguese' : 'English'}. Explain exact formula mechanics, stat priorities, marginal gains, and combat matchups clearly and concisely. Clearly differentiate between raw Combat Power (CP), per-hit damage, sustained estimated DPS, and actual measured rotation DPS. Never hallucinate unavailable data or invent unverified game mechanics; explicitly state which stats or rotation logs are required when data is incomplete. Calculator data:\n${currentAiContext()}\nOnline guide:\n${guide || 'none'}` },
+      ...conversationHistory.slice(-6),
+      { role: 'user', content: question },
+    ] });
+    target.textContent = result.text;
+    conversationHistory.push({ role: 'user', content: question }, { role: 'assistant', content: result.text });
+    if (conversationHistory.length > 8) conversationHistory.splice(0, conversationHistory.length - 8);
   } catch (error) {
-    if (id === aiRevision) {
-      targetElem.textContent = `${error.message} ${I18N.t('aiUseComparison')}`;
-      scrollChatToBottom();
-    }
+    target.textContent = I18N.format('aiUnavailable', { error: error.message });
+  } finally {
+    aiSend.disabled = false;
   }
+  scrollChatToBottom();
 }
 
 function submitUserQuestion() {
   const question = aiQuestion.value.trim();
-  if (!question) return;
-  clearTimeout(aiTimer);
+  if (!question || aiSend.disabled) return;
   aiQuestion.value = '';
-
   appendChatMessage('user', I18N.t('aiYou'), question);
-  conversationHistory.push({ role: 'user', content: question });
-  if (conversationHistory.length > 6) conversationHistory.splice(0, conversationHistory.length - 6);
-
-  const assistantTarget = appendChatMessage('assistant', 'Avatarnoia Flow', I18N.t('aiGenerating'));
-  scrollChatToBottom();
-
-  void dispatchAiRequest(question, assistantTarget);
+  const target = appendChatMessage('assistant', 'AionLabs', I18N.t('aiGenerating'));
+  void dispatchAiRequest(question, target);
 }
 
-// Each generation pins a CPU core for tens of seconds, so automatic advice
-// waits for the user to pause and only runs when the build context changed.
-let lastAdviceContext = '';
-function scheduleAiTips() {
-  clearTimeout(aiTimer);
+function updateApplyButton() {
   const suggestion = recommendedUpgrade();
   aiApply.hidden = !suggestion;
   if (suggestion) aiApply.textContent = I18N.format('aiApplyDynamic', { label: suggestion.label, gain: suggestion.gain });
-  aiTimer = setTimeout(() => {
-    if (`${I18N.currentLang}\n${currentAiContext()}` === lastAdviceContext) return;
-    void dispatchAiRequest('Como melhorar minha build ou DPS', aiAnswer);
-  }, 2000);
 }
 
 aiApply.addEventListener('click', () => {
@@ -241,27 +150,55 @@ aiApply.addEventListener('click', () => {
   suggestion.input.value = String(value + 1);
   suggestion.input.dispatchEvent(new Event('input', { bubbles: true }));
 });
-
-if (aiSend) {
-  aiSend.addEventListener('click', submitUserQuestion);
-}
-
-aiQuestion.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    submitUserQuestion();
+aiSend?.addEventListener('click', submitUserQuestion);
+aiQuestion.addEventListener('keydown', event => {
+  if (event.key === 'Enter') { event.preventDefault(); submitUserQuestion(); }
+});
+document.querySelector('#ai-configure').addEventListener('click', async () => {
+  const dialog = document.querySelector('#ai-settings');
+  dialog.showModal();
+  const status = document.querySelector('#ai-key-status');
+  const modelSelect = document.querySelector('#ai-model');
+  status.textContent = I18N.t('aiCheckingSettings');
+  try {
+    const [configured, models] = await Promise.all([hostRequest('ai_key_status'), hostRequest('ai_models')]);
+    status.textContent = I18N.t(configured.configured ? 'aiKeyConfigured' : 'aiKeyMissing');
+    const selected = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-3.5-mini';
+    modelSelect.replaceChildren(...models.map(id => {
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = id;
+      return option;
+    }));
+    modelSelect.value = models.includes(selected) ? selected : models[0] || '';
+    modelSelect.disabled = models.length === 0;
+  } catch (error) {
+    status.textContent = I18N.format('aiUnavailable', { error: error.message });
   }
 });
-
+document.querySelector('#ai-save-key').addEventListener('click', async () => {
+  const field = document.querySelector('#ai-api-key');
+  const status = document.querySelector('#ai-key-status');
+  try {
+    await hostRequest('ai_key_save', { key: field.value });
+    field.value = '';
+    status.textContent = I18N.t('aiKeyConfigured');
+  } catch (error) { status.textContent = error.message; }
+});
+document.querySelector('#ai-remove-key').addEventListener('click', async () => {
+  const status = document.querySelector('#ai-key-status');
+  try {
+    await hostRequest('ai_key_delete');
+    status.textContent = I18N.t('aiKeyMissing');
+  } catch (error) { status.textContent = error.message; }
+});
+document.querySelector('#ai-settings').addEventListener('close', () => {
+  document.querySelector('#ai-api-key').value = '';
+});
+document.querySelector('#ai-model').addEventListener('change', event => localStorage.setItem('aionLabsModel', event.target.value));
 for (const selector of ['#attacker-name', '#attacker-class', '#target-name', '#target-class', '#target-mode', '#creature-type-header', '#critical', '#position']) {
-  const elem = document.querySelector(selector);
-  if (elem) {
-    elem.addEventListener('input', scheduleAiTips);
-    elem.addEventListener('change', scheduleAiTips);
-  }
+  document.querySelector(selector)?.addEventListener('input', updateApplyButton);
+  document.querySelector(selector)?.addEventListener('change', updateApplyButton);
 }
-
-I18N.onLanguageChange(() => {
-  const suggestion = recommendedUpgrade();
-  if (suggestion) aiApply.textContent = I18N.format('aiApplyDynamic', { label: suggestion.label, gain: suggestion.gain });
-});
+I18N.onLanguageChange(updateApplyButton);
+updateApplyButton();

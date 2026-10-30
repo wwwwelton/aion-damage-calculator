@@ -3,9 +3,12 @@
 #![cfg_attr(not(windows), allow(dead_code))]
 
 mod assets;
+mod aionlabs;
 mod guides;
 mod official;
 mod protocol;
+mod profile_cache;
+mod profile_sync;
 #[cfg(windows)]
 mod window;
 
@@ -35,10 +38,11 @@ fn main() {
 async fn self_test() -> Value {
     let pages = assets::lookup("/").is_some();
     let script = assets::lookup("/characters.js").is_some();
-    let model = assets::lookup("/assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx/model_quantized.onnx_data").is_some();
-    let mut report = json!({ "embedded": { "index": pages, "characters_js": script, "model_data": model } });
+    let ai_script = assets::lookup("/ai-tips.js").is_some();
+    let mut report = json!({ "embedded": { "index": pages, "characters_js": script, "ai_tips_js": ai_script } });
     match official::OfficialClient::new() {
         Ok(client) => {
+            let client = std::sync::Arc::new(client);
             let search = client.search("Avatarnoia", "ww", "la").await;
             let first = search.as_ref().ok().and_then(|data| data["results"].as_array()).and_then(|list| list.first().cloned());
             report["search"] = match &search {
@@ -55,9 +59,13 @@ async fn self_test() -> Value {
                         "name": data["info"]["profile"]["characterName"],
                         "gearDetails": data["itemDetails"].as_object().map(|map| map.len()).unwrap_or(0),
                         "complete": data["complete"],
+                        "externalRanking": data["externalRanking"],
                     }),
                     Err(error) => json!({ "ok": false, "error": error }),
                 };
+                if let Ok(data) = &profile {
+                    report["profileCache"] = cache_self_test(client.clone(), &entry, data).await;
+                }
             }
         }
         Err(error) => report["client"] = json!({ "ok": false, "error": error }),
@@ -71,4 +79,30 @@ async fn self_test() -> Value {
         Err(error) => json!({ "ok": false, "error": error }),
     };
     report
+}
+
+async fn cache_self_test(client: std::sync::Arc<official::OfficialClient>, entry: &Value, data: &Value) -> Value {
+    let directory = std::env::temp_dir().join(format!("aion2-smoke-{}", std::process::id()));
+    let path = directory.join("profiles.json");
+    let server = entry["serverId"].as_i64().unwrap_or(0);
+    let character = entry["characterId"].as_str().unwrap_or("");
+    let result = async {
+        let cache = profile_cache::ProfileCache::open(path.clone())?;
+        cache.save(server, character, "la", data)?;
+        let restarted = profile_cache::ProfileCache::open(path)?;
+        let persisted = restarted.get(server, character, "la").ok_or("Saved profile missing after restart")?;
+        let sync = profile_sync::ProfileSync::new(restarted, client)?;
+        let replies = std::sync::Mutex::new(Vec::new());
+        let request = json!({"id": 1, "kind":"profile", "serverId":server, "characterId":character, "region":"ww", "globalRegion":"la"});
+        sync.respond(&request.to_string(), |reply| replies.lock().unwrap().push(reply)).await;
+        let replies: Vec<Value> = replies.into_inner().unwrap().iter().filter_map(|reply| serde_json::from_str(reply).ok()).collect();
+        Ok::<_, String>(json!({
+            "persisted": persisted["profile"]["info"]["profile"]["characterName"],
+            "cachedReplyFirst": replies.first().is_some_and(|reply| reply["data"]["cacheMeta"]["cached"] == true),
+            "backgroundRefresh": replies.last().is_some_and(|reply| reply["type"] == "profile_sync" && reply["data"]["cacheMeta"]["cached"] == false),
+            "events": replies.len(),
+        }))
+    }.await;
+    let _ = std::fs::remove_dir_all(directory);
+    match result { Ok(report) => report, Err(error) => json!({"error":error}) }
 }

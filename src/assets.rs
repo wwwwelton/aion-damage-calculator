@@ -1,4 +1,4 @@
-// Web UI, WebAssembly runtime and the bundled AI model, embedded in the executable.
+// Web UI and data assets embedded in the executable.
 // Only the files the page loads are embedded; tests and tooling stay out of the binary.
 use std::borrow::Cow;
 
@@ -15,17 +15,16 @@ use rust_embed::RustEmbed;
 #[include = "icons.js"]
 #[include = "matchups.js"]
 #[include = "ai-tips.js"]
-#[include = "ai-worker.bundle.js"]
 #[include = "attribute-trees.js"]
 #[include = "profile-ui.js"]
 #[include = "stat-tooltips.js"]
 #[include = "renderer.js"]
+#[include = "game-companion.js"]
 #[include = "characters.js"]
 #[include = "boss-data.js"]
 #[include = "mob-data.js"]
 #[include = "bosses.js"]
 #[include = "host-bridge.js"]
-#[include = "assets/ai/**/*"]
 #[include = "assets/classes/*.webp"]
 #[include = "assets/genus/*.webp"]
 struct Embedded;

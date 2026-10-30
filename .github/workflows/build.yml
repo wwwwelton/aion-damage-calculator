@@ -11,9 +11,6 @@ on:
 permissions:
   contents: read
 
-env:
-  MODEL_DIR: assets/ai/models/external/onnx-community/Qwen3-0.6B-ONNX/onnx
-
 jobs:
   test:
     name: JavaScript and Rust tests
@@ -28,11 +25,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: npm ci
       - run: npm test
-      # The embed list needs the model files to exist, so the test build uses placeholders.
-      - name: Create placeholder model files for the host tests
-        run: |
-          mkdir -p "$MODEL_DIR"
-          touch "$MODEL_DIR/model_quantized.onnx" "$MODEL_DIR/model_quantized.onnx_data"
       - run: cargo test
 
   build:
@@ -49,20 +41,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: npm ci
 
-      # build-ai.mjs verifies the pinned SHA-256 of the converted model files
-      # and skips the 618 MB download when they already match, so a cache hit
-      # costs nothing and a stale or corrupt cache is simply rebuilt.
-      - name: Restore converted model
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.MODEL_DIR }}
-          key: qwen3-q8-external-${{ hashFiles('build-ai.mjs', 'onnx-external-data.mjs') }}
-
-      - name: Download, convert and bundle AI assets
-        run: npm run build:ai
-
-      - name: Real offline inference check
-        run: node ai-model.smoke.mjs
 
       - name: Resolve version
         id: version
@@ -88,7 +66,7 @@ jobs:
         run: |
           AION2_SELFTEST=selftest.json ./target/release/AION2-Damage-Calculator.exe
           cat selftest.json
-          node -e "const r=require('./selftest.json'); if(!r.embedded.index||!r.embedded.characters_js||!r.embedded.model_data) process.exit(1)"
+          node -e "const r=require('./selftest.json'); if(!r.embedded.index||!r.embedded.characters_js||!r.embedded.ai_tips_js) process.exit(1)"
 
       - name: Checksum
         shell: bash
@@ -130,6 +108,6 @@ jobs:
             release/AION2-Damage-Calculator.exe.sha256
           generate_release_notes: true
           body: |
-            Native Windows x64 executable (Rust + WebView2, about 640 MB) with the embedded Qwen3-0.6B q8 model.
-            Requirements: Windows x64, Microsoft Edge WebView2 Runtime, about 2.5 GB of free RAM while the local assistant is active.
+            Native Windows x64 executable (Rust + WebView2) with an optional AionLabs API assistant.
+            Requirements: Windows x64 and Microsoft Edge WebView2 Runtime. Remote AI requires your own API key and may incur charges.
             Verify the download with the attached SHA-256 file. The executable is not digitally signed.

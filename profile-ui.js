@@ -75,10 +75,31 @@ function skillCard(skill) {
   card.append(profileImage(skill.icon, 'skill'));
   const content = dossierNode('div');
   content.append(dossierNode('strong', '', skill.name),
-    dossierNode('small', '', `${dossierText('level')} ${skill.skillLevel}${Number(skill.equip) ? ` · ${dossierText('equipped')}` : ''}`));
+    dossierNode('small', '', Number(skill.acquired) ? `${dossierText('level')} ${skill.skillLevel}${Number(skill.equip) ? ` · ${dossierText('equipped')}` : ''}` : `${dossierText('skillNotAcquired')}${skill.needLevel ? ` · ${dossierText('level')} ${skill.needLevel}` : ''}`));
   card.append(content);
   return card;
 }
+
+function skillState(skill) {
+  if (!Number(skill.acquired) || Number(skill.skillLevel) <= 0) return 'skillNotAcquired';
+  return Number(skill.equip) ? 'equipped' : 'skillAcquired';
+}
+
+function characterRankingRows(ranking) {
+  if (!ranking) return [];
+  return [
+    ['rankOverall', 'overall_rank', 'overall_total', 'overall_percentile'],
+    ['rankClass', 'job_rank', 'job_total', 'job_percentile'],
+    ['rankServer', 'server_rank', 'server_total', 'server_percentile']
+  ].flatMap(([scope, rank, total, percent]) => {
+    const values = [ranking[rank], ranking[total], ranking[percent]];
+    if (values.some(value => value === null || value === undefined || value === ''
+      || !Number.isFinite(Number(value)))) return [];
+    return [{ scope, rank: values[0], total: values[1], percent: Number(values[2]).toFixed(2) }];
+  });
+}
+
+if (typeof module !== 'undefined') module.exports = { characterRankingRows, skillState };
 
 function renderDossier(container, view) {
   const summary = dossierNode('div', 'dossier-summary');
@@ -86,17 +107,27 @@ function renderDossier(container, view) {
   portrait.classList.add('dossier-portrait');
   summary.append(portrait);
   const summaryText = dossierNode('div');
-  summaryText.append(dossierNode('strong', '', `${view.name} · ${view.className}`),
+  const cpText = view.combatPower ? `${dossierText('combatPower')} ${view.combatPower.toLocaleString()}` : '';
+  const gsText = view.gearScore ? `${dossierText('gearScore')} ${view.gearScore.toLocaleString()}` : (view.itemLevel ? `${dossierText('itemLevel')} ${view.itemLevel.toLocaleString()}` : '');
+  summaryText.append(
+    dossierNode('strong', '', `${view.name} · ${view.className}`),
     dossierNode('small', '', [`${dossierText('level')} ${view.level || '—'}`, view.race || dossierText('raceUnknown'),
       view.gender, view.server || dossierText('serverUnknown')].filter(Boolean).join(' · ')),
-    dossierNode('small', '', [`${dossierText('combatPower')} ${view.combatPower || '—'}`,
-      view.itemLevel ? `${dossierText('itemLevel')} ${view.itemLevel}` : '',
-      view.legion ? `${dossierText('legion')} ${view.legion}` : ''].filter(Boolean).join(' · ')));
+    dossierNode('small', '', [cpText, gsText, view.legion ? `${dossierText('legion')} ${view.legion}` : ''].filter(Boolean).join(' · '))
+  );
   if (view.titleName || view.titlesOwned !== null) {
     summaryText.append(dossierNode('small', '', [view.titleName ? `${dossierText('equippedTitle')} ${view.titleName}` : '',
       view.titlesOwned !== null ? dossierFormat('titlesOwned', { owned: view.titlesOwned, total: view.titlesTotal ?? '?' }) : '']
       .filter(Boolean).join(' · ')));
   }
+  for (const title of view.titles) {
+    summaryText.append(dossierNode('small', '', `${title.equipCategory || dossierText('equippedTitle')}: ${title.name}`));
+    for (const stat of title.equipStatList || []) summaryText.append(dossierNode('small', '', stat.desc));
+  }
+  const ranks = characterRankingRows(view.ranking).map(({ scope, rank, total, percent }) =>
+    dossierFormat('rankLine', { scope: dossierText(scope), rank, total, percent }));
+  summaryText.append(dossierNode('small', '', `${dossierText('rankAtool')}: ${
+    ranks.length ? ranks.join(' · ') : dossierText('rankingUnavailable')}`));
   summary.append(summaryText);
   const tabs = dossierNode('div', 'dossier-tabs');
   tabs.setAttribute('role', 'tablist');
@@ -109,14 +140,31 @@ function renderDossier(container, view) {
       const grid = dossierNode('div', 'gear-grid');
       grid.append(...view.gear.map(gearCard));
       section.append(grid);
+      const companions = dossierNode('div', 'progression-grid');
+      for (const [label, value, detail] of [
+        [dossierText('mount'), view.pet, view.pet?.level ? `${dossierText('level')} ${view.pet.level}` : ''],
+        [dossierText('wings'), view.wing, [view.wing?.grade, view.wing?.enchantLevel ? `+${view.wing.enchantLevel}` : ''].filter(Boolean).join(' · ')]
+      ]) {
+        if (!value?.name) continue;
+        const card = dossierNode('article', 'progression-card');
+        card.append(profileImage(value.icon, 'stat'), dossierNode('strong', '', value.name),
+          dossierNode('small', '', detail ? `${label} · ${detail}` : label));
+        companions.append(card);
+      }
+      section.append(companions);
     }],
     [dossierText('tabSkills'), section => {
+      section.append(dossierNode('p', 'reference-note', dossierText('skillDataNote')));
       for (const [category, key] of [['Active', 'activeSkills'], ['Passive', 'passiveSkills'], ['Dp', 'stigmaSkills']]) {
-        const skills = view.skills.filter(skill => skill.category === category);
-        section.append(dossierHeader(dossierText(key), dossierFormat('learnedCount', { count: skills.length })));
-        const grid = dossierNode('div', 'skill-grid');
-        grid.append(...skills.map(skillCard));
-        section.append(grid);
+        section.append(dossierHeader(dossierText(key), ''));
+        for (const state of ['equipped', 'skillAcquired', 'skillNotAcquired']) {
+          const skills = view.skills.filter(skill => skill.category === category && skillState(skill) === state);
+          if (!skills.length) continue;
+          section.append(dossierHeader(dossierText(state), String(skills.length)));
+          const grid = dossierNode('div', 'skill-grid');
+          grid.append(...skills.map(skillCard));
+          section.append(grid);
+        }
       }
     }],
     [dossierText('tabAttributes'), section => {
@@ -175,18 +223,6 @@ function renderDossier(container, view) {
       const arcana = dossierNode('div', 'gear-grid');
       arcana.append(...view.arcana.map(gearCard));
       section.append(arcana);
-      const companions = dossierNode('div', 'progression-grid');
-      for (const [label, value, detail] of [
-        [dossierText('mount'), view.pet, view.pet?.level ? `${dossierText('level')} ${view.pet.level}` : ''],
-        [dossierText('wings'), view.wing, [view.wing?.grade, view.wing?.enchantLevel ? `+${view.wing.enchantLevel}` : ''].filter(Boolean).join(' · ')]
-      ]) {
-        if (!value?.name) continue;
-        const card = dossierNode('article', 'progression-card');
-        card.append(profileImage(value.icon, 'stat'), dossierNode('strong', '', value.name),
-          dossierNode('small', '', detail ? `${label} · ${detail}` : label));
-        companions.append(card);
-      }
-      section.append(companions);
     }]
   ]) {
     const button = dossierNode('button', 'dossier-tab', label);
