@@ -3,6 +3,7 @@ bin/
 obj/
 dist/
 assets/ai/models/**/onnx/*.onnx
+certs/*.key
 assets/ai/models/**/onnx/*.onnx_data
 assets/ai/models/**/*.download
 target/
