@@ -26,6 +26,23 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: cargo test
+      - run: cargo test -p aion2-core
+
+  wasm:
+    name: WebAssembly UI
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@0.2.130
+      - run: bash scripts/build-ui.sh
+      - run: test -s ui/dist/aion2_ui_bg.wasm
 
   build:
     name: Windows executable
