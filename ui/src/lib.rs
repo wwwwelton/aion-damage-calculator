@@ -1,4 +1,5 @@
 pub mod boss;
+pub mod attributes;
 #[cfg(target_arch = "wasm32")]
 pub mod character;
 #[cfg(target_arch = "wasm32")]
@@ -11,6 +12,7 @@ pub mod header;
 pub mod i18n;
 pub mod state;
 
+use attributes::AttributesTab;
 use boss::BossTab;
 #[cfg(target_arch = "wasm32")]
 use character::CharacterTab;
@@ -41,6 +43,9 @@ fn App() -> impl IntoView {
             </div>
             <div hidden=move || state.tab.get() != ActiveTab::Enemy>
                 <EnemyTab state=state />
+            </div>
+            <div hidden=move || state.tab.get() != ActiveTab::Attributes>
+                <AttributesTab state=state />
             </div>
         </main>
     }
