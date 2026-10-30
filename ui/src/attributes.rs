@@ -234,8 +234,9 @@ fn strip_parens(title: &str) -> &str {
 }
 
 fn catalog_title(name: &str, lang: Lang, enemy: bool) -> String {
+    // Like localizedStatInfo in stat-tooltips.js: translate the title, then drop the parenthesis.
     let base = stat_info(name, matches!(lang, Lang::Pt))
-        .map(|i| strip_parens(&i.title).to_string())
+        .map(|i| strip_parens(&crate::i18n::stat_label(lang, &i.title)).to_string())
         .unwrap_or_else(|| name.to_string());
     if enemy {
         format!("{} · {base}", t(lang, "treeCatalogEnemy"))
@@ -465,5 +466,15 @@ mod tests {
             state.lang.set(Lang::Pt);
             assert_eq!(leaf_text(state, defense), "1.400");
         });
+    }
+
+    #[test]
+    fn catalog_names_follow_the_selected_language_like_the_js_catalog() {
+        assert_eq!(catalog_title("evasion", Lang::En, true), "Enemy · Evasion");
+        assert_eq!(catalog_title("accuracy", Lang::Pt, false), "Precisão");
+        assert_eq!(catalog_title("evasion", Lang::Pt, true), "Inimigo · Evasão");
+        assert_eq!(catalog_title("blockPenetration", Lang::Pt, false), "Penetração de Bloqueio");
+        assert_eq!(catalog_title("block", Lang::Pt, false), "Bloqueio");
+        assert_eq!(catalog_title("cogniBlock", Lang::Pt, false), "Cogni Bloqueio");
     }
 }
