@@ -20,6 +20,7 @@
   <script defer src="stat-tooltips.js"></script>
   <script defer src="attribute-trees.js"></script>
   <script defer src="ai-tips.js"></script>
+  <script defer src="game-companion.js"></script>
   <script defer src="renderer.js"></script>
 </head>
 <body>
@@ -42,7 +43,7 @@
       <button type="button" id="enemy-tab" role="tab" aria-controls="enemy-view" class="tab" data-tab="enemy-view" aria-selected="false" data-i18n="tabEnemy">Enemy Character</button>
       <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false" data-i18n="tabBoss">Mobs &amp; Bosses</button>
       <button type="button" id="attributes-tab" role="tab" aria-controls="attributes-view" class="tab" data-tab="attributes-view" aria-selected="false" data-i18n="tabAttributes">Attribute Trees</button>
-    </nav>
+      <button type="button" id="timers-tab" role="tab" aria-controls="timers-view" class="tab" data-tab="timers-view" aria-selected="false" data-i18n="tabTimers">Timers &amp; Map</button>
     <div id="calculator-view" class="tab-panel" role="tabpanel" aria-labelledby="calculator-tab">
     <section class="card encounter" aria-label="Combat scenario">
       <label data-i18n-label="targetModeLabel">Target mode<select id="target-mode"><option value="boss" data-i18n="targetModeBoss">PvE · Boss</option><option value="monster" data-i18n="targetModeMonster">PvE · Other monster</option><option value="player" data-i18n="targetModePlayer">PvP · Player</option></select></label>
@@ -51,13 +52,27 @@
         <div><h2 data-i18n-label="targetTitle">Target <span id="target-icon" class="actor-icon"></span></h2><label data-i18n-label="targetNameLabel">Name<input id="target-name" type="text" placeholder="Select a boss or enter a name" data-i18n-placeholder="targetNamePlaceholder"></label><label id="target-kind-label" data-i18n-label="creatureTypeLabel">Creature type<select id="creature-type-header"><option value="" data-i18n="creatureTypeUnknown">Unknown / manual</option><option value="cogni">Cogni</option><option value="fera">Fera</option><option value="natura">Natura</option><option value="varian">Varian</option><option value="special" data-i18n="creatureTypeSpecial">Special</option></select></label><label id="target-class-label" hidden data-i18n-label="classLabel">Class<input id="target-class" type="text" placeholder="Target class" data-i18n-placeholder="targetClassPlaceholder"></label></div>
       </div>
       <section class="ai-assistant" aria-labelledby="ai-title">
-        <h2 id="ai-title" data-i18n="aiAssistantTitle">Avatarnoia Flow Engine 2.0</h2>
-        <p class="reference-note" data-i18n="aiAssistantNote">Bundled Qwen3-0.6B ONNX (q8, reasoning disabled); no model download. Advice follows the active setup automatically. The Windows app may fetch an AION 2 guide by topic; names, values and questions stay local. Runs on CPU without WebGPU. Calculated comparisons take precedence over AI text.</p>
+        <div class="ai-heading"><h2 id="ai-title" data-i18n="aiAssistantTitle">AION 2 Combat Assistant</h2><button type="button" id="ai-configure" data-i18n="aiConfigure">Configure AI</button></div>
+        <p class="reference-note" data-i18n="aiAssistantNote">Remote AionLabs model; ask only when you choose. Your question, build data and guide excerpt are sent to AionLabs and may incur API charges. Save your key in Windows Credential Manager.</p>
+        <dialog id="ai-settings" aria-labelledby="ai-settings-title">
+          <form method="dialog" class="ai-settings">
+            <h2 id="ai-settings-title" data-i18n="aiSettingsTitle">AionLabs settings</h2>
+            <p id="ai-key-status" role="status" data-i18n="aiCheckingSettings">Checking settings…</p>
+            <label for="ai-api-key" data-i18n="aiKeyLabel">AionLabs API key</label>
+            <input id="ai-api-key" type="password" autocomplete="new-password" spellcheck="false">
+            <button type="button" id="ai-save-key" data-i18n="aiSaveKey">Save key</button>
+            <button type="button" id="ai-remove-key" data-i18n="aiRemoveKey">Remove saved key</button>
+            <label for="ai-model" data-i18n="aiModelLabel">Model</label>
+            <select id="ai-model"></select>
+            <p class="reference-note" data-i18n="aiPrivacyNote">Only clicking Ask sends the current question, calculator values, recent chat and a guide excerpt to AionLabs. Usage may be billed by your account.</p>
+            <button type="submit" data-i18n="aiClose">Close</button>
+          </form>
+        </dialog>
         <label for="ai-question" data-i18n="aiChatHeader">AION 2 Combat Assistant</label>
         <div id="ai-chat-dialog" class="ai-chat-dialog" role="log" aria-live="polite">
           <div class="ai-msg ai-msg-assistant">
             <span class="ai-msg-author">Avatarnoia Flow</span>
-            <div id="ai-answer" class="ai-msg-body" data-i18n="aiInitialStatus">Preparing local damage advice…</div>
+            <div id="ai-answer" class="ai-msg-body" data-i18n="aiInitialStatus">Ask a question to get a remote answer. Calculated comparisons remain local.</div>
           </div>
         </div>
         <div class="ai-input-row">
@@ -169,6 +184,11 @@
           <label id="global-region-label" data-i18n-label="globalRegionLabel">Global region<select id="global-region"><option value="naw">NA West</option><option value="nae">NA East</option><option value="eu">EU</option><option value="as">Asia</option><option value="la">SA</option></select></label>
           <button type="submit" data-i18n="searchBtn">Search</button>
         </form>
+        <h3 data-i18n="savedProfilesTitle">Saved profiles and recent characters</h3>
+        <p class="reference-note" data-i18n="savedProfilesNote">Saved profiles open immediately and refresh in the background. Old data remain available if the network fails.</p>
+        <label><input id="sync-enabled" type="checkbox" checked> <span data-i18n="syncEnabled">Background synchronization</span></label>
+        <label data-i18n-label="syncInterval">Refresh interval (seconds, 600–3600)<input id="sync-interval" type="number" min="600" max="3600" step="60" value="600"></label>
+        <div id="saved-profiles" class="saved-profiles"></div>
         <p id="search-status" role="status" aria-live="polite"></p>
         <label id="character-choice-label" hidden data-i18n-label="matchingCharsLabel">Matching characters<select id="character-choice"></select></label>
       </section>
@@ -176,6 +196,8 @@
         <h2 class="icon-heading"><span id="profile-class-icon" class="actor-icon" hidden></span><span id="profile-title"></span></h2>
         <p id="profile-meta"></p>
         <p id="profile-status" role="status" aria-live="polite"></p>
+        <button type="button" id="refresh-profile" data-i18n="refreshProfile">Refresh profile</button>
+        <button type="button" id="favorite-profile" aria-pressed="false" data-i18n="favoriteProfile">Favorite</button>
         <button type="button" id="import-character" disabled data-i18n="importCharBtn">Load available stats into calculator</button>
         <p class="import-note" data-i18n="importCharNote">Character-sheet totals and explicit equipment bonuses can be loaded into the calculator. Gear-only values are partial; missing HP and target Defense remain manual.</p>
         <div id="profile-dossier"></div>
@@ -408,6 +430,36 @@
           <p class="reference-note" data-i18n="genusCritCapNote">* Crit and Accuracy may be preferred over Power Shard Bonus until their respective caps are reached.</p>
           <p class="reference-note genus-bis-source" data-i18n="genusSource">Source: AION 2 — Global BIS Genus Lines (community reference; not official game guidance). Creature symbols from Aion2Data.com.</p>
         </section>
+      </section>
+    </div>
+    <div id="timers-view" class="tab-panel" role="tabpanel" aria-labelledby="timers-tab" hidden>
+      <section class="card">
+        <h2 data-i18n="timersTitle">AION 2 Event Timers</h2>
+        <p class="reference-note" data-i18n="timersSubtitle">Live countdowns for recurring rift, invasion, siege and world events aligned with regional servers.</p>
+        <div id="timer-cards" class="progression-grid"></div>
+      </section>
+      <section class="card">
+        <h2 data-i18n="mapTitle">Interactive Regional Map Reference</h2>
+        <p class="reference-note" data-i18n="mapSubtitle">Non-commercial reference map data and regional boundaries (CC BY-NC 4.0; Copyright © 2025 Yihao Liu).</p>
+        <label data-i18n-label="mapSelectLabel">Select Region<select id="map-select"></select></label>
+        <div id="map-summary" class="reference-note"></div>
+      </section>
+      <section class="card">
+        <h2 data-i18n="buildsTitle">Class Meta Builds &amp; Recommended Stigmas</h2>
+        <p class="reference-note" data-i18n="buildsSubtitle">Verified class weapon standards and community stigma priority from the October 2026 meta (source: shugo.gg/builds snapshot).</p>
+        <div id="build-cards" class="progression-grid"></div>
+      </section>
+      <section class="card">
+        <h2 data-i18n="leaderboardTitle">Top 10 Combat Power Rankings Snapshot</h2>
+        <p class="reference-note" data-i18n="leaderboardSubtitle">Global leaderboard snapshot verified from official client records and public Shugo rankings (2026-10-28); live Shugo API endpoint requires authentication/API clearance (HTTP 403).</p>
+        <div id="leaderboard-summary" class="reference-note"></div>
+        <ol id="leaderboard-list"></ol>
+      </section>
+      <section class="card">
+        <h2 data-i18n="dbTitle">Verified Game Database Directory</h2>
+        <p class="reference-note" data-i18n="dbSubtitle">Fast lookup across verified items, skills, dungeons and titles from client data snapshots.</p>
+        <input id="db-search-input" type="search" placeholder="Search database..." data-i18n-placeholder="dbSearchPlaceholder">
+        <div id="db-search-results" class="progression-grid"></div>
       </section>
     </div>
   </main>

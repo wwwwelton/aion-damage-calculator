@@ -1,49 +1,42 @@
 # AION 2 Damage Calculator
 
-Windows x64 damage calculator with a local WebView2 interface, hosted by a Rust executable (tao + wry). HTML, CSS, JavaScript, the inference runtime and Qwen3-0.6B q8 weights are embedded in the executable. Calculations, the mob/boss catalog and local model do not require internet access. Character search requests public profiles from the official AION 2 site (aion2.plaync.com); the assistant can fetch a current AION 2 guide by topic.
+Windows x64 damage calculator with an embedded WebView2 interface, hosted by Rust (tao + wry). Calculations and the mob/boss catalog work offline. Character search uses the official AION 2 site; optional AI advice uses the [AionLabs API](https://www.aionlabs.ai/docs/) and may incur usage charges.
 
 ## Get started
 
 ### Run the Windows app
 
-Requirements: Windows x64, the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) and about 2.5 GB of free RAM while the local assistant is active (see [Memory](#avatarnoia-flow-engine-20)). Download `AION2-Damage-Calculator.exe` from the [GitHub Releases](https://github.com/wwwwelton/aion-damage-calculator/releases) page (verify it with the attached `.sha256` file), or run a locally built executable from `dist/v<version>/` (each local build is written to its own version folder, so earlier builds are kept). The app reports an error if WebView2 is unavailable. The executable is a native Rust binary with no runtime to install. It is not digitally signed.
+Requirements: Windows x64 and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/). Download `AION2-Damage-Calculator.exe` from [GitHub Releases](https://github.com/wwwwelton/aion-damage-calculator/releases) and verify its SHA-256. Local builds are kept in `dist/v<version>/`. The executable is not digitally signed.
 
 ### Build from source
 
-Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) and [Bun](https://bun.sh/) on Windows. From the repository root, run:
+Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) on Windows. From the repository root, run:
 
 ```powershell
-bun install --frozen-lockfile
-bun build-ai.mjs
-cargo build --release
+cargo build --release -j 1
 ```
 
 To copy the WSL project (`/home/avatar/gui-dps-aion2`) to `C:\dev\gui-dps-aion2`, build it with one Cargo job, and keep each version's executable in `dist/v<version>/`, run `pwsh -NoProfile -File C:\dev\gui-dps-aion2\build-windows.ps1` on Windows. The script preserves downloaded model files and existing Windows builds; it does not remove files deleted from the WSL source.
 
 The executable is written to `target/release/AION2-Damage-Calculator.exe`. From WSL or Linux, `cargo build --release --target x86_64-pc-windows-gnu` cross-compiles the same executable with the MinGW toolchain (`x86_64-w64-mingw32-gcc`).
 
-The first build downloads the pinned Qwen3-0.6B-ONNX ONNX q8 model from Hugging Face, verifies its SHA-256 checksum and rewrites it into the ONNX external-data layout (`model_quantized.onnx` plus `model_quantized.onnx_data`, see `onnx-external-data.mjs`); the converted files are checksum-pinned too. **Users running the published executable do not download a model.** The weight files are excluded from Git because they exceed GitHub's 100 MB file limit. `src/assets.rs` lists the files embedded with `rust-embed`; `cargo build` fails if a listed file is missing, and `packaging.test.js` fails if `index.html` references a file that is not listed. The window (`src/window.rs`) compiles only on Windows; `cargo test` runs the host's unit tests (asset lookup, official lookup helpers, guide extraction and message routing) on any platform. `AION2_SELFTEST=<file> AION2-Damage-Calculator.exe` runs a headless check that writes a JSON report (embedded assets, one official search and profile, one guide fetch) without opening a window.
+No model download or AI bundling step is needed. `src/assets.rs` lists the embedded UI assets; `packaging.test.js` checks that the page's scripts and styles are included. The window compiles only on Windows; host unit tests run on any platform. `AION2_SELFTEST=<file>` runs the asset, official-profile and guide smoke check without opening a window.
 
 ### Continuous integration and releases
 
-`.github/workflows/build.yml` runs on every push and pull request to `main`: the JavaScript tests on Ubuntu, then on Windows `npm run build:ai` (the converted model is cached between runs and re-verified by checksum), the real offline inference check, `cargo test`, `cargo build --release` and an uploaded artifact containing the executable and its SHA-256. Pushing a tag such as `v1.2.0` additionally creates a GitHub Release with those two files, generated release notes and the version baked into the executable (the `version` in `Cargo.toml`, which must match the tag). To release: update `Cargo.toml` and `Cargo.lock`, then `git tag v1.2.0 && git push origin v1.2.0`. Each tag creates its own release; earlier releases and their executables stay available.
+`.github/workflows/build.yml` runs JavaScript and Rust tests on Ubuntu, then builds the Windows executable and publishes a checksummed artifact. A version tag matching `Cargo.toml` additionally creates a GitHub Release. Each tag keeps previous releases available.
 
 ### Development and checks
 
-Node.js runs the JavaScript tests and builds the AI assets. The full local verification chain, in order, is:
+Run the fast checks with Bun or Node.js, then build on Windows:
 
 ```bash
-npm ci
-npm run build:ai          # download/convert the model, bundle the worker (idempotent)
-node --test *.test.js     # 39 fast regression tests
-node ai-model.smoke.mjs   # real offline CPU inference in English and Portuguese
-cargo test                # Rust host unit tests (any platform)
-cargo build --release     # Windows executable (on Windows, or with --target x86_64-pc-windows-gnu from Linux)
+bun run test
+cargo test
+cargo build --release -j 1
 ```
 
-The executable is about 640 MB, almost all of it the embedded model and runtime files. `build:ai` reuses the converted model when its checksums match, so a rerun does not download again.
-
-Changing `ai-worker.js` or updating Transformers.js requires rerunning `npm run build:ai` before publishing. `package-lock.json` pins the development dependencies; normal users do not need Node.js or npm. The smoke check is not part of the fast test suite. The UI can be previewed by serving the repository over HTTP (for example, `python -m http.server 8000` and <http://127.0.0.1:8000/>). Character search and online guide retrieval go through the Rust host bridge (`host-bridge.js`) and work only in the Windows app. Verify those interactions and desktop behavior in the published executable.
+The UI can be previewed over HTTP. Character lookup, guide retrieval, API key storage and AI requests require the Windows host bridge. For an explicit paid evaluation with synthetic questions, set `AIONLABS_API_KEY` in the process environment and run `node aionlabs-evaluation.mjs`; it makes four calls and writes `aionlabs-evaluation-latest.json` for human review. Do not put a key in source control.
 
 ### Project layout
 
@@ -57,7 +50,7 @@ Changing `ai-worker.js` or updating Transformers.js requires rerunning `npm run 
 | `calculator.js`, `matchups.js`, `recommendations.js`, `numeric-input.js` | Damage calculation, matchup rules, tips and number parsing |
 | `characters.js`, `bosses.js`, `boss-data.js`, `mob-data.js`, `scrape-boss-details.mjs` | Profile imports, offline NPC catalog and the boss-detail refresh script |
 | `*.test.js` | Node.js regression tests |
-| `ai-worker.js`, `build-ai.mjs`, `onnx-external-data.mjs`, `ai-model.smoke.mjs`, `ai-worker.bundle.js`, `assets/ai/` | Transformers.js worker source, build script, ONNX external-data converter, inference smoke check, bundled worker and local inference runtime |
+| `src/aionlabs.rs`, `aionlabs-evaluation.mjs`, `aionlabs-evaluation.json` | Native AionLabs client, repeatable live evaluation and recorded exploratory results |
 
 ## Calculation scope
 
@@ -98,11 +91,25 @@ Open **Character Search**, enter an exact character name, choose a Global region
 
 The character dossier has **Equipment**, **Skills**, **Attributes** and **Progression** views. The summary shows level, race, gender, server, Combat Power, item level, the equipped title and how many titles the character owns. Equipment shows published base/bonus and Soul Bind options, stones and attached skills, with percentage values styled apart from flat values; **Attributes** groups the sheet into primary stats, divinities and other values and tags every published effect as **feeds the calculator** or **display only**; Skills groups learned active, passive and Stigma abilities with their levels; Progression shows published titles (equipped effects plus the bonus granted by owning the title), Daevanion boards, Arcana, pet with its level, and wings with grade and enchant level. The same views are available for the selected enemy player. Portrait and item/skill images require internet access; hidden or absent profile details are not inferred.
 
+The profile summary reads the legion from the official character profile and shows overall, class and server Combat Power ranks when available. Rankings are an optional Atool community lookup; unavailable rankings do not block the official profile and may be stale or absent.
+
+Equipped title names and published equip bonuses appear in the profile header. Wings and mounts appear with equipment. Skills are separated into equipped, acquired and not acquired, with their published levels. The response does not expose selected specialties, level-scaled descriptions, cooldowns or wing stat effects; these are not inferred.
+
 ## Enemy character search
 
 Open **Enemy Character**, enter a name and region, then select the correct character if several servers match. The profile shows explicit HP and defensive attributes from the public character sheet; where absent, it shows and labels equipped-item defenses as **partial** gear-only values. **Load enemy HP and defenses into calculator** copies available defenses and explicit HP into matching red fields; missing values reset to zero (unknown) when the opponent changes. A searched player character is not an NPC or boss: its defenses must not be mistaken for an encounter's actual stats. Block, Evasion and proc resistances remain reference-only for per-hit damage. The **Combat matchups** groups pair offensive stats with corresponding target defenses; PvP and elemental reference stats do not add unspecified multipliers to the supplied formula.
 
-The lookup uses the official AION 2 site's own search (`api-search.plaync.com/aion2global/search/v2/character`, the API behind `aion2.plaync.com/en-us/characters/index`) and character APIs (`aion2.plaync.com/api/character/info`, `equipment` and `equipment/item`), requested with `region` and `lang=en-US`. Complete searches are cached in memory for two minutes and complete profiles for five minutes. Item details are requested with at most six concurrent requests; a failed item detail marks the profile partial. No profile cache is written to disk. The official character data does not include HP in its stat list, so **HP is not imported** from character lookups and remains a manual value; no HP is estimated from community formulas.
+The lookup uses the official site's search (`api-search.plaync.com/aion2global/search/v2/character`) and character APIs (`aion2.plaync.com/api/character/info`, `equipment`, `equipment/item`) with `lang=en-US`. Item detail requests are limited to six concurrently; missing details mark the profile partial. The last 20 consulted profiles persist in `%LOCALAPPDATA%/AION2-Calculadora/profiles.json`, with atomic replacement and a successful-lookup timestamp. Saved profiles open immediately; the host fetches fresh data without serving its five-minute memory cache, then updates the dossier only. Network failures retain the last displayed data. Periodic background synchronization defaults to 600 seconds, can be disabled or set to 600–3600 seconds, and runs in Rust even when the window has no focus. In-flight requests may finish after it is disabled. **Refresh profile** explicitly fetches new data. Updates never re-import calculator values or invoke AI. Favorites are local browser preferences and sort saved profiles first; they do not exempt a profile from the 20-entry cache limit. Timestamps describe a successful API lookup, not when the character last changed in-game. The official profile has no HP total; HP remains manual.
+
+Atool rank data is fetched from its public Global `combat-score-rankings` endpoint with a five-second timeout. It is supplementary third-party data, not an official game ranking; when the service is unavailable or has no match, the dossier labels ranking as unavailable.
+
+## Timers, Map, Builds & Verified Database
+
+The **Timers & Map** tab adds regional event timers (Fenda, Shugo Festa, Invasão Dimensional, Vigilante Kairah) synchronized to regional schedules, interactive regional map coordinates and metadata (under CC BY-NC 4.0; Copyright © 2025 Yihao Liu), an October 2026 meta builds reference, a verified top-10 Combat Power leaderboard snapshot, and a fast game database directory.
+
+### Live Combat Telemetry & Prerequisites
+
+Live combat measurement (real-time DPS meter, combat replay, in-game task reading and live pet radar) requires passive packet capture from the game client. On Windows, the Npcap driver (`wpcap.dll` / `Packet.dll`) is detected and interface handles open without elevation. However, full live telemetry and opcode parsing require a running packet capture session and continuous packet decoding. Without an active capture decoder, these features remain explicitly documented as requiring external game event streams; they are not simulated with fake data.
 
 ## Boss catalog and creature-type matchups
 
@@ -120,15 +127,15 @@ The tips recalculate after every input change. They rank a **+1 percentage-point
 
 Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.tips/guides/aion-2-how-stats-work-damage-formula-guide.html) and [Aion 2 Maps — Stats explained](https://aion2maps.com/guides/stats-explained/). Their published rankings depend on build, boss and patch; the displayed numbers are **this formula's what-if estimates**, not measured in-game gains.
 
-### Avatarnoia Flow Engine 2.0
+### AionLabs assistant
 
-The assistant beneath the attacker and target names starts automatically with “Como melhorar minha build ou DPS” and refreshes advice two seconds after the last edit, and only when the build context actually changed, because each generation occupies a CPU core for tens of seconds. Questions are optional. Requests include the character and enemy classes (when available), the attributes that differ from the calculator defaults, active scenario, calculated hit, estimated DPS and top +1% upgrades. It runs the bundled [onnx-community/Qwen3-0.6B-ONNX](https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX) q8 model locally on CPU through Transformers.js; WebGPU is not required. No model weights are downloaded when the program runs, and the embedded files are served with `no-store` so they are not duplicated in the WebView2 profile. Each request carries the selected UI language; the system prompt and every status message (loading, reading, generating, errors) follow it. Check real inference offline with `node ai-model.smoke.mjs` after `npm run build:ai`; the small model can produce inaccurate or off-topic responses even with full context, so prefer the deterministic comparisons for numeric advice.
+Open **Configure AI**, save your API key in Windows Credential Manager and select a model. Only the model ID is stored in browser local storage; the saved key is not returned to the page. The default is `aion-labs/aion-3.5-mini`. The local inference worker, weights and runtime are no longer distributed.
 
-**Memory.** The WebView2 renderer holds about 2 GB of RAM once the model has answered: ONNX Runtime keeps the 0.6 GB of int8 weights in a WebAssembly heap that never shrinks, and the exported graph computes logits for every prompt position, so each prompt token costs roughly 1.3 MB permanently. The worker therefore caps prompts at 320 tokens, dropping the oldest conversation turns, then the guide note, then part of the build context; measured usage stays flat across chat turns instead of growing to 3 GB. Generation runs on a single WASM thread and takes tens of seconds per request; machines with little free RAM or swap pressure may stall while the model is active.
+Only pressing **Ask** or Enter sends a request. It includes the current question, recent conversation, character/target names, non-default calculator values, calculated hit/DPS, marginal upgrades and an optional guide excerpt. These data leave the device and are processed by AionLabs under your account. Editing the calculator does not initiate paid requests. Without network access or an API key, formula calculations remain available.
 
-The Windows app may automatically request one whitelisted [Aion 2 Maps combat guide](https://aion2maps.com/guides/stats-explained/) by topic and display its URL. Only a guide category is sent to the guide website; character names, calculator values and questions stay on the device. If the internet is unavailable, local advice still runs. This is guided lookup, not unrestricted web search.
+Exploratory live testing is recorded in `aionlabs-evaluation.json`: an initial 600-token limit returned no final answer, while 2400 tokens with low reasoning returned answers. One refined-prompt response was entirely off-topic. The model is not an authoritative game database: it must not infer exact DPS from combat power, invent proc/Teostone formulas or equate player defenses with boss defenses. The prompt asks for missing evidence and separates estimates from measured rotations, but cannot guarantee correctness.
 
-**Apply suggested +1% upgrade** changes the highest-ranked applicable percentage field by one point and recalculates the result. It is an explicit what-if edit, not a claim that the character's equipment changed; imported character and enemy stats are never silently overwritten. The small model can be inaccurate or off-topic; the calculated comparisons and cited guide take precedence.
+**Apply suggested +1% upgrade** is a local formula-based what-if edit, not an AI recommendation or a change to actual equipment. Calculated comparisons take precedence over generated text.
 
 ## Release history
 

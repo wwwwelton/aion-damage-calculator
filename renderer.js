@@ -146,7 +146,7 @@ function update() {
     : creatureType
       ? I18N.format('communityCreatureStatus', { type: creatureChoice.selectedOptions[0].textContent })
       : I18N.t('communityFormulaStatus')}`;
-  scheduleAiTips();
+  updateApplyButton();
 }
 form.addEventListener('input', update);
 form.addEventListener('focusout', (event) => {
