@@ -2,11 +2,13 @@
 // Port of the enemy path in characters.js. Equipment/typed-effect defenses and import are not ported yet.
 
 use crate::host;
-use crate::i18n::t;
+use crate::i18n::{format_t, t};
 use crate::state::AppState;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::{json, Value};
+use aion2_core::calculator::TargetMode;
+use aion2_core::character_extraction::{character_hp, enemy_defenses, ENEMY_FIELDS};
 
 const GLOBAL_REGIONS: [(&str, &str); 5] = [
     ("naw", "NA West"),
@@ -67,12 +69,6 @@ fn sheet_defenses(profile: &Value) -> Vec<(&'static str, &'static str, f64)> {
         .collect()
 }
 
-fn hp_of(profile: &Value) -> Option<f64> {
-    let text = stat_value(profile, "HP")?;
-    let digits: String = text.chars().filter(|c| c.is_ascii_digit() || *c == '.').collect();
-    digits.parse::<f64>().ok().filter(|v| *v > 0.0)
-}
-
 async fn fetch_profile_now(
     item: Value,
     region: RwSignal<String>,
@@ -90,6 +86,43 @@ async fn fetch_profile_now(
     }
 }
 
+fn import_into_calculator(state: AppState, data: &Value) -> String {
+    let lang = state.lang.get_untracked();
+    let defenses = enemy_defenses(data);
+    let hp = character_hp(data);
+    let name = data
+        .get("info")
+        .and_then(|i| i.get("profile"))
+        .and_then(|p| p.get("characterName"))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let inputs = state.inputs.get_value();
+    let set = |field: &str, text: String| {
+        if let Some((_, sig)) = inputs.iter().find(|(f, _)| *f == field) {
+            sig.set(text);
+        }
+    };
+    for (_, field, _) in ENEMY_FIELDS {
+        set(field, "0".to_string());
+    }
+    set("enemyHp", "0".to_string());
+    for (field, value) in &defenses {
+        set(field, value.to_string());
+    }
+    if let Some(hp) = hp {
+        set("enemyHp", hp.to_string());
+    }
+    state.target_mode.set(TargetMode::Player);
+    state.target_name.set(name.clone());
+    let hp_text = match hp {
+        Some(hp) => format_t(lang, "enemyHpKnown", &[("hp", hp.to_string().as_str())]),
+        None => t(lang, "enemyHpUnknown"),
+    };
+    let count = defenses.len().to_string();
+    format_t(lang, "enemyImportResult", &[("count", count.as_str()), ("name", name.as_str()), ("hp", hp_text.as_str())])
+}
+
 #[component]
 pub fn EnemyTab(state: AppState) -> impl IntoView {
     let lang = state.lang;
@@ -97,6 +130,7 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
     let region = RwSignal::new("ww".to_string());
     let global_region = RwSignal::new("naw".to_string());
     let status = RwSignal::new(String::new());
+    let import_status = RwSignal::new(String::new());
     let results = RwSignal::new(Vec::<Value>::new());
     let profile = RwSignal::new(None::<Value>);
 
@@ -189,7 +223,7 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
                 .into_iter()
                 .map(|(_, label, value)| format!("{label}: {value}"))
                 .collect();
-            if let Some(hp) = hp_of(&data) {
+            if let Some(hp) = character_hp(&data) {
                 rows.insert(0, format!("HP: {hp}"));
             }
             let rows_view = if rows.is_empty() {
@@ -201,6 +235,7 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
                     .collect_view()
                     .into_any()
             };
+            let import_data = data.clone();
             view! {
                 <section class="card">
                     <h2>{title}</h2>
@@ -208,6 +243,8 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
                     <h3>{move || t(lang.get(), "availableEnemyStats")}</h3>
                     <ul>{rows_view}</ul>
                     <p class="import-note">{move || t(lang.get(), "importEnemyNote")}</p>
+                    <button type="button" on:click=move |_| import_status.set(import_into_calculator(state, &import_data))>{move || t(lang.get(), "importEnemyBtn")}</button>
+                    <p role="status">{move || import_status.get()}</p>
                 </section>
             }
         })}

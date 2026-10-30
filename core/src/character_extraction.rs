@@ -364,7 +364,7 @@ pub fn extract_character(data: &Value) -> ExtractedCharacter {
     }
 }
 
-const ENEMY_FIELDS: &[(&str, &str, bool)] = &[
+pub const ENEMY_FIELDS: &[(&str, &str, bool)] = &[
     ("Defense", "defense", false),
     ("Weapon Damage Tolerance", "weaponDamageTolerance", true),
     ("Damage Tolerance", "damageTolerance", true),
