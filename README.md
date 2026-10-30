@@ -141,6 +141,7 @@ Exploratory live testing is recorded in `aionlabs-evaluation.json`: an initial 6
 
 | Version | Highlights |
 | --- | --- |
+| 1.3.0 | Replace local SLM with AionLabs API, add persistent profile cache & background sync, Authenticode SHA-256 signing with DigiCert timestamp, event timers, map reference, and dynamic PvP/PvE meta builds. |
 | 1.2.5 | PowerShell script copies and builds the Windows app; Teostones names and long effect text now have separate lines. |
 | 1.2.4 | Equipment cards switch to one column at narrower widths. |
 | 1.2.3 | Version-only rebuild; application behavior is unchanged from 1.2.2. |
