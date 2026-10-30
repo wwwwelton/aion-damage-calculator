@@ -185,6 +185,32 @@ impl OfficialClient {
         community_ranking_data(payload)
     }
 
+    pub async fn legion_roster(&self, server_name: &str, legion_name: &str, server_id: i64) -> Result<Value, String> {
+        if server_name.trim().is_empty() || legion_name.trim().is_empty() {
+            return Err("Invalid legion or server.".into());
+        }
+        let region = server_region(server_id).unwrap_or("SA");
+        let server_full = format!("{server_name} ({region})");
+        let encoded_server = percent_encoding::utf8_percent_encode(&server_full, percent_encoding::NON_ALPHANUMERIC).to_string();
+        let encoded_guild = percent_encoding::utf8_percent_encode(legion_name, percent_encoding::NON_ALPHANUMERIC).to_string();
+        let url_str = format!("https://aion2tool.com/global/api/region/{encoded_server}/{encoded_guild}?page=1&per_page=50");
+        let url = Url::parse(&url_str).map_err(|e| e.to_string())?;
+        let response = self.http.get(url)
+            .header("Referer", format!("https://aion2tool.com/global/region/{encoded_server}/{encoded_guild}"))
+            .header("Accept", "application/json, text/plain, */*")
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .timeout(Duration::from_secs(8))
+            .send()
+            .await
+            .map_err(|e| format!("Failed to reach legion service: {e}"))?;
+        let response = response.error_for_status().map_err(|e| format!("Legion service HTTP error: {e}"))?;
+        let data: Value = response.json().await.map_err(|e| format!("Invalid JSON from legion service: {e}"))?;
+        if data["success"] != true {
+            return Err("Legion not found in public database.".into());
+        }
+        Ok(data)
+    }
+
     // A failed item detail is reported as a partial profile instead of failing the whole lookup.
     async fn item_detail(&self, item: &Value, shared: &[(&str, String)]) -> Option<(String, Value)> {
         let slot = item.get("slotPos")?.as_i64()?;
@@ -333,5 +359,16 @@ mod tests {
         let shared = vec![("characterId", id)];
         let url = character_url("info", &shared, &[]).unwrap();
         assert!(url.query().unwrap().contains("characterId=9p064LqT7tlY1gPpQykuPS9QTy0nrWUblFDbE5MGhyY%3D"));
+    }
+
+    #[tokio::test]
+    async fn fetches_real_legion_roster_from_atool() {
+        let client = OfficialClient::new().unwrap();
+        let res = client.legion_roster("Siel", "GAURUS", 1401).await;
+        assert!(res.is_ok(), "Legion fetch failed: {:?}", res.err());
+        let data = res.unwrap();
+        assert_eq!(data["success"], true);
+        assert_eq!(data["guild"], "GAURUS");
+        assert!(data["members"].as_array().unwrap().len() >= 3);
     }
 }

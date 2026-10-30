@@ -24,6 +24,12 @@ pub async fn respond(message: &str, official: &OfficialClient, guides: &GuideCli
             _ => Err("Select a valid search result.".to_string()),
         },
         Some("research") => guides.fetch(text(&request, "topic")).await,
+        Some("legion_roster") => {
+            let server_name = text(&request, "serverName");
+            let legion_name = text(&request, "legionName");
+            let server_id = request.get("serverId").and_then(Value::as_i64).unwrap_or(0);
+            official.legion_roster(server_name, legion_name, server_id).await
+        }
         Some("ai_models") => ai.models().await,
         Some("ai_key_status") => Ok(json!({ "configured": ai.key_status() })),
         Some("ai_key_save") => ai.save_key(text(&request, "key")).map(|()| json!({ "configured": true })),

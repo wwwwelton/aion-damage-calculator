@@ -420,18 +420,46 @@ if (typeof document !== 'undefined') {
     openLegionDialog(legionName, serverName);
   });
 
-  function openLegionDialog(legionName, serverName) {
+  async function openLegionDialog(legionName, serverName) {
     const dialog = document.querySelector('#legion-dialog');
     const title = document.querySelector('#legion-dialog-title');
     const summary = document.querySelector('#legion-dialog-summary');
     const list = document.querySelector('#legion-members-list');
     if (!dialog || !list) return;
     title.textContent = `Legion: ${legionName}`;
+    summary.textContent = `Consultando integrantes da legião no servidor ${serverName || 'ativo'}…`;
+    list.replaceChildren();
+    dialog.showModal();
+
+    // Try live Atool legion roster via native host request first
+    try {
+      const serverId = loadedItem?.serverId || 1401;
+      const data = await request('legion_roster', { serverName: serverName || 'Siel', legionName, serverId });
+      if (data && data.members && data.members.length > 0) {
+        summary.textContent = `Membros registrados: ${data.total_members} · Média CP: ${Math.round(Number(data.avg_combat_power2 || 0)).toLocaleString()} · Média GS: ${Math.round(Number(data.avg_combat_power || 0)).toLocaleString()} · Rank do Servidor: #${data.server_rank || '—'}`;
+        list.replaceChildren(...data.members.map(m => {
+          const card = document.createElement('article');
+          card.className = 'progression-card';
+          const strong = document.createElement('strong');
+          strong.textContent = `${m.nickname} · ${m.job || ''}`;
+          const small = document.createElement('small');
+          const cpVal = m.combat_power2 ? `CP ${Number(m.combat_power2).toLocaleString()}` : '';
+          const gsVal = m.combat_power ? `GS ${Number(m.combat_power).toLocaleString()}` : '';
+          small.textContent = [m.race, cpVal, gsVal, m.server].filter(Boolean).join(' · ');
+          card.append(strong, small);
+          return card;
+        }));
+        return;
+      }
+    } catch (err) {
+      // Fallback to local saved members if network/Atool fails
+    }
+
     const savedMembers = savedProfiles.filter(entry => {
       const v = extractCharacter(entry.profile);
       return v.legion && v.legion.toLowerCase() === legionName.toLowerCase();
     });
-    summary.textContent = `Membros registrados localmente (${savedMembers.length}) no servidor ${serverName || 'ativo'}. A API web pública da PlayNC não fornece listagem completa de membros não consultados.`;
+    summary.textContent = `Membros registrados localmente (${savedMembers.length}) no servidor ${serverName || 'ativo'}.`;
     if (savedMembers.length > 0) {
       list.replaceChildren(...savedMembers.map(entry => {
         const v = extractCharacter(entry.profile);
@@ -447,10 +475,9 @@ if (typeof document !== 'undefined') {
     } else {
       const p = document.createElement('p');
       p.className = 'reference-note';
-      p.textContent = 'Nenhum outro membro desta legião foi consultado e armazenado no cache local ainda. Consulte os integrantes pelo nome para vê-los listados aqui.';
+      p.textContent = 'Não foi possível carregar a lista de integrantes remota e nenhum outro membro desta legião foi consultado localmente ainda.';
       list.replaceChildren(p);
     }
-    dialog.showModal();
   }
 
   if (window.aion2Host) {
