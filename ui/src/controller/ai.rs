@@ -309,6 +309,16 @@ pub fn update_apply_button() {
 
 pub fn init_ai() {
     let doc = document();
+    if let Some(calculator) = doc.get_element_by_id("calculator") {
+        let on_edit = Closure::<dyn FnMut()>::new(|| {
+            if let Some(report) = document().get_element_by_id("report-ai") {
+                let _ = report.set_attribute("hidden", "");
+            }
+        });
+        let _ = calculator.add_event_listener_with_callback("input", on_edit.as_ref().unchecked_ref());
+        let _ = calculator.add_event_listener_with_callback("change", on_edit.as_ref().unchecked_ref());
+        on_edit.forget();
+    }
 
     // Configure button -> showModal
     if let (Some(btn), Some(_dlg)) = (
@@ -525,6 +535,9 @@ pub fn init_ai() {
         if let Some(el) = doc.query_selector(selector).ok().flatten() {
             let on_input = Closure::<dyn FnMut()>::new(|| {
                 update_apply_button();
+                if let Some(report) = document().get_element_by_id("report-ai") {
+                    let _ = report.set_attribute("hidden", "");
+                }
             });
             let _ = el.add_event_listener_with_callback("input", on_input.as_ref().unchecked_ref());
             let _ = el.add_event_listener_with_callback("change", on_input.as_ref().unchecked_ref());
@@ -566,6 +579,9 @@ async fn dispatch_ai_request(question: String, asst_body: Element) {
     let doc = document();
     let lang = current_lang();
     let topic = guide_topic(&doc, &question);
+    if let Some(report) = doc.get_element_by_id("report-ai") {
+        let _ = report.set_attribute("hidden", "");
+    }
 
     let cached_guide = GUIDE_CACHE.with(|cache| cache.borrow().get(topic).cloned());
     let guide_result = match cached_guide {
@@ -626,6 +642,15 @@ async fn dispatch_ai_request(question: String, asst_body: Element) {
         Ok(res) => {
             let text = res.get("text").and_then(|t| t.as_str()).unwrap_or("");
             render_markdown_into(&doc, &asst_body, text);
+            if !text.trim().is_empty() && current_ai_context(&doc) == context {
+                if let (Some(report), Some(answer)) = (
+                    doc.get_element_by_id("report-ai"),
+                    doc.get_element_by_id("report-ai-answer"),
+                ) {
+                    render_markdown_into(&doc, &answer, text);
+                    let _ = report.remove_attribute("hidden");
+                }
+            }
             CONVERSATION_HISTORY.with(|hist| {
                 let mut h = hist.borrow_mut();
                 h.push(json!({ "role": "user", "content": question }));
