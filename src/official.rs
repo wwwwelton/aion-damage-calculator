@@ -189,8 +189,7 @@ impl OfficialClient {
         if server_name.trim().is_empty() || legion_name.trim().is_empty() {
             return Err("Invalid legion or server.".into());
         }
-        let region = server_region(server_id).unwrap_or("SA");
-        let server_full = format!("{server_name} ({region})");
+        let server_full = self.resolve_server_full(server_name, legion_name, server_id).await;
         let encoded_server = percent_encoding::utf8_percent_encode(&server_full, percent_encoding::NON_ALPHANUMERIC).to_string();
         let encoded_guild = percent_encoding::utf8_percent_encode(legion_name, percent_encoding::NON_ALPHANUMERIC).to_string();
         let url_str = format!("https://aion2tool.com/global/api/region/{encoded_server}/{encoded_guild}?page=1&per_page=50");
@@ -213,6 +212,30 @@ impl OfficialClient {
             return Err("Legion not found in public database.".into());
         }
         Ok(data)
+    }
+
+    // The roster API keys guilds by "Server (REGION)". The region is not derivable from the server id,
+    // so look the guild up in the public rankings and reuse the suffix it is listed under.
+    async fn resolve_server_full(&self, server_name: &str, legion_name: &str, server_id: i64) -> String {
+        let fallback = format!("{server_name} ({})", server_region(server_id).unwrap_or("SA"));
+        let Ok(url) = Url::parse("https://aion2tool.com/global/api/region-rankings?page=1&per_page=100") else {
+            return fallback;
+        };
+        let Ok(response) = self.http.get(url).header("Referer", "https://aion2tool.com/global/region").timeout(Duration::from_secs(8)).send().await else {
+            return fallback;
+        };
+        let Ok(payload) = response.json::<Value>().await else {
+            return fallback;
+        };
+        let prefix = format!("{server_name} (");
+        payload["data"]
+            .as_array()
+            .and_then(|rows| rows.iter().find(|row| {
+                row["guild"].as_str().is_some_and(|g| g.eq_ignore_ascii_case(legion_name))
+                    && row["server"].as_str().is_some_and(|s| s.starts_with(&prefix))
+            }))
+            .and_then(|row| row["server"].as_str().map(str::to_string))
+            .unwrap_or(fallback)
     }
 
     // A failed item detail is reported as a partial profile instead of failing the whole lookup.
