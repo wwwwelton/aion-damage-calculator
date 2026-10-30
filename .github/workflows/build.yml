@@ -22,31 +22,23 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: npm ci
-      - run: npm test
-      - run: cargo test
-      - run: cargo test -p aion2-core
-
-  wasm:
-    name: WebAssembly UI
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with:
           tool: wasm-bindgen@0.2.130
+      # The host embeds ui/dist (gitignored), so the interface is built before the tests.
       - run: bash scripts/build-ui.sh
-      - run: test -s ui/dist/aion2_ui_bg.wasm
+      - run: npm ci
+      - run: npm test
+      - run: cargo test
+      - run: cargo test -p aion2-core
+      - run: cargo test -p aion2-ui
 
   build:
     name: Windows executable
-    needs: [test, wasm]
+    needs: test
     runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.value }}
@@ -55,6 +47,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
@@ -62,11 +55,9 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: wasm-bindgen@0.2.130
-      - run: bash scripts/build-ui.sh
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+      - name: Build interface
+        shell: bash
+        run: bash scripts/build-ui.sh
       - run: npm ci
       - name: Resolve version
         id: version
@@ -92,7 +83,7 @@ jobs:
         run: |
           AION2_SELFTEST=selftest.json ./target/release/AION2-Damage-Calculator.exe
           cat selftest.json
-          node -e "const r=require('./selftest.json'); if(!r.embedded.index||!r.embedded.characters_js||!r.embedded.ai_tips_js) process.exit(1)"
+          node -e "const r=require('./selftest.json'); if(!r.embedded.index||!r.embedded.ui_js||!r.embedded.ui_wasm) process.exit(1)"
 
       - name: Checksum
         shell: bash

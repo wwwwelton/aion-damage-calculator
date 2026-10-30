@@ -5,10 +5,12 @@ $destination = 'C:\dev\gui-dps-aion2'
 $destinationWsl = '/mnt/c/dev/gui-dps-aion2/'
 
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
+wsl.exe -d CachyOS --exec bash -l "${source}scripts/build-ui.sh"
+if ($LASTEXITCODE -ne 0) { throw 'Could not build the WebAssembly interface in WSL.' }
 # shortcut: no --delete preserves caches and prior builds; remove stale source files manually if needed.
 wsl.exe -d CachyOS --exec rsync -rt --checksum `
     --exclude=.git/ --exclude=.claude/ --exclude=target/ --exclude=node_modules/ `
-    --exclude=dist/ --exclude=scripts/ --exclude=docs/ `
+    --exclude=/dist/ --exclude=scripts/ --exclude=docs/ `
     --exclude='*.onnx' --exclude='*.onnx_data' --exclude='*.download' `
     -- $source $destinationWsl
 if ($LASTEXITCODE -ne 0) { throw 'Could not copy the project from WSL.' }

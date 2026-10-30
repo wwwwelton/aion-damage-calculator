@@ -37,9 +37,9 @@ fn main() {
 
 async fn self_test() -> Value {
     let pages = assets::lookup("/").is_some();
-    let script = assets::lookup("/characters.js").is_some();
-    let ai_script = assets::lookup("/ai-tips.js").is_some();
-    let mut report = json!({ "embedded": { "index": pages, "characters_js": script, "ai_tips_js": ai_script } });
+    let ui_js = assets::lookup("/aion2_ui.js").is_some();
+    let ui_wasm = assets::lookup("/aion2_ui_bg.wasm").is_some();
+    let mut report = json!({ "embedded": { "index": pages, "ui_js": ui_js, "ui_wasm": ui_wasm } });
     match official::OfficialClient::new() {
         Ok(client) => {
             let client = std::sync::Arc::new(client);

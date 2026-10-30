@@ -10,17 +10,17 @@ Requirements: Windows x64 and the [Microsoft Edge WebView2 Runtime](https://deve
 
 ### Build from source
 
-Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) on Windows. From the repository root, run:
+Install [Rust](https://rustup.rs/) (stable, `x86_64-pc-windows-msvc`) on Windows. The executable embeds the WebAssembly interface from `ui/dist`, so first run `bash scripts/build-ui.sh` (needs the `wasm32-unknown-unknown` target and `wasm-bindgen-cli` 0.2.130). Then, from the repository root, run:
 
 ```powershell
 cargo build --release -j 1
 ```
 
-To copy the WSL project (`/home/avatar/gui-dps-aion2`) to `C:\dev\gui-dps-aion2`, build it with one Cargo job, and keep each version's executable in `dist/v<version>/`, run `pwsh -NoProfile -File C:\dev\gui-dps-aion2\build-windows.ps1` on Windows. The script preserves downloaded model files and existing Windows builds; it does not remove files deleted from the WSL source.
+To build the interface in WSL, copy the WSL project (`/home/avatar/gui-dps-aion2`) to `C:\dev\gui-dps-aion2`, build it with one Cargo job, and keep each version's executable in `dist/v<version>/`, run `pwsh -NoProfile -File C:\dev\gui-dps-aion2\build-windows.ps1` on Windows. The script preserves downloaded model files and existing Windows builds; it does not remove files deleted from the WSL source.
 
-The executable is written to `target/release/AION2-Damage-Calculator.exe`. From WSL or Linux, `cargo build --release --target x86_64-pc-windows-gnu` cross-compiles the same executable with the MinGW toolchain (`x86_64-w64-mingw32-gcc`).
+The executable is written to `target/release/AION2-Damage-Calculator.exe`. From WSL or Linux, `bash build.sh` builds the interface and cross-compiles the same executable with the MinGW toolchain (`x86_64-w64-mingw32-gcc`).
 
-No model download or AI bundling step is needed. `src/assets.rs` lists the embedded UI assets; `packaging.test.js` checks that the page's scripts and styles are included. The window compiles only on Windows; host unit tests run on any platform. `AION2_SELFTEST=<file>` runs the asset, official-profile and guide smoke check without opening a window.
+No model download or AI bundling step is needed. `src/assets.rs` lists the embedded UI assets; `packaging.test.js` checks that the built page's stylesheet and WebAssembly files are included. The window compiles only on Windows; host unit tests run on any platform. `AION2_SELFTEST=<file>` runs the asset, official-profile and guide smoke check without opening a window.
 
 ### Continuous integration and releases
 
@@ -31,6 +31,7 @@ No model download or AI bundling step is needed. `src/assets.rs` lists the embed
 Run the fast checks with Bun or Node.js, then build on Windows:
 
 ```bash
+bash scripts/build-ui.sh
 bun run test
 cargo test
 cargo build --release -j 1
