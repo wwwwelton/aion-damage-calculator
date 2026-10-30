@@ -39,14 +39,20 @@ dependencies = [
 [[package]]
 name = "aion2-core"
 version = "0.1.0"
+dependencies = [
+ "regex",
+ "serde_json",
+]
 
 [[package]]
 name = "aion2-ui"
 version = "0.1.0"
 dependencies = [
  "aion2-core",
+ "js-sys",
  "leptos",
  "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

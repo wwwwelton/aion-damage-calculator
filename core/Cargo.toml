@@ -6,3 +6,5 @@ publish = false
 description = "Pure AION 2 damage rules shared by the native host and the WebAssembly interface"
 
 [dependencies]
+regex = "1"
+serde_json = "1"
