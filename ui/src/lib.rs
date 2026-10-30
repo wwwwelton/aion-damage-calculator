@@ -1,4 +1,8 @@
 pub mod boss;
+#[cfg(target_arch = "wasm32")]
+pub mod character;
+#[cfg(target_arch = "wasm32")]
+pub mod host;
 pub mod calculator;
 pub mod calculator_form;
 pub mod header;
@@ -6,6 +10,8 @@ pub mod i18n;
 pub mod state;
 
 use boss::BossTab;
+#[cfg(target_arch = "wasm32")]
+use character::CharacterTab;
 use calculator::CalculatorTab;
 use header::Header;
 use leptos::mount::mount_to_body;
@@ -25,6 +31,9 @@ fn App() -> impl IntoView {
             </div>
             <div hidden=move || state.tab.get() != ActiveTab::Boss>
                 <BossTab state=state />
+            </div>
+            <div hidden=move || state.tab.get() != ActiveTab::Character>
+                <CharacterTab state=state />
             </div>
         </main>
     }
