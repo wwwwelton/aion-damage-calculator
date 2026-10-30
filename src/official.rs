@@ -205,6 +205,10 @@ impl OfficialClient {
             .map_err(|e| format!("Failed to reach legion service: {e}"))?;
         let response = response.error_for_status().map_err(|e| format!("Legion service HTTP error: {e}"))?;
         let data: Value = response.json().await.map_err(|e| format!("Invalid JSON from legion service: {e}"))?;
+        Self::checked_legion_roster(data)
+    }
+
+    fn checked_legion_roster(data: Value) -> Result<Value, String> {
         if data["success"] != true {
             return Err("Legion not found in public database.".into());
         }
@@ -361,14 +365,18 @@ mod tests {
         assert!(url.query().unwrap().contains("characterId=9p064LqT7tlY1gPpQykuPS9QTy0nrWUblFDbE5MGhyY%3D"));
     }
 
-    #[tokio::test]
-    async fn fetches_real_legion_roster_from_atool() {
-        let client = OfficialClient::new().unwrap();
-        let res = client.legion_roster("Siel", "GAURUS", 1401).await;
-        assert!(res.is_ok(), "Legion fetch failed: {:?}", res.err());
-        let data = res.unwrap();
-        assert_eq!(data["success"], true);
-        assert_eq!(data["guild"], "GAURUS");
-        assert!(data["members"].as_array().unwrap().len() >= 3);
+    #[test]
+    fn legion_roster_accepts_only_successful_responses() {
+        let fixture = json!({
+            "success": true,
+            "guild": "GAURUS",
+            "members": [{"name": "A"}, {"name": "B"}, {"name": "C"}]
+        });
+        let data = OfficialClient::checked_legion_roster(fixture.clone()).unwrap();
+        assert_eq!(data, fixture);
+        assert_eq!(
+            OfficialClient::checked_legion_roster(json!({"success": false})).unwrap_err(),
+            "Legion not found in public database."
+        );
     }
 }
