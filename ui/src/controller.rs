@@ -182,7 +182,7 @@ pub fn init_calculator() {
         form.set_oninput(Some(update.as_ref().unchecked_ref()));
         form.set_onchange(Some(update.as_ref().unchecked_ref()));
     }
-    for id in ["attacker-name", "attacker-class", "target-name", "target-class"] {
+    for id in ["attacker-name", "attacker-class", "target-name", "target-class", "creature-type-header"] {
         if let Some(input) = doc.get_element_by_id(id) {
             let _ = input.add_event_listener_with_callback("input", update.as_ref().unchecked_ref());
             let _ = input.add_event_listener_with_callback("change", update.as_ref().unchecked_ref());
@@ -271,6 +271,7 @@ fn populate_matchup_groups(doc: &Document, container: &Element, is_pve: bool) {
 
 pub fn recalculate() {
     let doc = document();
+    ai::invalidate_report();
     let lang = current_lang();
     let pt = lang == "pt";
     let Ok(inputs) = doc.query_selector_all("#calculator input") else { return };

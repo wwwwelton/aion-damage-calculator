@@ -180,8 +180,10 @@
           </div>
         </div>
         <ul id="report-assumptions" class="reference-note"></ul>
-        <section id="report-ai" hidden>
-          <h3>Gemini</h3>
+        <section id="report-ai" aria-labelledby="report-ai-title" aria-busy="false">
+          <h3 id="report-ai-title" data-i18n="reportAiTitle">Gemini-generated analysis</h3>
+          <p id="report-ai-model"></p>
+          <p id="report-ai-status" role="status" data-i18n="aiInitialStatus">Ask a question to get a remote answer. Calculated comparisons remain local.</p>
           <div id="report-ai-answer" class="ai-msg-body" aria-live="polite"></div>
         </section>
       </section>
