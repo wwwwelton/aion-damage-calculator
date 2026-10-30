@@ -140,7 +140,7 @@ The model is not an authoritative game database: it must not infer exact DPS fro
 
 | Version | Highlights |
 | --- | --- |
-| Unreleased | Switch the AI assistant from AionLabs to Google Gemini (default `gemini-3.1-flash-lite`); the Gemini API key is stored XOR-obfuscated as the embedded fallback. |
+| 1.4.0 | Switch the AI assistant from AionLabs to Google Gemini (default `gemini-3.1-flash-lite`; the API key is stored XOR-obfuscated as the embedded fallback), render assistant answers as Markdown, and show attacker-vs-target attribute matchups as bordered tables. |
 | 1.3.1 | Fix desktop view container width, add interactive legion roster modal with member inspection, and update release distribution. |
 | 1.3.0 | Replace local SLM with AionLabs API, add persistent profile cache & background sync, Authenticode SHA-256 signing with DigiCert timestamp, event timers, map reference, and dynamic PvP/PvE meta builds. |
 | 1.2.5 | PowerShell script copies and builds the Windows app; Teostones names and long effect text now have separate lines. |
