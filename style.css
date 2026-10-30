@@ -131,6 +131,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .estimate-results > div { padding: 16px; border: 1px solid #346f79; border-radius: 10px; background: #172738; }
 .estimate-results span { display: block; color: #91e6dc; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
 .estimate-results strong { display: block; margin-top: 8px; font-size: 27px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#report-hit-breakdown { white-space: pre-line; margin-top: 12px; }
+#report-assumptions { margin-top: 16px; }
 .estimate #estimate-note { margin: 14px 0 0; }
 .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .matchup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

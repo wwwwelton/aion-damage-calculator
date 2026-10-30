@@ -133,6 +133,10 @@ The tips recalculate after every input change. They rank a **+1 percentage-point
 
 Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.tips/guides/aion-2-how-stats-work-damage-formula-guide.html) and [Aion 2 Maps — Stats explained](https://aion2maps.com/guides/stats-explained/). Their published rankings depend on build, boss and patch; the displayed numbers are **this formula's what-if estimates**, not measured in-game gains.
 
+### Combat report
+
+The report at the bottom of the calculator uses the same effective scenario and results as the main calculation: attacker/target, landed-hit damage, estimated DPS and time to defeat. Missing hit rate or target HP is explained rather than guessed; zero hit damage stays zero. Its local +1 percentage-point comparisons are not a meta build or gear-cost ranking. Editing, importing or changing language refreshes the report offline without requesting AI.
+
 ### Gemini assistant
 
 Open **Configure AI**, save your API key in Windows Credential Manager and select a model. Only the model ID is stored in browser local storage; the saved key is not returned to the page. The default is `gemini-3.1-flash-lite`. The local inference worker, weights and runtime are no longer distributed.

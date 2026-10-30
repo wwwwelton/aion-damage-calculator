@@ -165,8 +165,8 @@
         <div id="reference-matchups"></div>
       </section>
       <section class="card" id="combat-report-section" aria-labelledby="combat-report-title">
-        <h2 id="combat-report-title" data-i18n="combatReportTitle">Combat Analysis &amp; Recommended Setup</h2>
-        <p class="reference-note" data-i18n="combatReportSubtitle">Summary of calculated combat parameters and meta-recommended configuration for the active mode.</p>
+        <h2 id="combat-report-title" data-i18n="combatReportTitle">Combat report</h2>
+        <p class="reference-note" data-i18n="combatReportSubtitle">Calculated results and local comparisons, separate from Gemini analysis.</p>
         <div class="estimate-results">
           <div>
             <span data-i18n="reportModeHeader">SCENARIO &amp; OUTCOME</span>
@@ -174,11 +174,12 @@
             <p id="report-hit-breakdown" class="reference-note"></p>
           </div>
           <div>
-            <span data-i18n="reportBuildHeader">RECOMMENDED META BUILD</span>
-            <strong id="report-build-title">—</strong>
-            <p id="report-build-details" class="reference-note"></p>
+            <span data-i18n="reportAdjustmentsHeader">LOCAL +1pp COMPARISONS</span>
+            <ul id="report-upgrades"></ul>
+            <p class="reference-note" data-i18n="adviceFooter">Per-hit comparisons, not DPS or upgrade-cost rankings.</p>
           </div>
         </div>
+        <ul id="report-assumptions" class="reference-note"></ul>
         <section id="report-ai" hidden>
           <h3>Gemini</h3>
           <div id="report-ai-answer" class="ai-msg-body" aria-live="polite"></div>

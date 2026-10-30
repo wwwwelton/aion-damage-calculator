@@ -182,6 +182,12 @@ pub fn init_calculator() {
         form.set_oninput(Some(update.as_ref().unchecked_ref()));
         form.set_onchange(Some(update.as_ref().unchecked_ref()));
     }
+    for id in ["attacker-name", "attacker-class", "target-name", "target-class"] {
+        if let Some(input) = doc.get_element_by_id(id) {
+            let _ = input.add_event_listener_with_callback("input", update.as_ref().unchecked_ref());
+            let _ = input.add_event_listener_with_callback("change", update.as_ref().unchecked_ref());
+        }
+    }
     if let Some(select) = doc.get_element_by_id("target-mode").and_then(|e| e.dyn_into::<HtmlSelectElement>().ok()) {
         let mode_change = Closure::<dyn FnMut()>::new(move || {
             let doc = document();
@@ -338,20 +344,62 @@ pub fn recalculate() {
         ttd.set_text_content(Some(&combat.seconds_to_defeat.map(|s| format!("{} s", fmt_num(s))).unwrap_or_else(|| "—".into())));
     }
 
-    if let Some(upgrades_list) = doc.get_element_by_id("upgrade-list") {
-        upgrades_list.set_inner_html("");
-        let upgrades = rank_damage_upgrades(&scenario, crit, pos);
-        for u in upgrades.iter().take(3) {
+    let identity = |name_id: &str, class_id: &str, fallback: &str| {
+        let input = |id: &str| doc.get_element_by_id(id)
+            .and_then(|e| e.dyn_into::<HtmlInputElement>().ok())
+            .map(|i| i.value()).unwrap_or_default();
+        let name = input(name_id);
+        let class = input(class_id);
+        match (name.trim(), class.trim()) {
+            ("", "") => t(&lang, fallback),
+            (name, "") => name.to_string(),
+            ("", class) => class.to_string(),
+            (name, class) => format!("{name} ({class})"),
+        }
+    };
+    if let Some(summary) = doc.get_element_by_id("report-scenario") {
+        let mode_key = match mode {
+            TargetMode::Boss => "targetModeBoss",
+            TargetMode::Monster => "targetModeMonster",
+            TargetMode::Player => "targetModePlayer",
+        };
+        let attacker = identity("attacker-name", "attacker-class", "attackerTitle");
+        let target = identity("target-name", if mode == TargetMode::Player { "target-class" } else { "" }, "targetTitle");
+        summary.set_text_content(Some(&format!("{} · {attacker} → {target}", t(&lang, mode_key))));
+    }
+    if let Some(summary) = doc.get_element_by_id("report-hit-breakdown") {
+        let dps = combat.dps.map(fmt_num).unwrap_or_else(|| t(&lang,
+            if hps <= 0.0 { "reportMissingRate" } else { "reportMissingDamage" }));
+        let time = combat.seconds_to_defeat.map(|s| format!("{} s", fmt_num(s)))
+            .unwrap_or_else(|| if hp <= 0.0 { t(&lang, "reportMissingHp") } else { dps.clone() });
+        summary.set_text_content(Some(&format!("{}: {}\n{}: {dps}\n{}: {time}",
+            t(&lang, "reportHitLabel"), fmt_num(damage),
+            t(&lang, "estimatedDpsLabel"), t(&lang, "timeToDefeatLabel"))));
+    }
+
+    let upgrades = rank_damage_upgrades(&scenario, crit, pos);
+    let upgrade_lists = ["upgrade-list", "report-upgrades"].map(|id| doc.get_element_by_id(id));
+    for list in upgrade_lists.iter().flatten() { list.set_text_content(None); }
+    for u in upgrades.iter().take(3) {
+        let label = match u.stat {
+            Stat::WeaponDamageBoost => t(&lang, "weaponDamageBoostLabel"),
+            Stat::DamageBoost => t(&lang, "damageBoostLabel"),
+            Stat::CriticalDamageBoost => t(&lang, "criticalDamageBoostLabel"),
+            Stat::FrontBackDamageBoost => if pos == Position::Back { t(&lang, "backBoostLabel") } else { t(&lang, "frontBoostLabel") },
+        };
+        let label_clean = label.trim_end_matches(" (%)").trim();
+        let text = format!("{label_clean}: +{}% {}", fmt_num(u.percent), t(&lang, "reportDamageGain"));
+        for list in upgrade_lists.iter().flatten() {
             let li = doc.create_element("li").unwrap();
-            let label = match u.stat {
-                Stat::WeaponDamageBoost => t(&lang, "weaponDamageBoostLabel"),
-                Stat::DamageBoost => t(&lang, "damageBoostLabel"),
-                Stat::CriticalDamageBoost => t(&lang, "criticalDamageBoostLabel"),
-                Stat::FrontBackDamageBoost => if pos == Position::Back { t(&lang, "backBoostLabel") } else { t(&lang, "frontBoostLabel") },
-            };
-            let label_clean = label.trim_end_matches(" (%)").trim();
-            li.set_text_content(Some(&format!("{label_clean}: +{:.2}% de dano", u.percent)));
-            let _ = upgrades_list.append_child(&li);
+            li.set_text_content(Some(&text));
+            let _ = list.append_child(&li);
+        }
+    }
+    if upgrades.is_empty() {
+        if let Some(list) = doc.get_element_by_id("report-upgrades") {
+            let li = doc.create_element("li").unwrap();
+            li.set_text_content(Some(&t(&lang, "reportNoUpgrades")));
+            let _ = list.append_child(&li);
         }
     }
 
@@ -378,12 +426,14 @@ pub fn recalculate() {
         }
     }
 
-    if let Some(assump_list) = doc.get_element_by_id("estimate-assumptions") {
-        assump_list.set_inner_html("");
-        for key in estimate_assumptions(hps, crit, double_en, pos) {
+    let assumption_lists = ["estimate-assumptions", "report-assumptions"].map(|id| doc.get_element_by_id(id));
+    for list in assumption_lists.iter().flatten() { list.set_text_content(None); }
+    for key in estimate_assumptions(hps, crit, double_en, pos) {
+        let text = t(&lang, key);
+        for list in assumption_lists.iter().flatten() {
             let li = doc.create_element("li").unwrap();
-            li.set_text_content(Some(&t(&lang, key)));
-            let _ = assump_list.append_child(&li);
+            li.set_text_content(Some(&text));
+            let _ = list.append_child(&li);
         }
     }
     attributes::update_attribute_values();
