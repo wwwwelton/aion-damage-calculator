@@ -73,6 +73,23 @@ attackerClass.addEventListener('input', updateActorIcons);
 targetClass.addEventListener('input', updateActorIcons);
 updateMode();
 
+const duelRows = document.querySelector('#duel-rows');
+function renderDuels(rows) {
+  duelRows.replaceChildren(...rows.map(row => {
+    const format = row.kind === 'defense' ? value => formatter.format(value) : value => `${formatter.format(value * 100)}%`;
+    const tr = document.createElement('tr');
+    const label = document.createElement('th');
+    label.scope = 'row';
+    label.textContent = I18N.t(row.labelKey);
+    tr.append(label, ...[row.you, row.target, row.net].map(value => {
+      const cell = document.createElement('td');
+      cell.textContent = format(value);
+      return cell;
+    }));
+    return tr;
+  }));
+}
+
 function update() {
   updateActorIcons();
   const values = {};
@@ -96,6 +113,7 @@ function update() {
     : position === 'back' ? values.backDamageTolerance : 0;
   const scenarioValues = applyTargetMode(values, targetMode.value);
   const damage = calculateDamage(scenarioValues);
+  renderDuels(attributeDuels(scenarioValues, { mode: targetMode.value, critical, position }));
   result.textContent = formatter.format(damage);
   const estimate = estimateCombat(damage, values.hitsPerSecond, values.enemyHp);
   document.querySelector('#estimated-dps').textContent = estimate.dps === null ? '—' : formatter.format(estimate.dps);

@@ -62,4 +62,26 @@ function estimateAssumptions(values, { critical = false, double = false, positio
   return keys;
 }
 
-if (typeof module !== 'undefined') module.exports = { calculateDamage, applyTargetMode, estimateCombat, estimateAssumptions };
+// Pairs each attacker stat with the target stat it meets, using the same clamping as calculateDamage.
+// Multiplier rows report the net ratio (1 = 100%); the defense row reports absolute defense left after penetration.
+function attributeDuels(v, { mode = 'boss', critical = false, position = 'none' } = {}) {
+  const multiplier = (id, labelKey, you, target, active = true) => ({
+    id, labelKey, active, kind: 'multiplier', you, target, net: Math.max(0, you - target),
+  });
+  const rows = [
+    multiplier('weapon', 'duelWeapon', v.weaponDamageBoost, v.weaponDamageTolerance ?? 0),
+    {
+      id: 'penetration', labelKey: 'duelPenetration', active: true, kind: 'defense',
+      you: v.penetration, target: v.defense, net: Math.max(0, v.defense - v.penetration),
+    },
+    multiplier('damage', 'duelDamage', v.damageBoost, v.damageTolerance ?? 0),
+    multiplier('pve', 'duelPve', v.pveDamageBoost, v.pveDamageTolerance ?? 0, mode !== 'player'),
+    multiplier('boss', 'duelBoss', v.bossDamageBoost ?? 0, v.bossDamageTolerance ?? 0, mode === 'boss'),
+    multiplier('species', 'duelSpecies', v.speciesDamageBoost, v.speciesDamageTolerance ?? 0, mode !== 'player'),
+    multiplier('critical', 'duelCritical', v.criticalDamageBoost, v.criticalDamageTolerance ?? 0, critical),
+    multiplier('position', 'duelPosition', v.frontBackDamageBoost, v.frontBackDamageTolerance ?? 0, position !== 'none'),
+  ];
+  return rows.filter(row => row.active);
+}
+
+if (typeof module !== 'undefined') module.exports = { calculateDamage, applyTargetMode, estimateCombat, estimateAssumptions, attributeDuels };

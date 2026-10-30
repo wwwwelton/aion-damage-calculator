@@ -116,6 +116,14 @@
         <p id="estimate-note" class="reference-note" role="status"></p>
         <ul id="estimate-assumptions" class="assumption-list" aria-label="Assumptions"></ul>
       </section>
+      <section class="card duel-card" aria-labelledby="duel-title">
+        <h2 id="duel-title" data-i18n="cardDuelTitle">Attribute matchups</h2>
+        <p class="reference-note" data-i18n="duelNote">Each row pairs your attacker stat with the target stat it meets, as the formula applies them for the selected target type. Net is the value used after clamping at zero.</p>
+        <table class="duel-table">
+          <thead><tr><th scope="col" data-i18n="duelColAttribute">Attribute</th><th scope="col" data-i18n="duelColYou">You (attacker)</th><th scope="col" data-i18n="duelColTarget">Target</th><th scope="col" data-i18n="duelColNet">Net in formula</th></tr></thead>
+          <tbody id="duel-rows"></tbody>
+        </table>
+      </section>
       <section class="card">
         <h2 data-i18n="cardAttackTitle">Attack</h2>
         <div class="grid">

@@ -409,6 +409,12 @@ button.tree-circle:is(:hover, :focus-visible) { border-color: #91e6dc; backgroun
 }
 
 .result-scope { display: block; color: #aebfd1; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+.duel-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.duel-table th, .duel-table td { padding: 8px 10px; border-bottom: 1px solid #303f54; text-align: left; }
+.duel-table thead th { color: #8ea4bf; font-weight: 600; }
+.duel-table td { text-align: right; font-variant-numeric: tabular-nums; color: #d5dfed; }
+.duel-table td:last-child { color: #91e6dc; font-weight: 700; }
+.duel-table tbody th { font-weight: 500; color: #d5dfed; }
 .assumption-list { margin: 0; padding-left: 18px; color: #b9cadb; font-size: 13px; line-height: 1.5; }
 .assumption-list li { margin: 2px 0; }
 .badge { display: inline-block; padding: 1px 6px; border-radius: 999px; font-size: 11px; line-height: 1.4; white-space: nowrap; vertical-align: middle; }

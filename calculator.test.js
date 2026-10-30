@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { calculateDamage, applyTargetMode, estimateCombat, estimateAssumptions } = require('./calculator');
+const { calculateDamage, applyTargetMode, estimateCombat, estimateAssumptions, attributeDuels } = require('./calculator');
 
 const base = {
   pureAttack: 1000, weaponDamageBoost: 1, multiHit: 1, powerShard: 1,
@@ -95,4 +95,31 @@ test('assumption list names only the probabilistic conditions the current toggle
   assert.deepEqual(estimateAssumptions({ hitsPerSecond: 2 }, { critical: true, double: true, position: 'back' }),
     ['assumeCritLands', 'assumeDoubleProcs', 'positionUptimeHint', 'assumeConstantRate',
       'resistNotModelled', 'roundingNotModelled']);
+});
+
+test('attribute duels clamp each pair at zero and show penetration against defense', () => {
+  const rows = attributeDuels({ ...base, weaponDamageBoost: 1, weaponDamageTolerance: 1.5, defense: 300, penetration: 100 }, { mode: 'boss' });
+  const weapon = rows.find(row => row.id === 'weapon');
+  const penetration = rows.find(row => row.id === 'penetration');
+  assert.equal(weapon.net, 0);
+  assert.equal(penetration.net, 200);
+  assert.equal(attributeDuels({ ...base, defense: 100, penetration: 500 }, { mode: 'boss' })
+    .find(row => row.id === 'penetration').net, 0);
+});
+
+test('attribute duels show only the target-type rows that apply to the mode', () => {
+  const ids = (mode, options = {}) => attributeDuels(base, { mode, ...options }).map(row => row.id);
+  assert.ok(!ids('player').includes('pve'));
+  assert.ok(!ids('player').includes('boss'));
+  assert.ok(!ids('player').includes('species'));
+  assert.ok(ids('boss').includes('boss'));
+  assert.ok(!ids('monster').includes('boss'));
+  assert.ok(ids('monster').includes('species'));
+});
+
+test('attribute duels include critical and positional rows only when they are in play', () => {
+  const off = attributeDuels(base, { mode: 'boss' }).map(row => row.id);
+  const on = attributeDuels(base, { mode: 'boss', critical: true, position: 'back' }).map(row => row.id);
+  assert.ok(!off.includes('critical') && !off.includes('position'));
+  assert.ok(on.includes('critical') && on.includes('position'));
 });
