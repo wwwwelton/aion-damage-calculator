@@ -31,6 +31,8 @@ jobs:
     name: Windows executable
     needs: test
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -55,7 +57,7 @@ jobs:
             fi
             echo "value=$tag" >> "$GITHUB_OUTPUT"
           else
-            echo "value=$crate-ci.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "value=v$crate" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build
@@ -89,7 +91,7 @@ jobs:
 
   release:
     name: GitHub release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -103,11 +105,13 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.build.outputs.version }}
           files: |
             release/AION2-Damage-Calculator.exe
             release/AION2-Damage-Calculator.exe.sha256
           generate_release_notes: true
+          make_latest: true
           body: |
-            Native Windows x64 executable (Rust + WebView2) with an optional AionLabs API assistant.
-            Requirements: Windows x64 and Microsoft Edge WebView2 Runtime. Remote AI requires your own API key and may incur charges.
-            Verify the download with the attached SHA-256 file. The executable is not digitally signed.
+            Windows x64 executable (Rust + WebView2) with AionLabs API integration.
+            Requirements: Windows x64 and Microsoft Edge WebView2 Runtime.
+            Verify the download with the attached SHA-256 file.
