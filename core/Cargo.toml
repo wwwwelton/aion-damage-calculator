@@ -1,0 +1,8 @@
+[package]
+name = "aion2-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Pure AION 2 damage rules shared by the native host and the WebAssembly interface"
+
+[dependencies]
