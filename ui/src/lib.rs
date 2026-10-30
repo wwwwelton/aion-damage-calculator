@@ -1,23 +1,31 @@
+pub mod boss;
 pub mod calculator;
 pub mod calculator_form;
 pub mod header;
 pub mod i18n;
 pub mod state;
 
+use boss::BossTab;
 use calculator::CalculatorTab;
 use header::Header;
 use leptos::mount::mount_to_body;
 use leptos::prelude::*;
-use state::AppState;
+use state::{ActiveTab, AppState};
 use wasm_bindgen::prelude::*;
 
 #[component]
 fn App() -> impl IntoView {
     let state = AppState::new();
+    // Panels stay mounted and toggle `hidden`, so inputs survive tab switches.
     view! {
         <Header state=state />
         <main>
-            <CalculatorTab state=state />
+            <div hidden=move || state.tab.get() != ActiveTab::Calculator>
+                <CalculatorTab state=state />
+            </div>
+            <div hidden=move || state.tab.get() != ActiveTab::Boss>
+                <BossTab state=state />
+            </div>
         </main>
     }
 }
