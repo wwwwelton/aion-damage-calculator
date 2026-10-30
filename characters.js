@@ -534,8 +534,12 @@ if (typeof document !== 'undefined') {
       searchStatus.textContent = formatUi('charactersFound', { count: results.length,
         extra: data.complete === false ? ui('moreMayAppear') : '' });
       choice.replaceChildren(new Option(ui('selectCharacter'), ''));
-      results.forEach((item, index) => choice.add(new Option(
-        `${item.name} · ${item.serverName} · ${item.className} · CP ${item.combatPower ?? '—'}`, String(index))));
+      results.forEach((item, index) => {
+        const classLabel = item.className && item.className !== 'Unknown' ? item.className : '';
+        const cpLabel = item.combatPower ? `CP ${item.combatPower.toLocaleString()}` : '';
+        const details = [item.serverName, classLabel, cpLabel].filter(Boolean).join(' · ');
+        choice.add(new Option(`${item.name}${details ? ` · ${details}` : ''}`, String(index)));
+      });
       if (results.length === 1) await loadCharacter(0);
       else choiceLabel.hidden = false;
     } catch (error) {
@@ -690,8 +694,12 @@ if (typeof document !== 'undefined') {
       }
       enemySearchStatus.textContent = formatUi('charactersFound', { count: enemyResults.length, extra: '' });
       enemyChoice.replaceChildren(new Option(ui('selectCharacter'), ''));
-      enemyResults.forEach((item, index) => enemyChoice.add(new Option(
-        `${item.name} · ${item.serverName} · ${item.className} · CP ${item.combatPower ?? '—'}`, String(index))));
+      enemyResults.forEach((item, index) => {
+        const classLabel = item.className && item.className !== 'Unknown' ? item.className : '';
+        const cpLabel = item.combatPower ? `CP ${item.combatPower.toLocaleString()}` : '';
+        const details = [item.serverName, classLabel, cpLabel].filter(Boolean).join(' · ');
+        enemyChoice.add(new Option(`${item.name}${details ? ` · ${details}` : ''}`, String(index)));
+      });
       if (enemyResults.length === 1) await loadEnemy(0);
       else enemyChoiceLabel.hidden = false;
     } catch (error) {
@@ -709,10 +717,12 @@ if (typeof document !== 'undefined') {
     enemyLoaded = null;
     enemyPanel.hidden = false;
     enemyImportButton.disabled = true;
-    const initialCp = item.combatPower ? ` · CP ${item.combatPower.toLocaleString()}` : '';
+    const initialClass = item.className && item.className !== 'Unknown' ? item.className : '';
+    const initialCp = item.combatPower ? `CP ${item.combatPower.toLocaleString()}` : '';
+    const initialDetails = [initialClass, `${ui('level')} ${item.level}`, initialCp].filter(Boolean).join(' · ');
     document.querySelector('#enemy-title').textContent = `${item.name} · ${item.serverName}`;
-    document.querySelector('#enemy-meta').textContent = `${item.className} · ${ui('level')} ${item.level}${initialCp}`;
-    setDisplayIcon(document.querySelector('#enemy-class-icon'), 'class', item.className);
+    document.querySelector('#enemy-meta').textContent = initialDetails;
+    if (initialClass) setDisplayIcon(document.querySelector('#enemy-class-icon'), 'class', initialClass);
     enemyProfileStatus.textContent = ui('loadingDefenses');
     document.querySelector('#enemy-dossier').replaceChildren();
     document.querySelector('#enemy-stats').replaceChildren();

@@ -282,14 +282,15 @@ fn strip_tags(text: &str) -> String {
 }
 fn class_name_from_pcid(pc_id: i64) -> &'static str {
     match pc_id {
-        1 | 2 | 7 | 8 => "Gladiator",
-        3 | 4 | 11 | 12 => "Templar",
-        5 | 6 | 13 | 14 => "Ranger",
-        9 | 10 | 18 | 19 => "Assassin",
-        15 | 16 | 21 | 22 => "Sorcerer",
-        17 | 20 | 23 | 24 => "Spiritmaster",
-        25 | 26 | 29 | 30 => "Cleric",
-        27 | 28 | 33 | 34 | 35 | 36 => "Chanter",
+        1..=4 => "Warrior",
+        5..=8 => "Gladiator",
+        9..=12 => "Templar",
+        13..=16 => "Ranger",
+        17..=20 => "Assassin",
+        21..=24 => "Spiritmaster",
+        25..=28 => "Sorcerer",
+        29..=32 => "Cleric",
+        33..=36 => "Chanter",
         _ => "Unknown",
     }
 }
