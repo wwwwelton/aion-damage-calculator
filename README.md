@@ -141,6 +141,7 @@ Exploratory live testing is recorded in `aionlabs-evaluation.json`: an initial 6
 
 | Version | Highlights |
 | --- | --- |
+| 1.3.1 | Fix desktop view container width, add interactive legion roster modal with member inspection, and update release distribution. |
 | 1.3.0 | Replace local SLM with AionLabs API, add persistent profile cache & background sync, Authenticode SHA-256 signing with DigiCert timestamp, event timers, map reference, and dynamic PvP/PvE meta builds. |
 | 1.2.5 | PowerShell script copies and builds the Windows app; Teostones names and long effect text now have separate lines. |
 | 1.2.4 | Equipment cards switch to one column at narrower widths. |
