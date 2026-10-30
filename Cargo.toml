@@ -6,7 +6,7 @@ publish = false
 description = "AION 2 damage calculator with a Windows WebView2 interface"
 
 [workspace]
-members = [".", "core"]
+members = [".", "core", "ui"]
 default-members = ["."]
 
 [[bin]]
