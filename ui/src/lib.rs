@@ -1,3 +1,12 @@
+pub mod companion;
+pub mod i18n;
+pub mod header;
+pub mod state;
+#[cfg(target_arch = "wasm32")]
+mod dom;
+#[cfg(target_arch = "wasm32")]
+pub use dom::mount_game_companion;
+
 use aion2_core::calculator::{apply_target_mode, calculate_damage, TargetMode, Values};
 use leptos::mount::mount_to_body;
 use leptos::prelude::*;
@@ -64,7 +73,7 @@ fn App() -> impl IntoView {
     }
 }
 
-#[wasm_bindgen(start)]
-pub fn start() {
+#[wasm_bindgen]
+pub fn mount_calculator() {
     mount_to_body(App);
 }
