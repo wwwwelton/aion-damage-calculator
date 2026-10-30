@@ -19,9 +19,16 @@ pub mod ai;
 pub mod characters;
 pub mod bosses;
 pub mod character_search;
+pub mod enemy;
 
 pub(crate) fn window() -> Window { web_sys::window().expect("window") }
 pub(crate) fn document() -> Document { window().document().expect("document") }
+pub fn show_loading(doc: &Document, elem_id: &str, text: &str) {
+    if let Some(el) = doc.get_element_by_id(elem_id) {
+        el.set_inner_html(&format!("<span class=\"loading-indicator\"><span class=\"loading-spinner\"></span> {text}</span>"));
+    }
+}
+
 
 pub(crate) fn t(lang: &str, key: &str) -> String {
     let map = I18N_RAW.get(lang).and_then(Value::as_object);

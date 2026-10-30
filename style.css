@@ -437,3 +437,6 @@ button.tree-circle:is(:hover, :focus-visible) { border-color: #91e6dc; backgroun
 .value-percent { color: #f1d09b; }
 .option-list li.sheet-total { opacity: 0.8; }
 .option-list li.sheet-total small { white-space: normal; }
+.loading-indicator { display: inline-flex; align-items: center; gap: 8px; color: #91e6dc; font-size: 13px; font-weight: 500; }
+.loading-spinner { width: 16px; height: 16px; border: 2px solid #23515b; border-top-color: #69d8cc; border-radius: 50%; animation: aion-spin 0.8s linear infinite; flex: none; }
+@keyframes aion-spin { to { transform: rotate(360deg); } }

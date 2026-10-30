@@ -891,9 +891,7 @@ pub fn load_character(index: usize, force: bool) {
     if let Some(class_icon) = doc.get_element_by_id("profile-class-icon") {
         set_display_icon(&doc, &class_icon, "class", cls_name);
     }
-    if let Some(st) = doc.get_element_by_id("profile-status") {
-        st.set_text_content(Some(&crate::i18n::t(lang, "loadingProfile")));
-    }
+    crate::controller::show_loading(&doc, "profile-status", &crate::i18n::t(lang, "loadingProfile"));
     if let Some(dossier) = doc.get_element_by_id("profile-dossier") {
         dossier.set_inner_html("");
     }
@@ -962,9 +960,7 @@ fn handle_search_submit() {
     if let Some(imp) = doc.get_element_by_id("import-character") {
         let _ = imp.set_attribute("disabled", "");
     }
-    if let Some(st) = doc.get_element_by_id("search-status") {
-        st.set_text_content(Some(&crate::i18n::t(lang, "searchingProfiles")));
-    }
+    crate::controller::show_loading(&doc, "search-status", &crate::i18n::t(lang, "searchingProfiles"));
 
     wasm_bindgen_futures::spawn_local(async move {
         let doc = document();
@@ -1263,10 +1259,8 @@ fn open_legion_dialog(legion_name: &str, server_name: &str) {
     if let Some(title) = doc.get_element_by_id("legion-dialog-title") {
         title.set_text_content(Some(&format!("Legion: {legion_name}")));
     }
-    if let Some(summary) = doc.get_element_by_id("legion-dialog-summary") {
-        let srv = if server_name.is_empty() { "ativo" } else { server_name };
-        summary.set_text_content(Some(&format!("Consultando integrantes da legião no servidor {srv}…")));
-    }
+    let srv = if server_name.is_empty() { "ativo" } else { server_name };
+    crate::controller::show_loading(&doc, "legion-dialog-summary", &format!("Consultando integrantes da legião no servidor {srv}…"));
     list.set_inner_html("");
 
     let _ = js_sys::Reflect::get(&dialog, &"showModal".into()).ok().and_then(|f| f.dyn_into::<js_sys::Function>().ok()).map(|f| f.call0(&dialog));
@@ -1284,9 +1278,12 @@ fn open_legion_dialog(legion_name: &str, server_name: &str) {
             "legionName": legion,
             "serverId": server_id
         });
-        if let Ok(data) = crate::host::request("legion_roster", "ww", "", params).await {
+        let remote_res = crate::host::request("legion_roster", "ww", "", params).await;
+        let mut shown_remote = false;
+        if let Ok(ref data) = remote_res {
             if let Some(members) = data.get("members").and_then(Value::as_array) {
                 if !members.is_empty() {
+                    shown_remote = true;
                     if let Some(summary) = doc.get_element_by_id("legion-dialog-summary") {
                         let total = data.get("total_members").map(|v| v.to_string()).unwrap_or_else(|| members.len().to_string());
                         let cp2 = data.get("avg_combat_power2").and_then(|v| v.as_f64()).unwrap_or(0.0);
@@ -1313,6 +1310,46 @@ fn open_legion_dialog(legion_name: &str, server_name: &str) {
                             let _ = card.append_child(&small);
                             let _ = list.append_child(&card);
                         }
+                    }
+                }
+            }
+        }
+
+        if !shown_remote {
+            // Fallback to locally saved profiles
+            if let Ok(res) = crate::host::request("saved_profiles", "ww", "", json!({})).await {
+                let mut local_members = Vec::new();
+                if let Some(arr) = res.as_array() {
+                    for entry in arr {
+                        let v = aion2_core::character_extraction::extract_character(&entry["profile"]);
+                        if v.legion.eq_ignore_ascii_case(&legion) {
+                            local_members.push(v);
+                        }
+                    }
+                }
+                if !local_members.is_empty() {
+                    if let Some(summary) = doc.get_element_by_id("legion-dialog-summary") {
+                        summary.set_text_content(Some(&format!("Membros registrados localmente ({}) no servidor {server}.", local_members.len())));
+                    }
+                    if let Some(list) = doc.get_element_by_id("legion-members-list") {
+                        list.set_inner_html("");
+                        for m in local_members {
+                            let card = dossier_node(&doc, "article", "progression-card", None);
+                            let strong = dossier_node(&doc, "strong", "", Some(&format!("{} · {}", m.name, m.class_name)));
+                            let cp_val = m.combat_power.map(|cp| format!(" · CP {}", format_number(cp))).unwrap_or_default();
+                            let gs_val = m.gear_score.map(|gs| format!(" · GS {}", format_number(gs))).unwrap_or_default();
+                            let small = dossier_node(&doc, "small", "", Some(&format!("Nível {}{cp_val}{gs_val}", m.level)));
+                            let _ = card.append_child(&strong);
+                            let _ = card.append_child(&small);
+                            let _ = list.append_child(&card);
+                        }
+                    }
+                } else {
+                    if let Some(summary) = doc.get_element_by_id("legion-dialog-summary") {
+                        summary.set_text_content(Some("Consulta remota indisponível no momento."));
+                    }
+                    if let Some(list) = doc.get_element_by_id("legion-members-list") {
+                        list.set_inner_html("<p class=\"reference-note\">Não foi possível carregar a lista de integrantes remota e nenhum outro membro desta legião foi consultado localmente ainda.</p>");
                     }
                 }
             }

@@ -34,7 +34,7 @@ fn current_lang() -> Lang {
 fn el(doc: &Document, tag: &str, class_name: &str) -> Element {
     let elem = doc.create_element(tag).unwrap();
     if !class_name.is_empty() {
-        elem.set_class_name(class_name);
+        let _ = elem.set_attribute("class", class_name);
     }
     elem
 }
@@ -100,7 +100,7 @@ fn icon_element(doc: &Document, kind: &str, label: &str) -> Element {
     let svg = doc
         .create_element_ns(Some("http://www.w3.org/2000/svg"), "svg")
         .unwrap();
-    svg.set_class_name(&format!("icon icon-{}", symbol));
+    let _ = svg.set_attribute("class", &format!("icon icon-{}", symbol));
     let _ = svg.set_attribute("aria-hidden", "true");
     let _ = svg.set_attribute("viewBox", "0 0 24 24");
     let use_elem = doc
@@ -224,13 +224,15 @@ pub fn render_dossier(
     let summary_text = el(doc, "div", "");
     let title_elem = el_text(doc, "strong", "", &format!("{} · {}", view.name, view.class_name));
     let _ = summary_text.append_child(&title_elem);
+    let race_str = if view.race.is_empty() { t(lang, "raceUnknown") } else { view.race.clone() };
+    let server_str = if view.server.is_empty() { t(lang, "serverUnknown") } else { view.server.clone() };
     let meta_str = format!(
         "{} {} · {} · {} · {}",
         t(lang, "level"),
         if view.level.is_empty() { "—" } else { &view.level },
-        if view.race.is_empty() { &t(lang, "raceUnknown") } else { &view.race },
+        race_str,
         view.gender,
-        if view.server.is_empty() { &t(lang, "serverUnknown") } else { &view.server }
+        server_str
     );
     let meta_elem = el_text(doc, "small", "", &meta_str);
     let _ = summary_text.append_child(&meta_elem);
@@ -240,6 +242,13 @@ pub fn render_dossier(
     if !scores.is_empty() {
         let scores_elem = el_text(doc, "small", "", &scores);
         let _ = summary_text.append_child(&scores_elem);
+    }
+    if !view.legion.is_empty() {
+        let legion_btn = el_text(doc, "button", "legion-link-btn", &format!("{} {}", t(lang, "legion"), view.legion));
+        let _ = legion_btn.set_attribute("type", "button");
+        let _ = legion_btn.set_attribute("data-legion-name", &view.legion);
+        let _ = legion_btn.set_attribute("data-server-name", &view.server);
+        let _ = summary_text.append_child(&legion_btn);
     }
     if !view.title_name.is_empty() {
         let title_line = el_text(doc, "small", "", &format!("{} {}", t(lang, "equippedTitle"), view.title_name));
@@ -581,9 +590,7 @@ fn load_enemy(index: usize) {
             set_display_icon(&doc, &class_icon, "class", initial_class);
         }
     }
-    if let Some(status) = doc.get_element_by_id("enemy-profile-status") {
-        status.set_text_content(Some(&t(lang, "loadingDefenses")));
-    }
+    crate::controller::show_loading(&doc, "enemy-profile-status", &t(lang, "loadingDefenses"));
     if let Some(dossier) = doc.get_element_by_id("enemy-dossier") {
         dossier.set_inner_html("");
     }
@@ -699,9 +706,7 @@ pub fn init_enemy_search() {
             if let Some(btn) = doc.get_element_by_id("import-enemy") {
                 let _ = btn.set_attribute("disabled", "");
             }
-            if let Some(status) = doc.get_element_by_id("enemy-search-status") {
-                status.set_text_content(Some(&t(lang, "searchingProfiles")));
-            }
+            crate::controller::show_loading(&doc, "enemy-search-status", &t(lang, "searchingProfiles"));
 
             wasm_bindgen_futures::spawn_local(async move {
                 let res = crate::host::request(
