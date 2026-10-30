@@ -70,7 +70,7 @@ jobs:
               echo "Tag v$tag does not match Cargo.toml version $crate" >&2
               exit 1
             fi
-            echo "value=$tag" >> "$GITHUB_OUTPUT"
+            echo "value=v$tag" >> "$GITHUB_OUTPUT"
           else
             echo "value=v$crate" >> "$GITHUB_OUTPUT"
           fi
@@ -84,6 +84,11 @@ jobs:
           AION2_SELFTEST=selftest.json ./target/release/AION2-Damage-Calculator.exe
           cat selftest.json
           node -e "const r=require('./selftest.json'); if(!r.embedded.index||!r.embedded.ui_js||!r.embedded.ui_wasm) process.exit(1)"
+
+      - name: Sign executable and export public certificate
+        shell: pwsh
+        run: |
+          ./scripts/sign-windows.ps1 -BinaryPath target/release/AION2-Damage-Calculator.exe -CertificatePath dist/AION2-Damage-Calculator.crt
 
       - name: Checksum
         shell: bash
@@ -101,6 +106,7 @@ jobs:
           path: |
             dist/AION2-Damage-Calculator.exe
             dist/AION2-Damage-Calculator.exe.sha256
+            dist/AION2-Damage-Calculator.crt
           if-no-files-found: error
           compression-level: 0
 
@@ -124,9 +130,12 @@ jobs:
           files: |
             release/AION2-Damage-Calculator.exe
             release/AION2-Damage-Calculator.exe.sha256
+            release/AION2-Damage-Calculator.crt
           generate_release_notes: true
           make_latest: true
           body: |
             Windows x64 executable (Rust + WebView2) with Google Gemini API integration.
             Requirements: Windows x64 and Microsoft Edge WebView2 Runtime.
             Verify the download with the attached SHA-256 file.
+            The executable has a fresh self-signed Authenticode signature and SHA-256 RFC3161 timestamp.
+            The attached CRT contains only the public certificate. Windows does not trust this publisher by default; no trust-store changes are made.
