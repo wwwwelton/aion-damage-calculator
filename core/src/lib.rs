@@ -4,3 +4,4 @@ pub mod recommendations;
 pub mod markdown;
 pub mod character_extraction;
 pub mod numeric_input;
+pub mod stat_info;
