@@ -1,8 +1,4 @@
 pub mod companion;
-pub mod calculator_form;
-pub mod i18n;
-pub mod header;
-pub mod state;
 #[cfg(target_arch = "wasm32")]
 mod dom;
 #[cfg(target_arch = "wasm32")]

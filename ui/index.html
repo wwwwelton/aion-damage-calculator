@@ -6,8 +6,9 @@
 </head>
 <body>
   <script type="module">
-    import init from './aion2_ui.js';
-    init();
+    import init, { mount_calculator } from './aion2_ui.js';
+    await init();
+    mount_calculator();
   </script>
 </body>
 </html>
