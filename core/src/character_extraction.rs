@@ -489,6 +489,39 @@ pub fn offensive_references(profile: &Value) -> BTreeMap<String, f64> {
     extract_fields(profile, REFERENCE_FIELDS, TYPED_OFFENSIVE_EFFECTS)
 }
 
+// Percent-of-base increases: the sheet publishes no base totals, so these are shown, never imported.
+const SHEET_MODIFIER_EFFECTS: &[(&str, &[&str])] = &[
+    ("AGI", &["accuracyIncrease", "criticalHitIncrease"]),
+    ("DEX", &["evasionIncrease", "blockIncrease", "criticalHitResistIncrease"]),
+    ("CON", &["hpIncrease"]),
+    ("Justice", &["defenseIncrease"]),
+    ("Freedom", &["accuracyIncrease", "evasionIncrease"]),
+    ("Life", &["hpIncrease"]),
+    ("Death", &["criticalHitIncrease"]),
+    ("Space", &["blockIncrease"]),
+];
+
+pub fn sheet_modifiers(profile: &Value) -> BTreeMap<String, f64> {
+    let mut values: BTreeMap<String, f64> = BTreeMap::new();
+    let Some(stats) = profile.pointer("/info/stat/statList").and_then(Value::as_array) else { return values };
+    for stat in stats {
+        let stat_type = stat.get("type").and_then(Value::as_str).unwrap_or("");
+        let Some(&(_, fields)) = SHEET_MODIFIER_EFFECTS.iter().find(|(k, _)| *k == stat_type) else { continue };
+        let amount = match stat.get("value") {
+            Some(Value::Number(n)) => n.as_f64(),
+            Some(Value::String(s)) => s.trim().parse::<f64>().ok(),
+            _ => None,
+        }
+        .map(|v| v / 10.0);
+        let Some(amount) = amount.filter(|a| a.is_finite() && *a > 0.0) else { continue };
+        for field in fields {
+            let entry = values.entry(field.to_string()).or_insert(0.0);
+            *entry = ((*entry + amount) * 10000.0).round() / 10000.0;
+        }
+    }
+    values
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct FormulaImportCoverage {
     pub imported: Vec<String>,
@@ -620,6 +653,21 @@ mod tests {
         assert_eq!(defs.get("evasion"), Some(&22.0));
         assert_eq!(defs.get("doubleResist"), Some(&8.0));
         assert_eq!(defs.get("endurance"), Some(&3.0));
+    }
+
+    #[test]
+    fn sheet_modifiers_sum_per_field_and_skip_non_positive_values() {
+        let mut player = test_profile();
+        player["info"]["stat"]["statList"] = json!([
+            { "type": "AGI", "value": "100" },
+            { "type": "Freedom", "value": 50 },
+            { "type": "DEX", "value": "0" }
+        ]);
+        let m = sheet_modifiers(&player);
+        assert_eq!(m.get("accuracyIncrease"), Some(&15.0));
+        assert_eq!(m.get("criticalHitIncrease"), Some(&10.0));
+        assert_eq!(m.get("evasionIncrease"), Some(&5.0));
+        assert!(!m.contains_key("blockIncrease"));
     }
 
     #[test]
