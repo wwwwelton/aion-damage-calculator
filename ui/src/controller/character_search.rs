@@ -1286,8 +1286,8 @@ fn open_legion_dialog(legion_name: &str, server_name: &str) {
                     shown_remote = true;
                     if let Some(summary) = doc.get_element_by_id("legion-dialog-summary") {
                         let total = data.get("total_members").map(|v| v.to_string()).unwrap_or_else(|| members.len().to_string());
-                        let cp2 = data.get("avg_combat_power2").and_then(|v| v.as_f64()).unwrap_or(0.0);
-                        let cp = data.get("avg_combat_power").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                        let cp2 = data.get("avg_combat_power2").and_then(|v| v.as_f64().or_else(|| v.as_str().and_then(|s| s.parse().ok()))).unwrap_or(0.0);
+                        let cp = data.get("avg_combat_power").and_then(|v| v.as_f64().or_else(|| v.as_str().and_then(|s| s.parse().ok()))).unwrap_or(0.0);
                         let rank = data.get("server_rank").map(|v| v.to_string()).unwrap_or_else(|| "—".into());
                         summary.set_text_content(Some(&format!(
                             "Membros registrados: {total} · Média CP: {} · Média GS: {} · Rank do Servidor: #{rank}",
