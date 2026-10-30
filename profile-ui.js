@@ -113,7 +113,23 @@ function renderDossier(container, view) {
     dossierNode('strong', '', `${view.name} · ${view.className}`),
     dossierNode('small', '', [`${dossierText('level')} ${view.level || '—'}`, view.race || dossierText('raceUnknown'),
       view.gender, view.server || dossierText('serverUnknown')].filter(Boolean).join(' · ')),
-    dossierNode('small', '', [cpText, gsText, view.legion ? `${dossierText('legion')} ${view.legion}` : ''].filter(Boolean).join(' · '))
+    (() => {
+      const row = dossierNode('small', '');
+      const parts = [cpText, gsText].filter(Boolean);
+      for (let i = 0; i < parts.length; i++) {
+        if (i > 0) row.append(document.createTextNode(' · '));
+        row.append(document.createTextNode(parts[i]));
+      }
+      if (view.legion) {
+        if (parts.length > 0) row.append(document.createTextNode(' · '));
+        const btn = dossierNode('button', 'legion-link-btn', `${dossierText('legion')} ${view.legion}`);
+        btn.type = 'button';
+        btn.dataset.legionName = view.legion;
+        btn.dataset.serverName = view.server || '';
+        row.append(btn);
+      }
+      return row;
+    })()
   );
   if (view.titleName || view.titlesOwned !== null) {
     summaryText.append(dossierNode('small', '', [view.titleName ? `${dossierText('equippedTitle')} ${view.titleName}` : '',

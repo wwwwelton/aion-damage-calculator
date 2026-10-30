@@ -222,6 +222,7 @@ const TRANSLATIONS = {
     combatReportSubtitle: 'Summary of calculated combat parameters and meta-recommended configuration for the active mode.',
     reportModeHeader: 'SCENARIO & OUTCOME',
     reportBuildHeader: 'RECOMMENDED META BUILD',
+    legionRosterTitle: 'Legion Members',
 
     resultStatus: 'Result of the supplied formula; in-game rounding is not included.',
     estimatedDpsLabel: 'ESTIMATED DPS',
@@ -709,6 +710,7 @@ const TRANSLATIONS = {
     combatReportSubtitle: 'Resumo dos parâmetros calculados e configuração meta recomendada para o modo ativo.',
     reportModeHeader: 'CENÁRIO & RESULTADO',
     reportBuildHeader: 'BUILD META RECOMENDADA',
+    legionRosterTitle: 'Integrantes da Legião',
     timeToDefeatLabel: 'TEMPO DE DERROTA',
 
     adviceTitle: 'Dicas de melhoria de dano',

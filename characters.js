@@ -412,6 +412,46 @@ if (typeof document !== 'undefined') {
     results = [loadedItem];
     void loadCharacter(0, true);
   });
+  document.addEventListener('click', event => {
+    const btn = event.target.closest('.legion-link-btn');
+    if (!btn) return;
+    const legionName = btn.dataset.legionName;
+    const serverName = btn.dataset.serverName;
+    openLegionDialog(legionName, serverName);
+  });
+
+  function openLegionDialog(legionName, serverName) {
+    const dialog = document.querySelector('#legion-dialog');
+    const title = document.querySelector('#legion-dialog-title');
+    const summary = document.querySelector('#legion-dialog-summary');
+    const list = document.querySelector('#legion-members-list');
+    if (!dialog || !list) return;
+    title.textContent = `Legion: ${legionName}`;
+    const savedMembers = savedProfiles.filter(entry => {
+      const v = extractCharacter(entry.profile);
+      return v.legion && v.legion.toLowerCase() === legionName.toLowerCase();
+    });
+    summary.textContent = `Membros registrados localmente (${savedMembers.length}) no servidor ${serverName || 'ativo'}. A API web pública da PlayNC não fornece listagem completa de membros não consultados.`;
+    if (savedMembers.length > 0) {
+      list.replaceChildren(...savedMembers.map(entry => {
+        const v = extractCharacter(entry.profile);
+        const card = document.createElement('article');
+        card.className = 'progression-card';
+        const strong = document.createElement('strong');
+        strong.textContent = `${v.name} · ${v.className}`;
+        const small = document.createElement('small');
+        small.textContent = `Nível ${v.level} · CP ${v.combatPower ? v.combatPower.toLocaleString() : '—'} · GS ${v.gearScore ? v.gearScore.toLocaleString() : '—'}`;
+        card.append(strong, small);
+        return card;
+      }));
+    } else {
+      const p = document.createElement('p');
+      p.className = 'reference-note';
+      p.textContent = 'Nenhum outro membro desta legião foi consultado e armazenado no cache local ainda. Consulte os integrantes pelo nome para vê-los listados aqui.';
+      list.replaceChildren(p);
+    }
+    dialog.showModal();
+  }
 
   if (window.aion2Host) {
     window.aion2Host.onMessage(event => {
