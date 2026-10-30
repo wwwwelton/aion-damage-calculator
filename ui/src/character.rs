@@ -7,6 +7,12 @@ use crate::state::AppState;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::{json, Value};
+use crate::calculator::FIELDS;
+use aion2_core::character_extraction::{
+    equipment_bonuses, extract_character, formula_import_coverage, offensive_references,
+};
+use crate::i18n::format_t;
+use std::collections::BTreeMap;
 
 const REGIONS: [(&str, &str); 1] = [("ww", "Global")];
 const GLOBAL_REGIONS: [(&str, &str); 5] = [
@@ -132,15 +138,73 @@ pub fn CharacterTab(state: AppState) -> impl IntoView {
                     p.get("raceName").and_then(Value::as_str).unwrap_or(""),
                     if cp.is_empty() { String::new() } else { format!(" · CP {cp}") },
                 );
+                let imported = data.clone();
                 view! {
                     <section class="card">
                         <h2>{title}</h2>
                         <p>{meta}</p>
+                        <p>{move || t(lang.get(), "importCharNote")}</p>
+                        <button type="button" on:click=move |_| apply_import(state, status, &imported)>
+                            {move || t(lang.get(), "importCharBtn")}
+                        </button>
                     </section>
                 }
             })}
         </Show>
     }
+}
+
+// Port of the characters.js import click: equipment and matchup values go into the calculator
+// inputs; values from the previous import that this profile no longer provides revert to default.
+fn apply_import(state: AppState, status: RwSignal<String>, profile: &Value) {
+    let bonuses = equipment_bonuses(profile);
+    let references = offensive_references(profile);
+    let inputs = state.inputs.get_value();
+    let find = |field: &str| inputs.iter().find(|(k, _)| *k == field).map(|(_, s)| *s);
+    for (field, prev) in state.import_previous.get_untracked() {
+        if bonuses.contains_key(&field) || references.contains_key(&field) {
+            continue;
+        }
+        if let Some(sig) = find(field.as_str()) {
+            if sig.get_untracked().trim().parse::<f64>().ok() == Some(prev) {
+                let default = FIELDS.iter().find(|(k, _)| *k == field).map(|(_, d)| *d).unwrap_or("0");
+                sig.set(default.to_string());
+            }
+        }
+    }
+    let ref_count = references.len();
+    let mut applied = BTreeMap::new();
+    for (field, value) in references.into_iter().chain(bonuses) {
+        if let Some(sig) = find(field.as_str()) {
+            sig.set(value.to_string());
+            applied.insert(field, value);
+        }
+    }
+    state.import_previous.set(applied);
+
+    let extracted = extract_character(profile);
+    state.attacker_name.set(extracted.name);
+    let class = profile.pointer("/info/profile/className").and_then(Value::as_str).unwrap_or("");
+    state.attacker_class.set(class.to_string());
+
+    let coverage = formula_import_coverage(profile);
+    let gear = coverage.sources.values().filter(|s| s.as_str() == "gear").count();
+    let sheet = coverage.sources.len() - gear;
+    let formula = coverage.imported.len().to_string();
+    let (sheet, gear, refs) = (sheet.to_string(), gear.to_string(), ref_count.to_string());
+    let lang = state.lang.get_untracked();
+    let manual = if coverage.manual.is_empty() {
+        t(lang, "importManualFallback")
+    } else {
+        coverage.manual.join(", ")
+    };
+    status.set(format_t(lang, "importCoverage", &[
+        ("formula", formula.as_str()),
+        ("sheet", sheet.as_str()),
+        ("gear", gear.as_str()),
+        ("references", refs.as_str()),
+        ("manual", manual.as_str()),
+    ]));
 }
 
 // Helper for the single-result path: awaits the same profile request the click handler uses.

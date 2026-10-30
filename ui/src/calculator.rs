@@ -6,7 +6,7 @@ use leptos::prelude::*;
 use std::collections::HashMap;
 
 // (raw key, default). Keys match build_scenario; percent fields are entered as percent.
-const FIELDS: &[(&str, &str)] = &[
+pub const FIELDS: &[(&str, &str)] = &[
     ("pureAttack", "1000"),
     ("weaponDamageBoost", "100"),
     ("weaponDamageTolerance", "0"),
@@ -57,10 +57,7 @@ fn raw_of(inputs: &[(&'static str, RwSignal<String>)]) -> HashMap<String, f64> {
 
 #[component]
 pub fn CalculatorTab(state: AppState) -> impl IntoView {
-    let inputs: Vec<(&'static str, RwSignal<String>)> = FIELDS
-        .iter()
-        .map(|(k, d)| (*k, RwSignal::new(d.to_string())))
-        .collect();
+    let inputs = state.inputs.get_value();
 
     let damage = {
         let inputs = inputs.clone();

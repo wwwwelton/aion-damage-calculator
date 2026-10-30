@@ -1,6 +1,8 @@
 use aion2_core::calculator::{Position, TargetMode, Values};
+use crate::calculator::FIELDS;
 use crate::i18n::Lang;
 use leptos::prelude::*;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum ActiveTab {
@@ -61,6 +63,10 @@ pub struct AppState {
     pub attacker_name: RwSignal<String>,
     pub attacker_class: RwSignal<String>,
     pub target_name: RwSignal<String>,
+    /// Calculator inputs keyed by form name; shared so the Character import can write them.
+    pub inputs: StoredValue<Vec<(&'static str, RwSignal<String>)>>,
+    /// Values written by the last character import, so a re-import can revert stale ones.
+    pub import_previous: RwSignal<BTreeMap<String, f64>>,
 }
 
 impl AppState {
@@ -79,6 +85,10 @@ impl AppState {
             attacker_name: RwSignal::new(String::new()),
             attacker_class: RwSignal::new(String::new()),
             target_name: RwSignal::new(String::new()),
+            inputs: StoredValue::new(
+                FIELDS.iter().map(|(k, d)| (*k, RwSignal::new(d.to_string()))).collect(),
+            ),
+            import_previous: RwSignal::new(BTreeMap::new()),
         }
     }
 }
