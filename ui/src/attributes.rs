@@ -446,6 +446,7 @@ mod tests {
     fn imported_defenses_follow_identity_and_never_replace_target_inputs() {
         Owner::new().with(|| {
             let state = AppState::new();
+            state.lang.set(Lang::En);
             state.attacker_name.set("Alice".into());
             state.attacker_class.set("Ranger".into());
             state.imported_profile.set(Some(serde_json::json!({

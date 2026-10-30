@@ -1,11 +1,24 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Lang {
-    #[default]
     En,
     Pt,
+}
+
+impl Default for Lang {
+    fn default() -> Self {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
+                if let Ok(Some(saved)) = storage.get_item("aion2_calculator_lang") {
+                    if saved == "en" { return Lang::En; }
+                }
+            }
+        }
+        Lang::Pt
+    }
 }
 
 impl Lang {

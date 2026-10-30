@@ -26,6 +26,17 @@ impl ActiveTab {
             ActiveTab::Timers => "timers-view",
         }
     }
+    pub fn tab_btn_id(self) -> &'static str {
+        match self {
+            ActiveTab::Calculator => "calculator-tab",
+            ActiveTab::Character => "character-tab",
+            ActiveTab::Enemy => "enemy-tab",
+            ActiveTab::Boss => "boss-tab",
+            ActiveTab::Attributes => "attributes-tab",
+            ActiveTab::Timers => "timers-tab",
+        }
+    }
+
 
     pub fn i18n_key(self) -> &'static str {
         match self {

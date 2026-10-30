@@ -9,10 +9,14 @@ pub mod host;
 #[cfg(target_arch = "wasm32")]
 pub mod timers;
 #[cfg(target_arch = "wasm32")]
+pub mod companion_timers;
+#[cfg(target_arch = "wasm32")]
 pub mod ai;
 pub mod dossier;
 #[cfg(target_arch = "wasm32")]
 pub mod profiles;
+#[cfg(target_arch = "wasm32")]
+pub mod controller;
 pub mod calculator;
 pub mod calculator_form;
 pub mod header;
@@ -27,7 +31,6 @@ use character::CharacterTab;
 use enemy::EnemyTab;
 use calculator::CalculatorTab;
 use header::Header;
-use leptos::mount::mount_to_body;
 use leptos::prelude::*;
 use state::{ActiveTab, AppState};
 use wasm_bindgen::prelude::*;
@@ -66,5 +69,5 @@ fn App() -> impl IntoView {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn mount_calculator() {
-    mount_to_body(App);
+    crate::controller::init_all();
 }

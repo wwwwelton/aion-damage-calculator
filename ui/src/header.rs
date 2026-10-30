@@ -23,7 +23,16 @@ pub fn Header(state: AppState) -> impl IntoView {
                         prop:value=move || lang.get().as_str()
                         on:change=move |ev| {
                             let val = event_target_value(&ev);
-                            lang.set(if val == "pt" { Lang::Pt } else { Lang::En });
+                            let next = if val == "pt" { Lang::Pt } else { Lang::En };
+                            #[cfg(target_arch = "wasm32")]
+                            if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
+                                let _ = storage.set_item("aion2_calculator_lang", next.as_str());
+                            }
+                            #[cfg(target_arch = "wasm32")]
+                            if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
+                                doc.set_title(&t(next, "windowTitle"));
+                            }
+                            lang.set(next);
                         }
                     >
                         <option value="pt">"Português"</option>
@@ -39,7 +48,8 @@ pub fn Header(state: AppState) -> impl IntoView {
                 view! {
                     <button
                         type="button"
-                        id=format!("{}-btn", tab.id())
+                        id=tab.tab_btn_id()
+                        data-tab=tab.id()
                         role="tab"
                         aria-controls=tab.id()
                         class=move || if is_active() { "tab active" } else { "tab" }

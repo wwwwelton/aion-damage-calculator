@@ -10,6 +10,7 @@ use rust_embed::RustEmbed;
 #[include = "style.css"]
 #[include = "aion2_ui.js"]
 #[include = "aion2_ui_bg.wasm"]
+#[include = "app.js"]
 struct Embedded;
 
 #[derive(RustEmbed)]

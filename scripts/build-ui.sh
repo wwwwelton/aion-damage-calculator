@@ -11,4 +11,5 @@ rm -rf ui/dist
 wasm-bindgen --target web --out-dir ui/dist target/wasm32-unknown-unknown/release/aion2_ui.wasm
 cp ui/index.html ui/dist/index.html
 cp style.css ui/dist/style.css
+cp ui/app.js ui/dist/app.js
 echo "built ui/dist"
