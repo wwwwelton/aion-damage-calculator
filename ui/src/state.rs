@@ -67,6 +67,7 @@ pub struct AppState {
     pub inputs: StoredValue<Vec<(&'static str, RwSignal<String>)>>,
     /// Values written by the last character import, so a re-import can revert stale ones.
     pub import_previous: RwSignal<BTreeMap<String, f64>>,
+    pub imported_profile: RwSignal<Option<serde_json::Value>>,
 }
 
 impl AppState {
@@ -89,6 +90,7 @@ impl AppState {
                 FIELDS.iter().map(|(k, d)| (*k, RwSignal::new(d.to_string()))).collect(),
             ),
             import_previous: RwSignal::new(BTreeMap::new()),
+            imported_profile: RwSignal::new(None),
         }
     }
 }

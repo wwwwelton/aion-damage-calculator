@@ -10,4 +10,5 @@ cargo build --release --target wasm32-unknown-unknown -p aion2-ui
 rm -rf ui/dist
 wasm-bindgen --target web --out-dir ui/dist target/wasm32-unknown-unknown/release/aion2_ui.wasm
 cp ui/index.html ui/dist/index.html
+cp style.css ui/dist/style.css
 echo "built ui/dist"

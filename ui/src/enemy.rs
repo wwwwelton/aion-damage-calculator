@@ -115,6 +115,7 @@ fn import_into_calculator(state: AppState, data: &Value) -> String {
     }
     state.target_mode.set(TargetMode::Player);
     state.target_name.set(name.clone());
+    state.tab.set(crate::state::ActiveTab::Calculator);
     let hp_text = match hp {
         Some(hp) => format_t(lang, "enemyHpKnown", &[("hp", hp.to_string().as_str())]),
         None => t(lang, "enemyHpUnknown"),
@@ -133,8 +134,12 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
     let import_status = RwSignal::new(String::new());
     let results = RwSignal::new(Vec::<Value>::new());
     let profile = RwSignal::new(None::<Value>);
+    let selected = RwSignal::new(None::<Value>);
 
     let pick = move |item: Value| {
+        let mut selected_item = item.clone();
+        selected_item["globalRegion"] = json!(global_region.get_untracked());
+        selected.set(Some(selected_item));
         status.set(String::new());
         profile.set(None);
         spawn_local(fetch_profile_now(item, region, global_region, profile, status));
@@ -157,6 +162,9 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
                     if list.is_empty() {
                         status.set(t(lang.get_untracked(), "noCharacters"));
                     } else if list.len() == 1 {
+                        let mut selected_item = list[0].clone();
+                        selected_item["globalRegion"] = json!(gr);
+                        selected.set(Some(selected_item));
                         status.set(String::new());
                         fetch_profile_now(list[0].clone(), region, global_region, profile, status).await;
                     } else {
@@ -189,6 +197,7 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
                 <button type="submit">{move || t(lang.get(), "searchBtn")}</button>
             </form>
             <p role="status">{move || status.get()}</p>
+            <crate::profiles::Profiles state=state profile=profile selected=selected global_region=global_region />
             <ul class="character-results">
                 {move || results.get().into_iter().map(|item| {
                     let label = format!(
@@ -240,6 +249,7 @@ pub fn EnemyTab(state: AppState) -> impl IntoView {
                 <section class="card">
                     <h2>{title}</h2>
                     <p>{meta}</p>
+                    <crate::dossier::Dossier state=state data=data.clone() />
                     <h3>{move || t(lang.get(), "availableEnemyStats")}</h3>
                     <ul>{rows_view}</ul>
                     <p class="import-note">{move || t(lang.get(), "importEnemyNote")}</p>

@@ -18,19 +18,20 @@ function isEmbedded(name, patterns) {
   });
 }
 
-test('every script and stylesheet the page loads is embedded in the executable', () => {
+test('the wasm page assets are embedded in the executable', () => {
   const patterns = embeddedPatterns();
-  const html = readFileSync('index.html', 'utf8');
+  const html = readFileSync('ui/index.html', 'utf8');
   const references = [...html.matchAll(/<(?:script|link)[^>]*(?:src|href)="([^"]+)"/g)]
     .map(match => match[1])
     .filter(name => !/^(https?:|#)/.test(name));
-  const missing = references.filter(name => !existsSync(name) || !isEmbedded(name, patterns));
+  const missing = references.filter(name => !existsSync(`ui/dist/${name}`) || !isEmbedded(name, patterns));
   assert.deepEqual(missing, []);
+  assert.ok(isEmbedded('aion2_ui_bg.wasm', patterns));
 });
 
-test('the native host bridge is embedded and mentioned by the pages that use it', () => {
+test('the native host bridge remains available to the wasm UI', () => {
   const patterns = embeddedPatterns();
-  assert.ok(isEmbedded('host-bridge.js', patterns));
-  assert.match(readFileSync('characters.js', 'utf8'), /window\.aion2Host/);
-  assert.match(readFileSync('ai-tips.js', 'utf8'), /window\.aion2Host/);
+  assert.ok(readFileSync('ui/src/host.rs', 'utf8').includes('aion2Host'));
+  assert.ok(isEmbedded('index.html', patterns));
+  assert.ok(isEmbedded('aion2_ui.js', patterns));
 });

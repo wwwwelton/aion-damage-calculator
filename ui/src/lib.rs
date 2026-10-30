@@ -6,6 +6,13 @@ pub mod character;
 pub mod enemy;
 #[cfg(target_arch = "wasm32")]
 pub mod host;
+#[cfg(target_arch = "wasm32")]
+pub mod timers;
+#[cfg(target_arch = "wasm32")]
+pub mod ai;
+pub mod dossier;
+#[cfg(target_arch = "wasm32")]
+pub mod profiles;
 pub mod calculator;
 pub mod calculator_form;
 pub mod header;
@@ -25,6 +32,7 @@ use leptos::prelude::*;
 use state::{ActiveTab, AppState};
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
 #[component]
 fn App() -> impl IntoView {
     let state = AppState::new();
@@ -34,6 +42,7 @@ fn App() -> impl IntoView {
         <main>
             <div hidden=move || state.tab.get() != ActiveTab::Calculator>
                 <CalculatorTab state=state />
+                <ai::AiPanel state=state />
             </div>
             <div hidden=move || state.tab.get() != ActiveTab::Boss>
                 <BossTab state=state />
@@ -47,10 +56,14 @@ fn App() -> impl IntoView {
             <div hidden=move || state.tab.get() != ActiveTab::Attributes>
                 <AttributesTab state=state />
             </div>
+            <div hidden=move || state.tab.get() != ActiveTab::Timers>
+                <timers::TimersTab state=state />
+            </div>
         </main>
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn mount_calculator() {
     mount_to_body(App);

@@ -437,3 +437,11 @@ button.tree-circle:is(:hover, :focus-visible) { border-color: #91e6dc; backgroun
 .value-percent { color: #f1d09b; }
 .option-list li.sheet-total { opacity: 0.8; }
 .option-list li.sheet-total small { white-space: normal; }
+
+/* Leptos keeps the accepted flat attribute list and inline tips. */
+.wasm-ui .calc-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.wasm-ui .calculator, .wasm-ui .attributes-view { padding: 24px; }
+.wasm-ui .tree-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.wasm-ui .tree-leaf { display: flex; align-items: center; gap: 12px; }
+.wasm-ui .tree-leaf-text { display: flex; flex-direction: column; }
+.wasm-ui .tree-tip { position: static; margin: 16px 0; pointer-events: auto; }

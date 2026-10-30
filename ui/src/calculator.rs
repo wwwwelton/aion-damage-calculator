@@ -31,20 +31,107 @@ pub const FIELDS: &[(&str, &str)] = &[
     ("speciesDamageTolerance", "0"),
     ("bossDamageBoost", "0"),
     ("bossDamageTolerance", "0"),
-    ("criticalDamageBoost", "100"),
+    ("criticalDamageBoost", "150"),
     ("criticalDamageTolerance", "0"),
-    ("double", "100"),
+    ("double", "200"),
     ("frontBoost", "100"),
     ("frontDamageTolerance", "0"),
     ("backBoost", "100"),
     ("backDamageTolerance", "0"),
-    ("hitsPerSecond", "1"),
-    ("enemyHp", "10000"),
+    ("hitsPerSecond", "0"),
+    ("enemyHp", "0"),
+    ("playerHp", "0"),
+    ("pveAccuracy", "0"),
+    ("elementalResistance", "0"),
+    ("accuracy", "0"),
+    ("evasion", "0"),
+    ("blockPenetration", "0"),
+    ("block", "0"),
+    ("pvpAccuracy", "0"),
+    ("pvpEvasion", "0"),
+    ("pvpBlockPenetration", "0"),
+    ("pvpBlock", "0"),
+    ("criticalHit", "0"),
+    ("criticalHitResist", "0"),
+    ("frontCriticalHit", "0"),
+    ("frontCriticalHitResist", "0"),
+    ("backCriticalHit", "0"),
+    ("backCriticalHitResist", "0"),
+    ("criticalAttack", "0"),
+    ("criticalDamageDefense", "0"),
+    ("frontAttack", "0"),
+    ("frontDefense", "0"),
+    ("backAttack", "0"),
+    ("backDefense", "0"),
+    ("pvpCriticalHit", "0"),
+    ("pvpCriticalHitResist", "0"),
+    ("doubleChance", "0"),
+    ("doubleResist", "0"),
+    ("perfectChance", "0"),
+    ("perfectResist", "0"),
+    ("multiHitChance", "0"),
+    ("multiHitResist", "0"),
+    ("endurancePenetration", "0"),
+    ("endurance", "0"),
+    ("regenerationPenetration", "0"),
+    ("regeneration", "0"),
+    ("pvpDamageBoost", "0"),
+    ("pvpDamageTolerance", "0"),
+    ("pvpAttack", "0"),
+    ("pvpDefense", "0"),
+    ("fireBoost", "0"),
+    ("fireTolerance", "0"),
+    ("waterBoost", "0"),
+    ("waterTolerance", "0"),
+    ("windBoost", "0"),
+    ("windTolerance", "0"),
+    ("earthBoost", "0"),
+    ("earthTolerance", "0"),
+    ("cogniDamageBoost", "0"),
+    ("cogniDamageTolerance", "0"),
+    ("cogniAttack", "0"),
+    ("cogniDefense", "0"),
+    ("cogniAccuracy", "0"),
+    ("cogniEvasion", "0"),
+    ("cogniBlockPenetration", "0"),
+    ("cogniBlock", "0"),
+    ("cogniCriticalHit", "0"),
+    ("cogniCriticalHitResist", "0"),
+    ("feraDamageBoost", "0"),
+    ("feraDamageTolerance", "0"),
+    ("feraAttack", "0"),
+    ("feraDefense", "0"),
+    ("feraAccuracy", "0"),
+    ("feraEvasion", "0"),
+    ("feraBlockPenetration", "0"),
+    ("feraBlock", "0"),
+    ("feraCriticalHit", "0"),
+    ("feraCriticalHitResist", "0"),
+    ("naturaDamageBoost", "0"),
+    ("naturaDamageTolerance", "0"),
+    ("naturaAttack", "0"),
+    ("naturaDefense", "0"),
+    ("naturaAccuracy", "0"),
+    ("naturaEvasion", "0"),
+    ("naturaBlockPenetration", "0"),
+    ("naturaBlock", "0"),
+    ("naturaCriticalHit", "0"),
+    ("naturaCriticalHitResist", "0"),
+    ("varianDamageBoost", "0"),
+    ("varianDamageTolerance", "0"),
+    ("varianAttack", "0"),
+    ("varianDefense", "0"),
+    ("varianAccuracy", "0"),
+    ("varianEvasion", "0"),
+    ("varianBlockPenetration", "0"),
+    ("varianBlock", "0"),
+    ("varianCriticalHit", "0"),
+    ("varianCriticalHitResist", "0"),
 ];
 
 // Blank or malformed input counts as 0, matching build_scenario's missing-key rule.
 fn parse(s: &str) -> f64 {
-    s.trim().parse::<f64>().ok().filter(|n| n.is_finite()).unwrap_or(0.0)
+    aion2_core::numeric_input::parse_numeric_input(s, 0.0).unwrap_or(0.0)
 }
 
 fn fmt(n: Option<f64>) -> String {
@@ -91,10 +178,12 @@ pub fn CalculatorTab(state: AppState) -> impl IntoView {
         .map(|(k, sig)| {
             view! {
                 <label class="calc-field">
-                    <span>{k}</span>
+                    <span>{move || aion2_core::stat_info::stat_info(k, state.lang.get() == crate::i18n::Lang::Pt).map(|i| crate::i18n::stat_label(state.lang.get(), &i.title)).unwrap_or_else(|| k.to_owned())}</span>
                     <input
                         type="text"
                         inputmode="decimal"
+                        name=k
+                        title=move || aion2_core::stat_info::stat_info(k, state.lang.get() == crate::i18n::Lang::Pt).map(|i| i.desc).unwrap_or_default()
                         prop:value=move || sig.get()
                         on:input=move |ev| sig.set(event_target_value(&ev))
                     />
@@ -105,6 +194,27 @@ pub fn CalculatorTab(state: AppState) -> impl IntoView {
 
     view! {
         <section class="calculator">
+            <div class="combatants">
+                <label>{move || crate::i18n::t(state.lang.get(), "charNameLabel")}
+                    <input id="attacker-name" prop:value=move || state.attacker_name.get() on:input=move |ev| state.attacker_name.set(event_target_value(&ev)) />
+                </label>
+                <label>{move || crate::i18n::t(state.lang.get(), "classLabel")}
+                    <input id="attacker-class" prop:value=move || state.attacker_class.get() on:input=move |ev| state.attacker_class.set(event_target_value(&ev)) />
+                </label>
+                <label>{move || crate::i18n::t(state.lang.get(), "targetNameLabel")}
+                    <input id="target-name" prop:value=move || state.target_name.get() on:input=move |ev| state.target_name.set(event_target_value(&ev)) />
+                </label>
+                <label>{move || crate::i18n::t(state.lang.get(), "creatureTypeLabel")}
+                    <select prop:value=move || state.creature_type.get().unwrap_or_default() on:change=move |ev| {
+                        let value = event_target_value(&ev);
+                        state.creature_type.set(if value.is_empty() { None } else { Some(value) });
+                    }>
+                        <option value="">{move || crate::i18n::t(state.lang.get(), "creatureManualOption")}</option>
+                        <option value="cogni">"Cogni"</option><option value="fera">"Fera"</option>
+                        <option value="natura">"Natura"</option><option value="varian">"Varian"</option>
+                    </select>
+                </label>
+            </div>
             <div class="calc-inputs">{inputs_view}</div>
             <div class="calc-toggles">
                 <label>

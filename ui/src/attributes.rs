@@ -1,7 +1,4 @@
-// Port of attribute-trees.js. Tree values come from calculator inputs; profile
-// (imported defenses) leaves show "unknown" until the Character import is ported.
-// Deviation: the nested tree is a flat list of the 17 leaves; the tip is shown
-// below the list instead of anchored to the button.
+// Port of attribute-trees.js. The accepted flat tree and inline tip layout are retained.
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use crate::i18n::{t, Lang};
@@ -94,12 +91,52 @@ fn input_value(state: AppState, name: &str) -> Option<f64> {
         .and_then(|(_, sig)| parse_numeric_input(&sig.get(), f64::NEG_INFINITY))
 }
 
+fn profile_description(lang: Lang, stat: &serde_json::Value) -> String {
+    let key = match stat["type"].as_str().unwrap_or("") {
+        "STR" => "treeTipMight", "AGI" => "treeTipPrecision",
+        "DEX" => "treeTipDexterity", "CON" => "treeTipConstitution",
+        "Justice" => "treeTipJustice", "Freedom" => "treeTipFreedom",
+        "Illusion" => "treeTipIllusion", "Life" => "treeTipLife",
+        "Time" => "treeTipTime", "Destruction" => "treeTipDestruction",
+        "Death" => "treeTipDeath", "Wisdom" => "treeTipWisdom",
+        "Destiny" => "treeTipDestiny", "Space" => "treeTipSpace",
+        _ => "",
+    };
+    if !key.is_empty() {
+        return t(lang, key);
+    }
+    let name = stat["name"].as_str().unwrap_or("");
+    let mut words = name.split(|c: char| !c.is_ascii_alphanumeric()).filter(|s| !s.is_empty());
+    let mut field = words.next().unwrap_or("").to_ascii_lowercase();
+    for word in words {
+        field.push_str(&word[..1].to_ascii_uppercase());
+        field.push_str(&word[1..]);
+    }
+    stat_info(name, matches!(lang, Lang::Pt))
+        .or_else(|| stat_info(&field, matches!(lang, Lang::Pt)))
+        .map(|info| info.desc)
+        .unwrap_or_else(|| t(lang, "treeProfileNoMechanics"))
+}
+
+fn current_profile(state: AppState) -> Option<serde_json::Value> {
+    state.imported_profile.get().filter(|profile| {
+        profile.pointer("/info/profile/characterName").and_then(serde_json::Value::as_str)
+            == Some(state.attacker_name.get().as_str())
+            && profile.pointer("/info/profile/className").and_then(serde_json::Value::as_str)
+                == Some(state.attacker_class.get().as_str())
+    })
+}
+
 fn leaf_text(state: AppState, leaf: &Leaf) -> String {
     let lang = state.lang.get();
-    if leaf.profile {
-        return t(lang, "treeUnknown");
-    }
-    match input_value(state, leaf.stat) {
+    let value = if leaf.profile {
+        current_profile(state).and_then(|profile| {
+            aion2_core::character_extraction::enemy_defenses(&profile).get(leaf.stat).copied()
+        })
+    } else {
+        input_value(state, leaf.stat)
+    };
+    match value {
         Some(v) if !(leaf.stat == "playerHp" && v <= 0.0) => {
             let suffix = if leaf.percent { "%" } else { "" };
             format!("{}{suffix}", format_number(v, matches!(lang, Lang::Pt)))
@@ -346,6 +383,49 @@ pub fn AttributesTab(state: AppState) -> impl IntoView {
     view! {
         <section class="attributes-view">
             <div class="tree-list">{leaves}</div>
+            <p>{move || current_profile(state).map(|_| crate::i18n::format_t(
+                state.lang.get(), "treeImportedFrom", &[("name", &state.attacker_name.get())],
+            )).unwrap_or_else(|| t(state.lang.get(), "treeValueNote"))}</p>
+            <h3>{move || t(state.lang.get(), "treeProfileTitle")}</h3>
+            {move || {
+                let lang = state.lang.get();
+                let profile = current_profile(state);
+                let stats = profile.as_ref().map(|p| aion2_core::character_extraction::extract_character(p).stats).unwrap_or_default();
+                let empty = stats.is_empty();
+                let rows = stats.into_iter().map(|stat| {
+                    let name = stat["name"].as_str().unwrap_or("").to_owned();
+                    let raw = stat["value"].as_str().map(str::to_owned).unwrap_or_else(|| stat["value"].to_string());
+                    let percent = raw.trim().ends_with('%');
+                    let value = raw.trim().trim_end_matches('%').parse::<f64>().ok()
+                        .map(|v| format!("{}{}", format_number(v, matches!(lang, Lang::Pt)), if percent { "%" } else { "" }))
+                        .unwrap_or(raw);
+                    let title = crate::i18n::stat_label(lang, &name);
+                    let inner = view! { <span>{title}</span><strong>{value}</strong> }.into_any();
+                    view! { <li>{tip_button(tip, pinned, state, move |lang| Tip {
+                        title: crate::i18n::stat_label(lang, &name),
+                        text: profile_description(lang, &stat),
+                    }, "tree-catalog-item", inner)}</li> }
+                }).collect_view();
+                let modifiers = profile.as_ref().map(aion2_core::character_extraction::sheet_modifiers).unwrap_or_default();
+                let has_modifiers = !modifiers.is_empty();
+                let modifiers = modifiers.into_iter().map(|(field, amount)| {
+                    let key = format!("modifier{}{}", field[..1].to_ascii_uppercase(), &field[1..]);
+                    let title = t(lang, &key);
+                    let inner = view! { <span>{title}</span><strong>{format!("{}%", format_number(amount, matches!(lang, Lang::Pt)))}</strong> }.into_any();
+                    view! { <li>{tip_button(tip, pinned, state, move |lang| Tip {
+                        title: t(lang, &key), text: t(lang, "sheetModifiersNote"),
+                    }, "tree-catalog-item", inner)}</li> }
+                }).collect_view();
+                view! {
+                    <p hidden=!empty>{t(lang, "treeProfileEmpty")}</p>
+                    <ul id="tree-profile-list" class="tree-profile-list">{rows}</ul>
+                    <section hidden=!has_modifiers>
+                        <h3>{t(lang, "sheetModifiersTitle")}</h3>
+                        <p>{t(lang, "sheetModifiersNote")}</p>
+                        <ul id="tree-modifier-list" class="tree-profile-list">{modifiers}</ul>
+                    </section>
+                }
+            }}
             <div class="tree-tip" role="tooltip" hidden=move || tip.get().is_none()>
                 {move || tip.get().map(|tp| view! {
                     <strong>{tp.title}</strong>
@@ -354,5 +434,36 @@ pub fn AttributesTab(state: AppState) -> impl IntoView {
             </div>
             <div class="tree-catalog" id="tree-catalog">{catalog}</div>
         </section>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn imported_defenses_follow_identity_and_never_replace_target_inputs() {
+        Owner::new().with(|| {
+            let state = AppState::new();
+            state.attacker_name.set("Alice".into());
+            state.attacker_class.set("Ranger".into());
+            state.imported_profile.set(Some(serde_json::json!({
+                "info": {
+                    "profile": {"characterName": "Alice", "className": "Ranger"},
+                    "stat": {"statList": [{"name": "Defense", "value": "1400"}]}
+                }
+            })));
+            let defense = LEAVES.iter().find(|leaf| leaf.stat == "defense").unwrap();
+            assert_eq!(leaf_text(state, defense), "1,400");
+            assert_eq!(input_value(state, "defense"), Some(0.0));
+            state.attacker_class.set("Gladiator".into());
+            assert_eq!(leaf_text(state, defense), "Not available");
+            state.attacker_class.set("Ranger".into());
+            state.attacker_name.set("Bob".into());
+            assert_eq!(leaf_text(state, defense), "Not available");
+            state.attacker_name.set("Alice".into());
+            state.lang.set(Lang::Pt);
+            assert_eq!(leaf_text(state, defense), "1.400");
+        });
     }
 }

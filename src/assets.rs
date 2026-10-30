@@ -5,30 +5,18 @@ use std::borrow::Cow;
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
-#[folder = "."]
+#[folder = "ui/dist/"]
 #[include = "index.html"]
 #[include = "style.css"]
-#[include = "i18n.js"]
-#[include = "calculator.js"]
-#[include = "numeric-input.js"]
-#[include = "recommendations.js"]
-#[include = "icons.js"]
-#[include = "matchups.js"]
-#[include = "ai-tips.js"]
-#[include = "markdown.js"]
-#[include = "attribute-trees.js"]
-#[include = "profile-ui.js"]
-#[include = "stat-tooltips.js"]
-#[include = "renderer.js"]
-#[include = "game-companion.js"]
-#[include = "characters.js"]
-#[include = "boss-data.js"]
-#[include = "mob-data.js"]
-#[include = "bosses.js"]
-#[include = "host-bridge.js"]
+#[include = "aion2_ui.js"]
+#[include = "aion2_ui_bg.wasm"]
+struct Embedded;
+
+#[derive(RustEmbed)]
+#[folder = "."]
 #[include = "assets/classes/*.webp"]
 #[include = "assets/genus/*.webp"]
-struct Embedded;
+struct Images;
 
 pub struct Asset {
     pub data: Cow<'static, [u8]>,
@@ -45,7 +33,7 @@ pub fn lookup(request_path: &str) -> Option<Asset> {
     if name.split('/').any(|part| part == ".." || part.is_empty()) {
         return None;
     }
-    let file = Embedded::get(name)?;
+    let file = Embedded::get(name).or_else(|| Images::get(name))?;
     let mime = mime_guess::from_path(name).first_or_octet_stream();
     let content_type = if mime.type_() == mime_guess::mime::TEXT {
         format!("{mime}; charset=utf-8")
@@ -69,7 +57,10 @@ mod tests {
         let page = lookup("/").expect("index.html is embedded");
         assert!(page.content_type.starts_with("text/html"));
         assert_eq!(page.cache_control, "no-store");
-        assert!(lookup("/characters.js").expect("script is embedded").content_type.starts_with("text/javascript"));
+        assert!(lookup("/aion2_ui.js").expect("Wasm loader is embedded").content_type.starts_with("text/javascript"));
+        let wasm = lookup("/aion2_ui_bg.wasm").expect("Wasm binary is embedded");
+        assert_eq!(wasm.content_type, "application/wasm");
+        assert!(wasm.data.starts_with(b"\0asm"));
     }
 
     #[test]

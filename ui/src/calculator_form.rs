@@ -125,4 +125,19 @@ mod tests {
         let none = build_scenario(&r, TargetMode::Boss, None, false, false, Position::None);
         assert_eq!(none.values.front_back_damage_boost, 1.0);
     }
+
+    #[test]
+    fn hit_and_proc_resistances_do_not_change_a_selected_hits_damage() {
+        let mut inputs: HashMap<String, f64> = crate::calculator::FIELDS.iter()
+            .map(|(name, value)| (name.to_string(), value.parse().unwrap())).collect();
+        let damage = |inputs: &HashMap<String, f64>| {
+            let scenario = build_scenario(inputs, TargetMode::Boss, None, true, true, Position::Back);
+            aion2_core::calculator::calculate_damage(&scenario.values)
+        };
+        assert_eq!(damage(&inputs), 3000.0);
+        for field in ["evasion", "block", "criticalHitResist", "doubleResist", "perfectResist", "multiHitResist", "endurance", "regeneration"] {
+            inputs.insert(field.to_owned(), 100.0);
+        }
+        assert_eq!(damage(&inputs), 3000.0);
+    }
 }

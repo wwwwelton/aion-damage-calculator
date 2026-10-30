@@ -34,8 +34,17 @@ fn ensure_listener(host: &JsValue) -> Result<(), String> {
     let on_message: js_sys::Function = on_message.dyn_into().map_err(|_| "onMessage not a function")?;
     let listener = Closure::<dyn FnMut(JsValue)>::new(|event: JsValue| {
         let data = js_sys::Reflect::get(&event, &"data".into()).unwrap_or(JsValue::UNDEFINED);
-        let Some(text) = data.as_string() else { return };
+        let Ok(text) = js_sys::JSON::stringify(&data) else { return };
+        let Some(text) = text.as_string() else { return };
         let Ok(reply) = serde_json::from_str::<Value>(&text) else { return };
+        if reply["type"] == "profile_sync" {
+            let init = web_sys::CustomEventInit::new();
+            init.set_detail(&data);
+            if let (Some(window), Ok(event)) = (web_sys::window(), web_sys::CustomEvent::new_with_event_init_dict("aion2-profile-sync", &init)) {
+                let _ = window.dispatch_event(&event);
+            }
+            return;
+        }
         let Some(id) = reply.get("id").map(|v| v.to_string()) else { return };
         let Some((resolve, reject)) = PENDING.with(|p| p.borrow_mut().remove(&id)) else { return };
         if let Some(error) = reply.get("error").and_then(Value::as_str) {

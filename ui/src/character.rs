@@ -1,5 +1,4 @@
-// Character search tab: name search and profile summary over the native host bridge.
-// Port of the search and summary path in characters.js. Dossier, sync and import are not ported yet.
+// Character search, dossier and calculator import over the native host bridge.
 
 use crate::host;
 use crate::i18n::t;
@@ -36,8 +35,12 @@ pub fn CharacterTab(state: AppState) -> impl IntoView {
     let status = RwSignal::new(String::new());
     let results = RwSignal::new(Vec::<Value>::new());
     let profile = RwSignal::new(None::<Value>);
+    let selected = RwSignal::new(None::<Value>);
 
     let load_profile = move |item: Value| {
+        let mut selected_item = item.clone();
+        selected_item["globalRegion"] = json!(global_region.get_untracked());
+        selected.set(Some(selected_item));
         let server_id = item.get("serverId").cloned().unwrap_or(Value::Null);
         let character_id = item.get("characterId").cloned().unwrap_or(Value::Null);
         let gr = global_region.get();
@@ -68,6 +71,9 @@ pub fn CharacterTab(state: AppState) -> impl IntoView {
                     if list.len() == 1 {
                         results.set(list.clone());
                         // Single match loads straight away, like the JS path.
+                        let mut selected_item = list[0].clone();
+                        selected_item["globalRegion"] = json!(gr);
+                        selected.set(Some(selected_item));
                         load_profile_now(list[0].clone(), region, global_region, profile, status).await;
                     } else {
                         results.set(list);
@@ -104,6 +110,7 @@ pub fn CharacterTab(state: AppState) -> impl IntoView {
                 <button type="submit">{move || t(lang.get(), "searchBtn")}</button>
             </form>
             <p role="status">{move || status.get()}</p>
+            <crate::profiles::Profiles state=state profile=profile selected=selected global_region=global_region />
             <ul class="character-results">
                 {move || results.get().into_iter().map(|item| {
                     let label = format!(
@@ -139,10 +146,12 @@ pub fn CharacterTab(state: AppState) -> impl IntoView {
                     if cp.is_empty() { String::new() } else { format!(" · CP {cp}") },
                 );
                 let imported = data.clone();
+                let dossier_data = data.clone();
                 view! {
                     <section class="card">
                         <h2>{title}</h2>
                         <p>{meta}</p>
+                        <crate::dossier::Dossier state=state data=dossier_data />
                         <p>{move || t(lang.get(), "importCharNote")}</p>
                         <button type="button" on:click=move |_| apply_import(state, status, &imported)>
                             {move || t(lang.get(), "importCharBtn")}
@@ -157,7 +166,8 @@ pub fn CharacterTab(state: AppState) -> impl IntoView {
 // Port of the characters.js import click: equipment and matchup values go into the calculator
 // inputs; values from the previous import that this profile no longer provides revert to default.
 fn apply_import(state: AppState, status: RwSignal<String>, profile: &Value) {
-    let bonuses = equipment_bonuses(profile);
+    let mut bonuses = equipment_bonuses(profile);
+    bonuses.insert("playerHp".into(), aion2_core::character_extraction::character_hp(profile).unwrap_or(0.0));
     let references = offensive_references(profile);
     let inputs = state.inputs.get_value();
     let find = |field: &str| inputs.iter().find(|(k, _)| *k == field).map(|(_, s)| *s);
@@ -181,11 +191,13 @@ fn apply_import(state: AppState, status: RwSignal<String>, profile: &Value) {
         }
     }
     state.import_previous.set(applied);
+    state.imported_profile.set(Some(profile.clone()));
 
     let extracted = extract_character(profile);
     state.attacker_name.set(extracted.name);
     let class = profile.pointer("/info/profile/className").and_then(Value::as_str).unwrap_or("");
     state.attacker_class.set(class.to_string());
+    state.tab.set(crate::state::ActiveTab::Calculator);
 
     let coverage = formula_import_coverage(profile);
     let gear = coverage.sources.values().filter(|s| s.as_str() == "gear").count();
