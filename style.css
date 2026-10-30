@@ -260,6 +260,10 @@ footer { font-size: 12px; margin-top: 20px; }
 .saved-profiles { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .saved-profiles button, #refresh-profile, #favorite-profile { padding: 8px 12px; border: 1px solid #40516a; border-radius: 8px; background: #172334; color: #e8eef7; font: inherit; cursor: pointer; overflow-wrap: anywhere; max-width: 100%; }
 #favorite-profile[aria-pressed="true"] { border-color: #69d8cc; color: #91e6dc; }
+.legion-link-btn { background: none; border: none; padding: 0; color: #91e6dc; text-decoration: underline; font: inherit; cursor: pointer; }
+.legion-link-btn:hover { color: #fff; }
+#legion-dialog { width: min(600px, calc(100% - 32px)); max-height: 85vh; overflow: auto; color: #e8eef7; background: #172334; border: 1px solid #40516a; border-radius: 12px; }
+#legion-dialog::backdrop { background: #07101dcc; }
 .boss-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
 .boss-filters label:last-child { grid-column: 1 / -1; }
 #import-boss { min-height: 40px; max-width: 100%; padding: 8px 15px; border: 1px solid #69d8cc; border-radius: 8px; background: #23515b; color: #fff; font: inherit; cursor: pointer; }

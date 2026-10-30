@@ -44,6 +44,7 @@
       <button type="button" id="boss-tab" role="tab" aria-controls="boss-view" class="tab" data-tab="boss-view" aria-selected="false" data-i18n="tabBoss">Mobs &amp; Bosses</button>
       <button type="button" id="attributes-tab" role="tab" aria-controls="attributes-view" class="tab" data-tab="attributes-view" aria-selected="false" data-i18n="tabAttributes">Attribute Trees</button>
       <button type="button" id="timers-tab" role="tab" aria-controls="timers-view" class="tab" data-tab="timers-view" aria-selected="false" data-i18n="tabTimers">Timers &amp; Map</button>
+    </nav>
     <div id="calculator-view" class="tab-panel" role="tabpanel" aria-labelledby="calculator-tab">
     <section class="card encounter" aria-label="Combat scenario">
       <label data-i18n-label="targetModeLabel">Target mode<select id="target-mode"><option value="boss" data-i18n="targetModeBoss">PvE · Boss</option><option value="monster" data-i18n="targetModeMonster">PvE · Other monster</option><option value="player" data-i18n="targetModePlayer">PvP · Player</option></select></label>
@@ -65,6 +66,14 @@
             <label for="ai-model" data-i18n="aiModelLabel">Model</label>
             <select id="ai-model"></select>
             <p class="reference-note" data-i18n="aiPrivacyNote">Only clicking Ask sends the current question, calculator values, recent chat and a guide excerpt to AionLabs. Usage may be billed by your account.</p>
+            <button type="submit" data-i18n="aiClose">Close</button>
+          </form>
+        </dialog>
+        <dialog id="legion-dialog" aria-labelledby="legion-dialog-title">
+          <form method="dialog" class="ai-settings">
+            <h2 id="legion-dialog-title" data-i18n="legionRosterTitle">Legion Members</h2>
+            <p id="legion-dialog-summary" class="reference-note"></p>
+            <div id="legion-members-list" class="progression-grid"></div>
             <button type="submit" data-i18n="aiClose">Close</button>
           </form>
         </dialog>
