@@ -107,12 +107,14 @@ function renderDossier(container, view) {
   portrait.classList.add('dossier-portrait');
   summary.append(portrait);
   const summaryText = dossierNode('div');
-  summaryText.append(dossierNode('strong', '', `${view.name} · ${view.className}`),
+  const cpText = view.combatPower ? `${dossierText('combatPower')} ${view.combatPower.toLocaleString()}` : '';
+  const gsText = view.gearScore ? `${dossierText('gearScore')} ${view.gearScore.toLocaleString()}` : (view.itemLevel ? `${dossierText('itemLevel')} ${view.itemLevel.toLocaleString()}` : '');
+  summaryText.append(
+    dossierNode('strong', '', `${view.name} · ${view.className}`),
     dossierNode('small', '', [`${dossierText('level')} ${view.level || '—'}`, view.race || dossierText('raceUnknown'),
       view.gender, view.server || dossierText('serverUnknown')].filter(Boolean).join(' · ')),
-    dossierNode('small', '', [`${dossierText('combatPower')} ${view.combatPower || '—'}`,
-      view.itemLevel ? `${dossierText('itemLevel')} ${view.itemLevel}` : '',
-      view.legion ? `${dossierText('legion')} ${view.legion}` : ''].filter(Boolean).join(' · ')));
+    dossierNode('small', '', [cpText, gsText, view.legion ? `${dossierText('legion')} ${view.legion}` : ''].filter(Boolean).join(' · '))
+  );
   if (view.titleName || view.titlesOwned !== null) {
     summaryText.append(dossierNode('small', '', [view.titleName ? `${dossierText('equippedTitle')} ${view.titleName}` : '',
       view.titlesOwned !== null ? dossierFormat('titlesOwned', { owned: view.titlesOwned, total: view.titlesTotal ?? '?' }) : '']

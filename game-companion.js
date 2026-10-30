@@ -100,14 +100,38 @@ if (typeof document !== 'undefined') {
   }
 }
 const CLASS_BUILDS = {
-  Gladiator: { weapon: 'Montante do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Postura de Assalto', 'Bênção de Zikel', 'Explosão de Ira', 'Perseverança', 'Bloqueio Concentrado', 'Arremesso de Lâmina'] },
-  Templar: { weapon: 'Espada Longa do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Bandeira do Campo de Batalha', 'Escudo da Perdição', 'Armadura Nobre', 'Provocação', 'Apreensão', 'Escudo da Proteção', 'Punição do Senhor Empíreo'] },
-  Ranger: { weapon: 'Arco do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Soberania de Vaizel', 'Arco da Bênção', 'Fogo de Supressão', 'Flecha de Grifo', 'Sopro da Mãe Natureza', 'Chute Surpresa'] },
-  Assassin: { weapon: 'Adaga do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Pacto da Celeridade', 'Clone Ilusório', 'Lançamento de Espada Sombria', 'Presa da Besta', 'Punhal de Triniel', 'Caminhada nas Sombras', 'Postura de Evasão'] },
-  Sorcerer: { weapon: 'Grimório do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Aprimoramento Elemental', 'Barreira de Fogo', 'Explosão Tardia', 'Tempestade Gélida', 'Escudo Protetivo de Aço', 'Armadura Ártica', 'Hibernação'] },
-  Spiritmaster: { weapon: 'Orbe do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Invocação: Espírito Ancestral', 'Ataque Conjunto: Corrosão', 'Aprimoramento: Bendição do Espírito', 'Bênção do Fogo Ardente', 'Comando: Substituto', 'Sucção'] },
-  Cleric: { weapon: 'Maça do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Punição da Terra', 'Oração da Amplificação', 'Luz da Proteção', 'Aura Nobre', 'Salvação', 'Ressurreição por Invocação', 'Soberania de Yustiel'] },
-  Chanter: { weapon: 'Cajado do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Mantra do Imbatível', 'Soberania do Vendaval', 'Bênção da Guarda', 'Fúria de Marchutan', 'Mantra da Disparada', 'Defesa Concentrada'] }
+  Gladiator: {
+    pve: { weapon: 'Montante do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Postura de Assalto', 'Bênção de Zikel', 'Explosão de Ira', 'Perseverança', 'Bloqueio Concentrado', 'Arremesso de Lâmina'] },
+    pvp: { weapon: 'Montante do General Guardião +15', stigmas: ['Postura de Assalto', 'Bênção de Zikel', 'Arremesso de Lâmina', 'Perseverança', 'Salto Devastador', 'Fúria Destrutiva'] }
+  },
+  Templar: {
+    pve: { weapon: 'Espada Longa do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Bandeira do Campo de Batalha', 'Escudo da Perdição', 'Armadura Nobre', 'Provocação', 'Apreensão', 'Escudo da Proteção', 'Punição do Senhor Empíreo'] },
+    pvp: { weapon: 'Espada Longa do General Guardião +15', stigmas: ['Escudo da Proteção', 'Apreensão', 'Punição Divina', 'Armadura Nobre', 'Golpe do Escudo Inabalável', 'Julgamento'] }
+  },
+  Ranger: {
+    pve: { weapon: 'Arco do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Soberania de Vaizel', 'Arco da Bênção', 'Fogo de Supressão', 'Flecha de Grifo', 'Sopro da Mãe Natureza', 'Chute Surpresa'] },
+    pvp: { weapon: 'Arco do General Guardião +15', stigmas: ['Soberania de Vaizel', 'Olho de Águia', 'Flecha de Grifo', 'Fogo de Supressão', 'Flecha Silenciadora', 'Retirada Tática'] }
+  },
+  Assassin: {
+    pve: { weapon: 'Adaga do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Pacto da Celeridade', 'Clone Ilusório', 'Lançamento de Espada Sombria', 'Presa da Besta', 'Punhal de Triniel', 'Caminhada nas Sombras', 'Postura de Evasão'] },
+    pvp: { weapon: 'Adaga do General Guardião +15', stigmas: ['Pacto da Celeridade', 'Caminhada nas Sombras', 'Punhal de Triniel', 'Golpe Sombrio', 'Postura de Evasão', 'Lançamento de Espada Sombria'] }
+  },
+  Sorcerer: {
+    pve: { weapon: 'Grimório do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Aprimoramento Elemental', 'Barreira de Fogo', 'Explosão Tardia', 'Tempestade Gélida', 'Escudo Protetivo de Aço', 'Armadura Ártica', 'Hibernação'] },
+    pvp: { weapon: 'Grimório do General Guardião +15', stigmas: ['Aprimoramento Elemental', 'Hibernação', 'Chama do Caos', 'Escudo Protetivo de Aço', 'Prisão Gélida', 'Teleporte'] }
+  },
+  Spiritmaster: {
+    pve: { weapon: 'Orbe do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Invocação: Espírito Ancestral', 'Ataque Conjunto: Corrosão', 'Aprimoramento: Bendição do Espírito', 'Bênção do Fogo Ardente', 'Comando: Substituto', 'Sucção'] },
+    pvp: { weapon: 'Orbe do General Guardião +15', stigmas: ['Maldição dos Espíritos', 'Invocação: Espírito Ancestral', 'Comando: Substituto', 'Aprimoramento: Bendição do Espírito', 'Nuvem Aflitiva', 'Sucção'] }
+  },
+  Cleric: {
+    pve: { weapon: 'Maça do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Punição da Terra', 'Oração da Amplificação', 'Luz da Proteção', 'Aura Nobre', 'Salvação', 'Ressurreição por Invocação', 'Soberania de Yustiel'] },
+    pvp: { weapon: 'Maça do General Guardião +15', stigmas: ['Luz da Proteção', 'Punição da Terra', 'Graça Divina', 'Salvação', 'Correntes do Julgamento', 'Oração da Amplificação'] }
+  },
+  Chanter: {
+    pve: { weapon: 'Cajado do Lorde Dragão Sombrio Brilhante +15', stigmas: ['Mantra do Imbatível', 'Soberania do Vendaval', 'Bênção da Guarda', 'Fúria de Marchutan', 'Mantra da Disparada', 'Defesa Concentrada'] },
+    pvp: { weapon: 'Cajado do General Guardião +15', stigmas: ['Mantra do Imbatível', 'Soberania do Vendaval', 'Fúria de Marchutan', 'Golpe Desestabilizador', 'Defesa Concentrada', 'Mantra da Vitória'] }
+  }
 };
 const LEADERBOARD_SNAPSHOT = [
   { rank: 1, name: 'Asulgard', className: 'Ranger', server: 'Siel (EU)', cp: 287070 },
@@ -140,12 +164,11 @@ if (typeof document !== 'undefined') {
       card.className = 'progression-card';
       const strong = document.createElement('strong');
       strong.textContent = className;
-      const weapon = document.createElement('small');
-      weapon.textContent = `Arma meta: ${build.weapon}`;
-      const stigmas = document.createElement('p');
-      stigmas.className = 'reference-note';
-      stigmas.textContent = `Estigmas recomendados: ${build.stigmas.join(', ')}`;
-      card.append(strong, weapon, stigmas);
+      const pve = document.createElement('small');
+      pve.textContent = `PvE: ${build.pve.weapon}`;
+      const pvp = document.createElement('small');
+      pvp.textContent = `PvP: ${build.pvp.weapon}`;
+      card.append(strong, pve, pvp);
       return card;
     }));
   }

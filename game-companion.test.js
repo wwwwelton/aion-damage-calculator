@@ -25,6 +25,14 @@ test('computes next hourly and interval-based recurring event occurrences', () =
   assert.equal(hourly.next.getHours(), fixed.getHours() + 1);
 
   const cyclical = nextScheduledEvent(TIMER_SCHEDULES.kairah, fixed);
+
   assert.ok(cyclical.next > fixed);
   assert.equal(cyclical.next.getMinutes(), 0);
+});
+test('class builds define both pve and pvp recommendations', () => {
+  const { CLASS_BUILDS } = require('./game-companion');
+  assert.ok(CLASS_BUILDS.Gladiator.pve.weapon);
+  assert.ok(CLASS_BUILDS.Gladiator.pvp.weapon);
+  assert.ok(CLASS_BUILDS.Gladiator.pve.stigmas.length >= 4);
+  assert.ok(CLASS_BUILDS.Gladiator.pvp.stigmas.length >= 4);
 });

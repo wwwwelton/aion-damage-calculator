@@ -77,6 +77,8 @@ impl OfficialClient {
                 "serverId": entry.get("serverId").and_then(Value::as_i64).unwrap_or(0),
                 "serverName": text_field(entry, "serverName"),
                 "level": entry.get("level").and_then(Value::as_i64).unwrap_or(0),
+                "className": class_name_from_pcid(entry.get("pcId").and_then(Value::as_i64).unwrap_or(0)),
+                "combatPower": entry.get("combatPower").and_then(Value::as_i64),
                 "region": global_region,
             })).collect())
             .unwrap_or_default();
@@ -277,6 +279,19 @@ fn strip_tags(text: &str) -> String {
         }
     }
     output
+}
+fn class_name_from_pcid(pc_id: i64) -> &'static str {
+    match pc_id {
+        1 | 2 | 7 | 8 => "Gladiator",
+        3 | 4 | 11 | 12 => "Templar",
+        5 | 6 | 13 | 14 => "Ranger",
+        9 | 10 | 18 | 19 => "Assassin",
+        15 | 16 | 21 | 22 => "Sorcerer",
+        17 | 20 | 23 | 24 => "Spiritmaster",
+        25 | 26 | 29 | 30 => "Cleric",
+        27 | 28 | 33 | 34 | 35 | 36 => "Chanter",
+        _ => "Unknown",
+    }
 }
 
 #[cfg(test)]

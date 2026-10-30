@@ -218,6 +218,10 @@ const TRANSLATIONS = {
     dbTitle: 'Verified Game Database Directory',
     dbSubtitle: 'Fast lookup across verified items, skills, dungeons and titles from client data snapshots.',
     dbSearchPlaceholder: 'Search database...',
+    combatReportTitle: 'Combat Analysis & Recommended Setup',
+    combatReportSubtitle: 'Summary of calculated combat parameters and meta-recommended configuration for the active mode.',
+    reportModeHeader: 'SCENARIO & OUTCOME',
+    reportBuildHeader: 'RECOMMENDED META BUILD',
 
     resultStatus: 'Result of the supplied formula; in-game rounding is not included.',
     estimatedDpsLabel: 'ESTIMATED DPS',
@@ -701,6 +705,10 @@ const TRANSLATIONS = {
     dbSubtitle: 'Busca rápida entre itens, habilidades, masmorras e títulos verificados a partir de dados do cliente.',
     dbSearchPlaceholder: 'Buscar no banco de dados...',
     estimatedDpsLabel: 'DPS ESTIMADO',
+    combatReportTitle: 'Análise de Combate & Configuração Recomendada',
+    combatReportSubtitle: 'Resumo dos parâmetros calculados e configuração meta recomendada para o modo ativo.',
+    reportModeHeader: 'CENÁRIO & RESULTADO',
+    reportBuildHeader: 'BUILD META RECOMENDADA',
     timeToDefeatLabel: 'TEMPO DE DERROTA',
 
     adviceTitle: 'Dicas de melhoria de dano',

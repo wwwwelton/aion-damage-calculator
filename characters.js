@@ -113,11 +113,13 @@ function extractCharacter(data) {
   const profile = data?.info?.profile || {};
   const gear = equippedDetails(data);
   const stats = data?.info?.stat?.statList || [];
+  const combatPower = profile.combatPower ? Number(profile.combatPower) : null;
+  const itemLevel = Number(stats.find(stat => stat.type === 'ItemLevel')?.value) || null;
   return { name: profile.characterName || '', server: profile.serverName || '',
     className: profile.className || '', level: profile.characterLevel || '',
-    combatPower: profile.combatPower || '', race: profile.raceName || '',
+    combatPower, race: profile.raceName || '',
     gender: profile.genderName || '', titleName: profile.titleName || '',
-    itemLevel: Number(stats.find(stat => stat.type === 'ItemLevel')?.value) || null,
+    itemLevel, gearScore: itemLevel,
     titlesOwned: data?.info?.title?.ownedCount ?? null, titlesTotal: data?.info?.title?.totalCount ?? null,
     legion: profile.regionName || '', portrait: profile.profileImage || '',
     ranking: data?.externalRanking || null,
@@ -358,7 +360,10 @@ if (typeof document !== 'undefined') {
     loaded = data;
     const view = extractCharacter(data);
     document.querySelector('#profile-title').textContent = `${view.name} · ${view.server}`;
-    document.querySelector('#profile-meta').textContent = `${view.className} · ${ui('level')} ${view.level} · ${view.race} · CP ${view.combatPower || '—'}`;
+    const cpDisplay = view.combatPower ? `CP ${view.combatPower.toLocaleString()}` : '';
+    const gsDisplay = view.gearScore ? `GS ${view.gearScore.toLocaleString()}` : '';
+    const scores = [cpDisplay, gsDisplay].filter(Boolean).join(' · ');
+    document.querySelector('#profile-meta').textContent = `${view.className} · ${ui('level')} ${view.level} · ${view.race}${scores ? ` · ${scores}` : ''}`;
     setDisplayIcon(document.querySelector('#profile-class-icon'), 'class', view.className);
     renderDossier(document.querySelector('#profile-dossier'), view);
     importButton.disabled = !Object.keys(equipmentBonuses(data)).length

@@ -147,6 +147,7 @@ function update() {
       ? I18N.format('communityCreatureStatus', { type: creatureChoice.selectedOptions[0].textContent })
       : I18N.t('communityFormulaStatus')}`;
   updateApplyButton();
+  updateCombatReport(values);
 }
 form.addEventListener('input', update);
 form.addEventListener('focusout', (event) => {
@@ -158,6 +159,31 @@ form.addEventListener('focusout', (event) => {
 });
 form.addEventListener('change', update);
 update();
+function updateCombatReport(values) {
+  const scenario = document.querySelector('#report-scenario');
+  const hitBreakdown = document.querySelector('#report-hit-breakdown');
+  const buildTitle = document.querySelector('#report-build-title');
+  const buildDetails = document.querySelector('#report-build-details');
+  if (!scenario || !hitBreakdown || !buildTitle || !buildDetails) return;
+  const mode = targetMode.value;
+  const hit = document.querySelector('#result').textContent;
+  const dps = document.querySelector('#estimated-dps').textContent;
+  const isPvp = mode === 'player';
+  scenario.textContent = `${isPvp ? 'PvP · Player' : mode === 'boss' ? 'PvE · Boss' : 'PvE · Monster'} (${hit} / hit)`;
+  const posVal = document.querySelector('#position')?.value || 'none';
+  const critVal = document.querySelector('#critical')?.value || 'no';
+  hitBreakdown.textContent = `DPS Estimado: ${dps} · Posição: ${posVal} · Crítico: ${critVal === 'yes' ? 'Sim' : 'Não'}`;
+  const attackerClass = (document.querySelector('#attacker-class')?.value || '').trim();
+  const matchedClass = Object.keys(CLASS_BUILDS || {}).find(cls => cls.toLowerCase() === attackerClass.toLowerCase()) || 'Gladiator';
+  const build = CLASS_BUILDS?.[matchedClass]?.[isPvp ? 'pvp' : 'pve'];
+  if (build) {
+    buildTitle.textContent = `${matchedClass} (${isPvp ? 'PvP Meta' : 'PvE Meta'})`;
+    buildDetails.textContent = `Arma: ${build.weapon} · Estigmas: ${build.stigmas.slice(0, 4).join(', ')}`;
+  } else {
+    buildTitle.textContent = 'Configuração Geral';
+    buildDetails.textContent = 'Defina a classe do atacante para carregar a recomendação meta exata.';
+  }
+}
 
 I18N.onLanguageChange(() => {
   formatter = new Intl.NumberFormat(I18N.currentLang === 'pt' ? 'pt-BR' : 'en-US',

@@ -49,8 +49,8 @@ test('groups real gear options, learned abilities and progression without invent
   const view = extractCharacter(data);
   assert.equal(view.name, 'Kanon');
   assert.deepEqual(view.stats.map(stat => stat.name), ['Might', 'Damage Tolerance', 'Attack Modifier', '아이템레벨']);
-  assert.deepEqual([view.gender, view.titleName, view.itemLevel, view.titlesOwned, view.titlesTotal],
-    ['Female', 'Treading on Black Wings', 1805, 170, 297]);
+  assert.deepEqual([view.gender, view.titleName, view.itemLevel, view.gearScore, view.titlesOwned, view.titlesTotal],
+    ['Female', 'Treading on Black Wings', 1805, 1805, 170, 297]);
   assert.equal(view.gear[0].item.name, 'Mace');
   assert.equal(view.gear[0].detail.subStats[0].value, '5.6%');
   assert.equal(view.gear[0].detail.subSkills[0].name, 'Bolt');
