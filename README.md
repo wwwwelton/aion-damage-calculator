@@ -120,7 +120,6 @@ The **Mobs & Bosses** tab adds every entry in [Aion2Data's monster catalog](http
 The selected NPC's level, rank, creature type, encounter classification, source ID and source URL appear together in the catalog details. For the 521 bosses, `scrape-boss-details.mjs` additionally captured from each aion2data.com page the portrait, spawn-point count (374 bosses), basic attack type/reach/interval (493) and the client skill table with damage type, cast time, cooldown and range (163 bosses list skills); run `node scrape-boss-details.mjs` to refresh. HP, defenses and damage numbers are server-side and never appear on that site; they remain unknown and must be entered or measured manually instead of importing fabricated values.
 
 For Cogni, Fera, Natura or Varian, importing selects the corresponding **Creature-type matchups** mode in the calculator. In this mode, the matching creature-specific Damage Boost and enemy Damage Tolerance fields replace the generic Species boost/tolerance terms of the supplied formula; they are not added twice. Other creature-specific fields remain reference-only because the formula has no hit-chance or separate creature-attack conversion. A target classified **Special** stays in manual Species mode. Select **Manual Species values** to restore the original generic fields. Creature mechanics: [Wikily — Creature types](https://wikily.gg/aion-2/stats/creature-types).
-
 ## Upgrade tips
 
 The tips recalculate after every input change. They rank a **+1 percentage-point** change to Weapon Damage Boost and Damage Boost; Critical Damage Boost is included only for a critical hit, and Front/Back Attack Damage Boost only for the selected position. Gains are calculated from the current damage formula and entered enemy tolerances rather than copied from a fixed stat tier list. They compare individual hit damage, **not** gear cost or expected DPS. Critical Hit rate, Double Chance proc rate, resistance-to-chance conversions, positional uptime and skill rotation are not modeled, so no DPS recommendation is made for those stats. For a non-positive damage baseline, percentage comparisons are omitted.
@@ -129,7 +128,7 @@ Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.
 
 ### AionLabs assistant
 
-Open **Configure AI**, save your API key in Windows Credential Manager and select a model. Only the model ID is stored in browser local storage; the saved key is not returned to the page. The default is `aion-labs/aion-3.5-mini`. The local inference worker, weights and runtime are no longer distributed.
+Open **Configure AI**, save your API key in Windows Credential Manager and select a model. Only the model ID is stored in browser local storage; the saved key is not returned to the page. The default is `aion-labs/aion-2.0`. The local inference worker, weights and runtime are no longer distributed.
 
 Only pressing **Ask** or Enter sends a request. It includes the current question, recent conversation, character/target names, non-default calculator values, calculated hit/DPS, marginal upgrades and an optional guide excerpt. These data leave the device and are processed by AionLabs under your account. Editing the calculator does not initiate paid requests. Without network access or an API key, formula calculations remain available.
 

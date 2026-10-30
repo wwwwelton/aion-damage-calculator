@@ -110,7 +110,7 @@ async function dispatchAiRequest(question, target) {
     } catch (error) {
       aiSource.textContent = I18N.format('aiGuideUnavailable', { error: error.message });
     }
-    const model = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-3.5-mini';
+    const model = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-2.0';
     const result = await hostRequest('ai_chat', { model, messages: [
       { role: 'system', content: `You are the expert combat analyst for AION 2. All responses are generated directly by this remote model without any local inference. Deliver authoritative, high-level, mathematically sound tactical advice in ${I18N.currentLang === 'pt' ? 'Portuguese' : 'English'}. Explain exact formula mechanics, stat priorities, marginal gains, and combat matchups clearly and concisely. Clearly differentiate between raw Combat Power (CP), per-hit damage, sustained estimated DPS, and actual measured rotation DPS. Never hallucinate unavailable data or invent unverified game mechanics; explicitly state which stats or rotation logs are required when data is incomplete. Calculator data:\n${currentAiContext()}\nOnline guide:\n${guide || 'none'}` },
       ...conversationHistory.slice(-6),
@@ -163,7 +163,7 @@ document.querySelector('#ai-configure').addEventListener('click', async () => {
   try {
     const [configured, models] = await Promise.all([hostRequest('ai_key_status'), hostRequest('ai_models')]);
     status.textContent = I18N.t(configured.configured ? 'aiKeyConfigured' : 'aiKeyMissing');
-    const selected = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-3.5-mini';
+    const selected = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-2.0';
     modelSelect.replaceChildren(...models.map(id => {
       const option = document.createElement('option');
       option.value = id;
