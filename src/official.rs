@@ -35,6 +35,7 @@ struct CacheEntry {
 impl OfficialClient {
     pub fn new() -> Result<Self, String> {
         let http = reqwest::Client::builder()
+            .dns_resolver(crate::dns::GoogleDns::new()?)
             // Fail fast: a healthy official response arrives in a few seconds.
             .timeout(Duration::from_secs(20))
             .user_agent(USER_AGENT)
@@ -203,13 +204,18 @@ impl OfficialClient {
             .await
             .map_err(|e| format!("Failed to reach legion service: {e}"))?;
         let response = response.error_for_status().map_err(|e| format!("Legion service HTTP error: {e}"))?;
-        let data: Value = response.json().await.map_err(|e| format!("Invalid JSON from legion service: {e}"))?;
+        let body = response.text().await.map_err(|e| format!("Legion service read error: {e}"))?;
+        let data: Value = serde_json::from_str(&body)
+            .map_err(|_| "Serviço de legião bloqueado ou indisponível no momento (resposta não é JSON).".to_string())?;
         Self::checked_legion_roster(data)
     }
 
     fn checked_legion_roster(data: Value) -> Result<Value, String> {
         if data["success"] != true {
-            return Err("Legion not found in public database.".into());
+            return Err("Legião não encontrada na base pública.".into());
+        }
+        if data["members"].as_array().is_some_and(Vec::is_empty) {
+            return Err("Legião não encontrada no servidor informado.".into());
         }
         Ok(data)
     }
@@ -399,7 +405,7 @@ mod tests {
         assert_eq!(data, fixture);
         assert_eq!(
             OfficialClient::checked_legion_roster(json!({"success": false})).unwrap_err(),
-            "Legion not found in public database."
+            "Legião não encontrada na base pública."
         );
     }
 }

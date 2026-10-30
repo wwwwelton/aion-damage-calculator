@@ -3,6 +3,7 @@
 #![cfg_attr(not(windows), allow(dead_code))]
 
 mod assets;
+mod dns;
 mod gemini;
 mod guides;
 mod official;

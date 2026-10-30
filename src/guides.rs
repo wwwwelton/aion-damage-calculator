@@ -23,6 +23,7 @@ pub struct GuideClient {
 impl GuideClient {
     pub fn new() -> Result<Self, String> {
         let http = reqwest::Client::builder()
+            .dns_resolver(crate::dns::GoogleDns::new()?)
             .timeout(Duration::from_secs(12))
             .user_agent(USER_AGENT)
             .build()
