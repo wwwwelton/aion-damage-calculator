@@ -1,4 +1,5 @@
 pub mod companion;
+pub mod calculator_form;
 pub mod i18n;
 pub mod header;
 pub mod state;
