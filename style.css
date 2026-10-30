@@ -224,6 +224,19 @@ footer { font-size: 12px; margin-top: 20px; }
 .ai-msg-body {
   margin: 0;
 }
+.ai-msg-assistant .ai-msg-body { white-space: normal; }
+.ai-msg-body > :first-child { margin-top: 0; }
+.ai-msg-body > :last-child { margin-bottom: 0; }
+.ai-msg-body p, .ai-msg-body ul, .ai-msg-body ol, .ai-msg-body pre, .ai-msg-body blockquote, .ai-msg-body table { margin: 6px 0; }
+.ai-msg-body h3, .ai-msg-body h4, .ai-msg-body h5, .ai-msg-body h6 { margin: 10px 0 4px; font-size: 14px; color: #69d8cc; }
+.ai-msg-body ul, .ai-msg-body ol { padding-left: 20px; }
+.ai-msg-body code { background: #0b1624; padding: 1px 4px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+.ai-msg-body pre { overflow-x: auto; background: #0b1624; padding: 8px; border-radius: 6px; }
+.ai-msg-body pre code { padding: 0; background: none; white-space: pre; }
+.ai-msg-body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.ai-msg-body th, .ai-msg-body td { border: 1px solid #2e3e52; padding: 4px 8px; text-align: left; vertical-align: top; }
+.ai-msg-body blockquote { margin-left: 0; padding-left: 10px; border-left: 3px solid #2e3e52; color: #b8c7d9; }
+.ai-msg-body hr { border: none; border-top: 1px solid #2e3e52; margin: 10px 0; }
 .ai-input-row {
   display: flex;
   gap: 8px;

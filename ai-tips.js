@@ -116,7 +116,7 @@ async function dispatchAiRequest(question, target) {
       ...conversationHistory.slice(-6),
       { role: 'user', content: question },
     ] });
-    target.textContent = result.text;
+    target.replaceChildren(renderMarkdown(result.text));
     conversationHistory.push({ role: 'user', content: question }, { role: 'assistant', content: result.text });
     if (conversationHistory.length > 8) conversationHistory.splice(0, conversationHistory.length - 8);
   } catch (error) {

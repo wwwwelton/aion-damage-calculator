@@ -15,6 +15,7 @@ use rust_embed::RustEmbed;
 #[include = "icons.js"]
 #[include = "matchups.js"]
 #[include = "ai-tips.js"]
+#[include = "markdown.js"]
 #[include = "attribute-trees.js"]
 #[include = "profile-ui.js"]
 #[include = "stat-tooltips.js"]
