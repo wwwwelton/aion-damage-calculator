@@ -6,7 +6,7 @@ Windows x64 damage calculator with an embedded WebView2 interface, hosted by Rus
 
 ### Run the Windows app
 
-Requirements: Windows x64 and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/). Download `AION2-Damage-Calculator.exe` from [GitHub Releases](https://github.com/wwwwelton/aion-damage-calculator/releases) and verify its SHA-256. Local builds are kept in `dist/v<version>/`. The executable is not digitally signed.
+Requirements: Windows x64 and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/). Download `AION2-Damage-Calculator.exe` from [GitHub Releases](https://github.com/wwwwelton/aion-damage-calculator/releases) and verify its SHA-256. Local builds are kept in `dist/v<version>/`. Windows-script and CI builds carry a fresh self-signed Authenticode signature with a SHA-256 RFC3161 timestamp; this verifies signed-file integrity, not a trusted publisher identity. Windows/SmartScreen warnings can remain.
 
 ### Build from source
 
@@ -18,13 +18,19 @@ cargo build --release -j 1
 
 To build the interface in WSL, copy the WSL project (`/home/avatar/gui-dps-aion2`) to `C:\dev\gui-dps-aion2`, build it with one Cargo job, and keep each version's executable in `dist/v<version>/`, run `pwsh -NoProfile -File C:\dev\gui-dps-aion2\build-windows.ps1` on Windows. The script preserves downloaded model files and existing Windows builds; it does not remove files deleted from the WSL source.
 
-The executable is written to `target/release/AION2-Damage-Calculator.exe`. From WSL or Linux, `bash build.sh` builds the interface and cross-compiles the same executable with the MinGW toolchain (`x86_64-w64-mingw32-gcc`).
+The Windows script and CI share `scripts/sign-windows.ps1`; install the Windows SDK Signing Tools. Each signing run creates a fresh non-exportable code-signing key in the current user's personal certificate store, signs with SHA-256 and a DigiCert RFC3161 timestamp, checks the signature and timestamp, exports only `AION2-Damage-Calculator.crt` beside the executable, then removes the certificate and private key. No PFX or repository private key is used, and no trusted-root/publisher store is modified. Signature verification accepts only success or Windows' specific untrusted-self-signed-root result; missing timestamps and integrity errors fail the build. `-WslSource /path/to/clean/worktree/` selects a different WSL checkout for `build-windows.ps1`. A direct `cargo build` or Linux cross-build remains unsigned; to sign an existing Windows binary, run:
+
+```powershell
+pwsh -NoProfile -File scripts/sign-windows.ps1 -BinaryPath target/release/AION2-Damage-Calculator.exe -CertificatePath dist/AION2-Damage-Calculator.crt
+```
+
+From WSL, `bash build.sh` builds the interface, cross-compiles with MinGW (`x86_64-w64-mingw32-gcc`), then generates a fresh certificate and signs using Windows PowerShell and the Windows SDK. The executable and public certificate are written to `target/x86_64-pc-windows-gnu/release/`. Plain Linux without Windows interop cannot run the signing step.
 
 No model download or AI bundling step is needed. `src/assets.rs` lists the embedded UI assets; `packaging.test.js` checks that the built page's stylesheet and WebAssembly files are included. The window compiles only on Windows; host unit tests run on any platform. `AION2_SELFTEST=<file>` runs the asset, official-profile and guide smoke check without opening a window.
 
 ### Continuous integration and releases
 
-`.github/workflows/build.yml` runs JavaScript and Rust tests on Ubuntu, then builds the Windows executable and publishes a checksummed artifact. A version tag matching `Cargo.toml` additionally creates a GitHub Release. Each tag keeps previous releases available.
+`.github/workflows/build.yml` runs JavaScript and Rust tests on Ubuntu, then builds and signs the Windows executable and publishes it with its public CRT and a checksum computed after signing. A `v<version>` tag matching `Cargo.toml` additionally creates a GitHub Release under that same v-prefixed tag. Each tag keeps previous releases available.
 
 ### Development and checks
 
@@ -133,6 +139,8 @@ Open **Configure AI**, save your API key in Windows Credential Manager and selec
 
 Only pressing **Ask** or Enter sends a request. It includes the current question, recent conversation, character/target names, non-default calculator values, calculated hit/DPS, marginal upgrades and an optional guide excerpt. These data leave the device and are processed by Google under your account. Editing the calculator does not initiate paid requests. Without network access or an API key, formula calculations remain available.
 
+A successful Gemini answer also appears in the combat report at the bottom of the calculator. Editing the scenario or starting another request hides the previous AI analysis; a response for an outdated scenario is not published there. Failed requests leave the local calculated comparison available.
+
 The model is not an authoritative game database: it must not infer exact DPS from combat power, invent proc/Teostone formulas or equate player defenses with boss defenses. The prompt asks for missing evidence and separates estimates from measured rotations, but cannot guarantee correctness.
 
 **Apply suggested +1% upgrade** is a local formula-based what-if edit, not an AI recommendation or a change to actual equipment. Calculated comparisons take precedence over generated text.
@@ -141,6 +149,8 @@ The model is not an authoritative game database: it must not infer exact DPS fro
 
 | Version | Highlights |
 | --- | --- |
+| 1.5.1 | Update the final combat report after successful Gemini answers; accept decimal-string legion averages; generate fresh certificates and sign local/CI executables with SHA-256 timestamping and public certificate export; preserve the release source tag. |
+| 1.5.0 | Resolve public legion server regions and use embedded Google DNS for official lookups and guides. |
 | 1.4.0 | Switch the AI assistant from AionLabs to Google Gemini (default `gemini-3.1-flash-lite`; the API key is stored XOR-obfuscated as the embedded fallback), render assistant answers as Markdown, and show attacker-vs-target attribute matchups as bordered tables. |
 | 1.3.1 | Fix desktop view container width, add interactive legion roster modal with member inspection, and update release distribution. |
 | 1.3.0 | Replace local SLM with AionLabs API, add persistent profile cache & background sync, Authenticode SHA-256 signing with DigiCert timestamp, event timers, map reference, and dynamic PvP/PvE meta builds. |
