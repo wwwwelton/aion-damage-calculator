@@ -110,7 +110,7 @@ async function dispatchAiRequest(question, target) {
     } catch (error) {
       aiSource.textContent = I18N.format('aiGuideUnavailable', { error: error.message });
     }
-    const model = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-2.0';
+    const model = localStorage.getItem('geminiModel') || 'gemini-3.1-flash-lite';
     const result = await hostRequest('ai_chat', { model, messages: [
       { role: 'system', content: `You are the expert combat analyst for AION 2. All responses are generated directly by this remote model without any local inference. Deliver authoritative, high-level, mathematically sound tactical advice in ${I18N.currentLang === 'pt' ? 'Portuguese' : 'English'}. Explain exact formula mechanics, stat priorities, marginal gains, and combat matchups clearly and concisely. Clearly differentiate between raw Combat Power (CP), per-hit damage, sustained estimated DPS, and actual measured rotation DPS. Never hallucinate unavailable data or invent unverified game mechanics; explicitly state which stats or rotation logs are required when data is incomplete. Calculator data:\n${currentAiContext()}\nOnline guide:\n${guide || 'none'}` },
       ...conversationHistory.slice(-6),
@@ -132,7 +132,7 @@ function submitUserQuestion() {
   if (!question || aiSend.disabled) return;
   aiQuestion.value = '';
   appendChatMessage('user', I18N.t('aiYou'), question);
-  const target = appendChatMessage('assistant', 'AionLabs', I18N.t('aiGenerating'));
+  const target = appendChatMessage('assistant', 'Gemini', I18N.t('aiGenerating'));
   void dispatchAiRequest(question, target);
 }
 
@@ -163,7 +163,7 @@ document.querySelector('#ai-configure').addEventListener('click', async () => {
   try {
     const [configured, models] = await Promise.all([hostRequest('ai_key_status'), hostRequest('ai_models')]);
     status.textContent = I18N.t(configured.configured ? 'aiKeyConfigured' : 'aiKeyMissing');
-    const selected = localStorage.getItem('aionLabsModel') || 'aion-labs/aion-2.0';
+    const selected = localStorage.getItem('geminiModel') || 'gemini-3.1-flash-lite';
     modelSelect.replaceChildren(...models.map(id => {
       const option = document.createElement('option');
       option.value = id;
@@ -195,7 +195,7 @@ document.querySelector('#ai-remove-key').addEventListener('click', async () => {
 document.querySelector('#ai-settings').addEventListener('close', () => {
   document.querySelector('#ai-api-key').value = '';
 });
-document.querySelector('#ai-model').addEventListener('change', event => localStorage.setItem('aionLabsModel', event.target.value));
+document.querySelector('#ai-model').addEventListener('change', event => localStorage.setItem('geminiModel', event.target.value));
 for (const selector of ['#attacker-name', '#attacker-class', '#target-name', '#target-class', '#target-mode', '#creature-type-header', '#critical', '#position']) {
   document.querySelector(selector)?.addEventListener('input', updateApplyButton);
   document.querySelector(selector)?.addEventListener('change', updateApplyButton);

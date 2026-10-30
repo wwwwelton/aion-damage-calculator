@@ -3,7 +3,7 @@
 #![cfg_attr(not(windows), allow(dead_code))]
 
 mod assets;
-mod aionlabs;
+mod gemini;
 mod guides;
 mod official;
 mod protocol;

@@ -2,14 +2,14 @@
 // Each reply carries the request id, so the page can match it to the waiting request.
 use serde_json::{json, Value};
 
-use crate::aionlabs::AionLabsClient;
+use crate::gemini::GeminiClient;
 use crate::guides::GuideClient;
 use crate::official::OfficialClient;
 
 pub const APP_ORIGIN_HOST: &str = "aion2.localhost";
 
 // Returns the JSON reply for a page message, or None when the message has no usable id.
-pub async fn respond(message: &str, official: &OfficialClient, guides: &GuideClient, ai: &AionLabsClient) -> Option<String> {
+pub async fn respond(message: &str, official: &OfficialClient, guides: &GuideClient, ai: &GeminiClient) -> Option<String> {
     let request: Value = serde_json::from_str(message).ok()?;
     let id = request.get("id").and_then(Value::as_i64)?;
     let outcome = match request.get("kind").and_then(Value::as_str) {
@@ -56,7 +56,7 @@ mod tests {
     async fn unknown_kinds_reply_with_the_request_id() {
         let official = OfficialClient::new().unwrap();
         let guides = GuideClient::new().unwrap();
-        let ai = AionLabsClient::new().unwrap();
+        let ai = GeminiClient::new().unwrap();
         let reply = respond(r#"{"id":7,"kind":"nope"}"#, &official, &guides, &ai).await.unwrap();
         let value: Value = serde_json::from_str(&reply).unwrap();
         assert_eq!(value["id"], 7);
@@ -67,7 +67,7 @@ mod tests {
     async fn messages_without_an_id_get_no_reply() {
         let official = OfficialClient::new().unwrap();
         let guides = GuideClient::new().unwrap();
-        let ai = AionLabsClient::new().unwrap();
+        let ai = GeminiClient::new().unwrap();
         assert!(respond(r#"{"kind":"search"}"#, &official, &guides, &ai).await.is_none());
         assert!(respond("not json", &official, &guides, &ai).await.is_none());
     }
@@ -76,7 +76,7 @@ mod tests {
     async fn non_global_regions_are_rejected_before_any_network_call() {
         let official = OfficialClient::new().unwrap();
         let guides = GuideClient::new().unwrap();
-        let ai = AionLabsClient::new().unwrap();
+        let ai = GeminiClient::new().unwrap();
         let reply = respond(r#"{"id":1,"kind":"search","name":"Kanon","region":"kr","globalRegion":""}"#, &official, &guides, &ai)
             .await
             .unwrap();

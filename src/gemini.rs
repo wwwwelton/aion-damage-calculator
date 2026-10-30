@@ -1,16 +1,17 @@
 use reqwest::Client;
 use serde_json::{json, Value};
 
-const API: &str = "https://api.aionlabs.ai/v1";
-const KEY_TARGET: &str = "AION2-Damage-Calculator/AionLabsApiKey";
+const API: &str = "https://generativelanguage.googleapis.com/v1beta/openai";
+const KEY_TARGET: &str = "AION2-Damage-Calculator/GeminiApiKey";
 
 const CIPHER_MASK: [u8; 12] = [0x5A, 0xA5, 0x3C, 0xC3, 0x66, 0x99, 0x18, 0xE7, 0x42, 0xBD, 0x7E, 0x81];
-const CIPHER_KEY: [u8; 48] = [
-    59, 201, 74, 241, 57, 212, 123, 137, 27, 244,
-    41, 203, 59, 206, 82, 148, 2, 223, 64, 179,
-    17, 251, 26, 243, 21, 200, 14, 181, 33, 221,
-    127, 161, 13, 245, 50, 243, 21, 246, 86, 146,
-    50, 170, 121, 170, 18, 142, 44, 192,
+const CIPHER_KEY: [u8; 53] = [
+    27, 244, 18, 130, 4, 161, 74, 169, 116, 247,
+    71, 215, 57, 136, 119, 133, 17, 244, 112, 166,
+    114, 211, 28, 242, 111, 210, 70, 156, 11, 211,
+    42, 172, 17, 132, 11, 230, 54, 228, 102, 143,
+    0, 252, 116, 151, 51, 206, 11, 244, 44, 204,
+    88, 177, 17,
 ];
 
 fn default_embedded_key() -> String {
@@ -22,11 +23,11 @@ fn default_embedded_key() -> String {
     String::from_utf8(bytes).unwrap_or_default()
 }
 
-pub struct AionLabsClient {
+pub struct GeminiClient {
     http: Client,
 }
 
-impl AionLabsClient {
+impl GeminiClient {
     pub fn new() -> Result<Self, String> {
         Ok(Self {
             http: Client::builder()
@@ -37,11 +38,17 @@ impl AionLabsClient {
     }
 
     pub async fn models(&self) -> Result<Value, String> {
-        let response = self.http.get(format!("{API}/models")).send().await.map_err(api_error)?;
+        let key = credential_read()?;
+        let response = self.http.get(format!("{API}/models")).bearer_auth(key).send().await.map_err(api_error)?;
         let response = response.error_for_status().map_err(api_error)?;
         let body: Value = response.json().await.map_err(api_error)?;
         let models = body.get("data").and_then(Value::as_array).ok_or("Invalid model list response.")?;
-        Ok(json!(models.iter().filter_map(|model| model.get("id").and_then(Value::as_str)).collect::<Vec<_>>()))
+        Ok(json!(models
+            .iter()
+            .filter_map(|model| model.get("id").and_then(Value::as_str))
+            .map(|id| id.strip_prefix("models/").unwrap_or(id))
+            .filter(|id| id.starts_with("gemini-") && !id.contains("tts") && !id.contains("image"))
+            .collect::<Vec<_>>()))
     }
 
     pub async fn chat(&self, model: &str, messages: &Value) -> Result<Value, String> {
@@ -58,12 +65,12 @@ impl AionLabsClient {
         let key = credential_read()?;
         let response = self.http.post(format!("{API}/chat/completions"))
             .bearer_auth(key)
-            .json(&json!({ "model": model, "messages": messages, "max_tokens": 2400, "reasoning_effort": "low" }))
+            .json(&json!({ "model": model, "messages": messages, "max_tokens": 2400 }))
             .send().await.map_err(api_error)?;
         let response = response.error_for_status().map_err(api_error)?;
         let body: Value = response.json().await.map_err(api_error)?;
         let text = body.pointer("/choices/0/message/content").and_then(Value::as_str)
-            .filter(|text| !text.trim().is_empty()).ok_or("AionLabs returned no answer.")?;
+            .filter(|text| !text.trim().is_empty()).ok_or("Gemini returned no answer.")?;
         Ok(json!({ "text": text }))
     }
 
@@ -73,8 +80,9 @@ impl AionLabsClient {
 
     pub fn save_key(&self, key: &str) -> Result<(), String> {
         let key = key.trim();
-        if !(key.starts_with("alv2_") && (20..=512).contains(&key.len()) && key.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')) {
-            return Err("Enter a valid AionLabs API key.".into());
+        let prefix_ok = key.starts_with("AQ.") || key.starts_with("AIza");
+        if !(prefix_ok && (20..=512).contains(&key.len()) && key.bytes().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))) {
+            return Err("Enter a valid Gemini API key.".into());
         }
         credential_write(key)
     }
@@ -86,9 +94,9 @@ impl AionLabsClient {
 
 fn api_error(error: reqwest::Error) -> String {
     if let Some(status) = error.status() {
-        format!("AionLabs API returned HTTP {status}.")
+        format!("Gemini API returned HTTP {status}.")
     } else {
-        format!("AionLabs request failed: {error}")
+        format!("Gemini request failed: {error}")
     }
 }
 
@@ -103,15 +111,15 @@ fn credential_read() -> Result<String, String> {
         if !fallback.is_empty() {
             return Ok(fallback);
         }
-        return Err("AionLabs API key is not configured.".into());
+        return Err("Gemini API key is not configured.".into());
     }
     let value = unsafe {
         let entry = &*credential;
         if entry.CredentialBlob.is_null() || !(20..=512).contains(&entry.CredentialBlobSize) {
-            Err("Stored AionLabs API key is invalid.".to_string())
+            Err("Stored Gemini API key is invalid.".to_string())
         } else {
             let blob = std::slice::from_raw_parts(entry.CredentialBlob, entry.CredentialBlobSize as usize);
-            String::from_utf8(blob.to_vec()).map_err(|_| "Stored AionLabs API key is invalid.".to_string())
+            String::from_utf8(blob.to_vec()).map_err(|_| "Stored Gemini API key is invalid.".to_string())
         }
     };
     unsafe { CredFree(credential.cast()) };
@@ -124,7 +132,7 @@ fn credential_read() -> Result<String, String> {
     if !fallback.is_empty() {
         Ok(fallback)
     } else {
-        Err("AionLabs API keys are stored in Windows Credential Manager; run this in the Windows app.".into())
+        Err("Gemini API keys are stored in Windows Credential Manager; run this in the Windows app.".into())
     }
 }
 
@@ -146,7 +154,7 @@ fn credential_write(key: &str) -> Result<(), String> {
 
 #[cfg(not(windows))]
 fn credential_write(_: &str) -> Result<(), String> {
-    Err("AionLabs API keys can only be stored by the Windows app.".into())
+    Err("Gemini API keys can only be stored by the Windows app.".into())
 }
 
 #[cfg(windows)]
@@ -154,13 +162,13 @@ fn credential_delete() -> Result<(), String> {
     use std::{ffi::OsStr, os::windows::ffi::OsStrExt};
     use windows_sys::Win32::Security::Credentials::{CredDeleteW, CRED_TYPE_GENERIC};
     let target: Vec<u16> = OsStr::new(KEY_TARGET).encode_wide().chain(Some(0)).collect();
-    if unsafe { CredDeleteW(target.as_ptr(), CRED_TYPE_GENERIC, 0) } == 0 { return Err("No saved AionLabs API key was found.".into()); }
+    if unsafe { CredDeleteW(target.as_ptr(), CRED_TYPE_GENERIC, 0) } == 0 { return Err("No saved Gemini API key was found.".into()); }
     Ok(())
 }
 
 #[cfg(not(windows))]
 fn credential_delete() -> Result<(), String> {
-    Err("AionLabs API keys can only be managed by the Windows app.".into())
+    Err("Gemini API keys can only be managed by the Windows app.".into())
 }
 
 #[cfg(test)]
@@ -169,14 +177,14 @@ mod tests {
 
     #[test]
     fn chat_validation_rejects_unknown_roles_and_empty_messages_without_credentials() {
-        let client = AionLabsClient::new().unwrap();
-        assert_eq!(futures::executor::block_on(client.chat("aion-labs/aion-3.5-mini", &json!([]))).unwrap_err(), "Invalid chat messages.");
-        assert_eq!(futures::executor::block_on(client.chat("aion-labs/aion-3.5-mini", &json!([{"role":"tool","content":"x"}]))).unwrap_err(), "Invalid chat messages.");
+        let client = GeminiClient::new().unwrap();
+        assert_eq!(futures::executor::block_on(client.chat("gemini-3.1-flash-lite", &json!([]))).unwrap_err(), "Invalid chat messages.");
+        assert_eq!(futures::executor::block_on(client.chat("gemini-3.1-flash-lite", &json!([{"role":"tool","content":"x"}]))).unwrap_err(), "Invalid chat messages.");
     }
 
     #[test]
     fn rejects_invalid_model_ids_before_key_access() {
-        let client = AionLabsClient::new().unwrap();
+        let client = GeminiClient::new().unwrap();
         assert_eq!(futures::executor::block_on(client.chat("bad model", &json!([{"role":"user","content":"x"}]))).unwrap_err(), "Select a valid model.");
     }
 }

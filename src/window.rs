@@ -12,7 +12,7 @@ use tokio::runtime::Runtime;
 use wry::http::{Request, Response, Uri};
 use wry::{WebContext, WebViewBuilder, WebViewBuilderExtWindows};
 
-use crate::aionlabs::AionLabsClient;
+use crate::gemini::GeminiClient;
 use crate::guides::GuideClient;
 use crate::official::OfficialClient;
 use crate::profile_cache::ProfileCache;
@@ -35,7 +35,7 @@ pub fn run(runtime: Runtime) {
         Ok(client) => Arc::new(client),
         Err(error) => return show_error("Unable to open calculator", &error),
     };
-    let ai = match AionLabsClient::new() {
+    let ai = match GeminiClient::new() {
         Ok(client) => Arc::new(client),
         Err(error) => return show_error("Unable to open calculator", &error),
     };

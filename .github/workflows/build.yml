@@ -112,6 +112,6 @@ jobs:
           generate_release_notes: true
           make_latest: true
           body: |
-            Windows x64 executable (Rust + WebView2) with AionLabs API integration.
+            Windows x64 executable (Rust + WebView2) with Google Gemini API integration.
             Requirements: Windows x64 and Microsoft Edge WebView2 Runtime.
             Verify the download with the attached SHA-256 file.

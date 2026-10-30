@@ -54,18 +54,18 @@
       </div>
       <section class="ai-assistant" aria-labelledby="ai-title">
         <div class="ai-heading"><h2 id="ai-title" data-i18n="aiAssistantTitle">AION 2 Combat Assistant</h2><button type="button" id="ai-configure" data-i18n="aiConfigure">Configure AI</button></div>
-        <p class="reference-note" data-i18n="aiAssistantNote">Remote AionLabs model; ask only when you choose. Your question, build data and guide excerpt are sent to AionLabs and may incur API charges. Save your key in Windows Credential Manager.</p>
+        <p class="reference-note" data-i18n="aiAssistantNote">Remote Google Gemini model; ask only when you choose. Your question, build data and guide excerpt are sent to Google Gemini and may incur API charges. Save your key in Windows Credential Manager.</p>
         <dialog id="ai-settings" aria-labelledby="ai-settings-title">
           <form method="dialog" class="ai-settings">
-            <h2 id="ai-settings-title" data-i18n="aiSettingsTitle">AionLabs settings</h2>
+            <h2 id="ai-settings-title" data-i18n="aiSettingsTitle">Gemini settings</h2>
             <p id="ai-key-status" role="status" data-i18n="aiCheckingSettings">Checking settings…</p>
-            <label for="ai-api-key" data-i18n="aiKeyLabel">AionLabs API key</label>
+            <label for="ai-api-key" data-i18n="aiKeyLabel">Gemini API key</label>
             <input id="ai-api-key" type="password" autocomplete="new-password" spellcheck="false">
             <button type="button" id="ai-save-key" data-i18n="aiSaveKey">Save key</button>
             <button type="button" id="ai-remove-key" data-i18n="aiRemoveKey">Remove saved key</button>
             <label for="ai-model" data-i18n="aiModelLabel">Model</label>
             <select id="ai-model"></select>
-            <p class="reference-note" data-i18n="aiPrivacyNote">Only clicking Ask sends the current question, calculator values, recent chat and a guide excerpt to AionLabs. Usage may be billed by your account.</p>
+            <p class="reference-note" data-i18n="aiPrivacyNote">Only clicking Ask sends the current question, calculator values, recent chat and a guide excerpt to Google Gemini. Usage may be billed by your account.</p>
             <button type="submit" data-i18n="aiClose">Close</button>
           </form>
         </dialog>

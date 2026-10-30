@@ -1,6 +1,6 @@
 # AION 2 Damage Calculator
 
-Windows x64 damage calculator with an embedded WebView2 interface, hosted by Rust (tao + wry). Calculations and the mob/boss catalog work offline. Character search uses the official AION 2 site; optional AI advice uses the [AionLabs API](https://www.aionlabs.ai/docs/) and may incur usage charges.
+Windows x64 damage calculator with an embedded WebView2 interface, hosted by Rust (tao + wry). Calculations and the mob/boss catalog work offline. Character search uses the official AION 2 site; optional AI advice uses the [Google Gemini API](https://ai.google.dev/gemini-api/docs/openai) and may incur usage charges.
 
 ## Get started
 
@@ -36,7 +36,7 @@ cargo test
 cargo build --release -j 1
 ```
 
-The UI can be previewed over HTTP. Character lookup, guide retrieval, API key storage and AI requests require the Windows host bridge. For an explicit paid evaluation with synthetic questions, set `AIONLABS_API_KEY` in the process environment and run `node aionlabs-evaluation.mjs`; it makes four calls and writes `aionlabs-evaluation-latest.json` for human review. Do not put a key in source control.
+The UI can be previewed over HTTP. Character lookup, guide retrieval, API key storage and AI requests require the Windows host bridge. Do not put a key in source control.
 
 ### Project layout
 
@@ -50,7 +50,7 @@ The UI can be previewed over HTTP. Character lookup, guide retrieval, API key st
 | `calculator.js`, `matchups.js`, `recommendations.js`, `numeric-input.js` | Damage calculation, matchup rules, tips and number parsing |
 | `characters.js`, `bosses.js`, `boss-data.js`, `mob-data.js`, `scrape-boss-details.mjs` | Profile imports, offline NPC catalog and the boss-detail refresh script |
 | `*.test.js` | Node.js regression tests |
-| `src/aionlabs.rs`, `aionlabs-evaluation.mjs`, `aionlabs-evaluation.json` | Native AionLabs client, repeatable live evaluation and recorded exploratory results |
+| `src/gemini.rs` | Native Google Gemini client (OpenAI-compatible endpoint) |
 
 ## Calculation scope
 
@@ -126,13 +126,13 @@ The tips recalculate after every input change. They rank a **+1 percentage-point
 
 Research: [AION 2 damage formula and end-game stat efficiency](https://gameplay.tips/guides/aion-2-how-stats-work-damage-formula-guide.html) and [Aion 2 Maps — Stats explained](https://aion2maps.com/guides/stats-explained/). Their published rankings depend on build, boss and patch; the displayed numbers are **this formula's what-if estimates**, not measured in-game gains.
 
-### AionLabs assistant
+### Gemini assistant
 
-Open **Configure AI**, save your API key in Windows Credential Manager and select a model. Only the model ID is stored in browser local storage; the saved key is not returned to the page. The default is `aion-labs/aion-2.0`. The local inference worker, weights and runtime are no longer distributed.
+Open **Configure AI**, save your API key in Windows Credential Manager and select a model. Only the model ID is stored in browser local storage; the saved key is not returned to the page. The default is `gemini-3.1-flash-lite`. The local inference worker, weights and runtime are no longer distributed.
 
-Only pressing **Ask** or Enter sends a request. It includes the current question, recent conversation, character/target names, non-default calculator values, calculated hit/DPS, marginal upgrades and an optional guide excerpt. These data leave the device and are processed by AionLabs under your account. Editing the calculator does not initiate paid requests. Without network access or an API key, formula calculations remain available.
+Only pressing **Ask** or Enter sends a request. It includes the current question, recent conversation, character/target names, non-default calculator values, calculated hit/DPS, marginal upgrades and an optional guide excerpt. These data leave the device and are processed by Google under your account. Editing the calculator does not initiate paid requests. Without network access or an API key, formula calculations remain available.
 
-Exploratory live testing is recorded in `aionlabs-evaluation.json`: an initial 600-token limit returned no final answer, while 2400 tokens with low reasoning returned answers. One refined-prompt response was entirely off-topic. The model is not an authoritative game database: it must not infer exact DPS from combat power, invent proc/Teostone formulas or equate player defenses with boss defenses. The prompt asks for missing evidence and separates estimates from measured rotations, but cannot guarantee correctness.
+The model is not an authoritative game database: it must not infer exact DPS from combat power, invent proc/Teostone formulas or equate player defenses with boss defenses. The prompt asks for missing evidence and separates estimates from measured rotations, but cannot guarantee correctness.
 
 **Apply suggested +1% upgrade** is a local formula-based what-if edit, not an AI recommendation or a change to actual equipment. Calculated comparisons take precedence over generated text.
 
@@ -140,6 +140,7 @@ Exploratory live testing is recorded in `aionlabs-evaluation.json`: an initial 6
 
 | Version | Highlights |
 | --- | --- |
+| Unreleased | Switch the AI assistant from AionLabs to Google Gemini (default `gemini-3.1-flash-lite`); the Gemini API key is stored XOR-obfuscated as the embedded fallback. |
 | 1.3.1 | Fix desktop view container width, add interactive legion roster modal with member inspection, and update release distribution. |
 | 1.3.0 | Replace local SLM with AionLabs API, add persistent profile cache & background sync, Authenticode SHA-256 signing with DigiCert timestamp, event timers, map reference, and dynamic PvP/PvE meta builds. |
 | 1.2.5 | PowerShell script copies and builds the Windows app; Teostones names and long effect text now have separate lines. |
