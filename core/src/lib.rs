@@ -3,3 +3,4 @@ pub mod calculator;
 pub mod recommendations;
 pub mod markdown;
 pub mod character_extraction;
+pub mod formula_bonuses;
