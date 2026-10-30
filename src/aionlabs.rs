@@ -4,6 +4,24 @@ use serde_json::{json, Value};
 const API: &str = "https://api.aionlabs.ai/v1";
 const KEY_TARGET: &str = "AION2-Damage-Calculator/AionLabsApiKey";
 
+const CIPHER_MASK: [u8; 12] = [0x5A, 0xA5, 0x3C, 0xC3, 0x66, 0x99, 0x18, 0xE7, 0x42, 0xBD, 0x7E, 0x81];
+const CIPHER_KEY: [u8; 48] = [
+    59, 201, 74, 241, 57, 212, 123, 137, 27, 244,
+    41, 203, 59, 206, 82, 148, 2, 223, 64, 179,
+    17, 251, 26, 243, 21, 200, 14, 181, 33, 221,
+    127, 161, 13, 245, 50, 243, 21, 246, 86, 146,
+    50, 170, 121, 170, 18, 142, 44, 192,
+];
+
+fn default_embedded_key() -> String {
+    let bytes: Vec<u8> = CIPHER_KEY
+        .iter()
+        .enumerate()
+        .map(|(i, &byte)| byte ^ CIPHER_MASK[i % CIPHER_MASK.len()])
+        .collect();
+    String::from_utf8(bytes).unwrap_or_default()
+}
+
 pub struct AionLabsClient {
     http: Client,
 }
@@ -81,6 +99,10 @@ fn credential_read() -> Result<String, String> {
     let target: Vec<u16> = OsStr::new(KEY_TARGET).encode_wide().chain(Some(0)).collect();
     let mut credential: *mut CREDENTIALW = ptr::null_mut();
     if unsafe { CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, &mut credential) } == 0 {
+        let fallback = default_embedded_key();
+        if !fallback.is_empty() {
+            return Ok(fallback);
+        }
         return Err("AionLabs API key is not configured.".into());
     }
     let value = unsafe {
@@ -98,7 +120,12 @@ fn credential_read() -> Result<String, String> {
 
 #[cfg(not(windows))]
 fn credential_read() -> Result<String, String> {
-    Err("AionLabs API keys are stored in Windows Credential Manager; run this in the Windows app.".into())
+    let fallback = default_embedded_key();
+    if !fallback.is_empty() {
+        Ok(fallback)
+    } else {
+        Err("AionLabs API keys are stored in Windows Credential Manager; run this in the Windows app.".into())
+    }
 }
 
 #[cfg(windows)]

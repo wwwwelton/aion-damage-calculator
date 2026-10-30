@@ -709,8 +709,9 @@ if (typeof document !== 'undefined') {
     enemyLoaded = null;
     enemyPanel.hidden = false;
     enemyImportButton.disabled = true;
+    const initialCp = item.combatPower ? ` · CP ${item.combatPower.toLocaleString()}` : '';
     document.querySelector('#enemy-title').textContent = `${item.name} · ${item.serverName}`;
-    document.querySelector('#enemy-meta').textContent = `${item.className} · ${ui('level')} ${item.level} · CP ${item.combatPower ?? '—'}`;
+    document.querySelector('#enemy-meta').textContent = `${item.className} · ${ui('level')} ${item.level}${initialCp}`;
     setDisplayIcon(document.querySelector('#enemy-class-icon'), 'class', item.className);
     enemyProfileStatus.textContent = ui('loadingDefenses');
     document.querySelector('#enemy-dossier').replaceChildren();
@@ -727,6 +728,13 @@ if (typeof document !== 'undefined') {
   function showEnemyProfile(data) {
     enemyLoaded = data;
     renderDossier(document.querySelector('#enemy-dossier'), extractCharacter(data));
+    const enemyChar = extractCharacter(data);
+    document.querySelector('#enemy-title').textContent = `${enemyChar.name} · ${enemyChar.server}`;
+    const enemyCp = enemyChar.combatPower ? `CP ${enemyChar.combatPower.toLocaleString()}` : '';
+    const enemyGs = enemyChar.gearScore ? `GS ${enemyChar.gearScore.toLocaleString()}` : '';
+    const enemyScores = [enemyCp, enemyGs].filter(Boolean).join(' · ');
+    document.querySelector('#enemy-meta').textContent = `${enemyChar.className} · ${ui('level')} ${enemyChar.level} · ${enemyChar.race}${enemyScores ? ` · ${enemyScores}` : ''}`;
+    setDisplayIcon(document.querySelector('#enemy-class-icon'), 'class', enemyChar.className);
     const defenses = enemyDefenses(data);
     const sheet = enemySheetDefenses(data);
     const entries = Object.entries(defenses);
@@ -757,7 +765,7 @@ if (typeof document !== 'undefined') {
     const hp = characterHp(enemyLoaded);
     if (hp !== null) calculator.elements.namedItem('enemyHp').value = String(hp);
     document.querySelector('#target-name').value = extractCharacter(enemyLoaded).name || '';
-    document.querySelector('#target-class').value = document.querySelector('#enemy-meta').textContent.split(' · ')[0];
+    document.querySelector('#target-class').value = extractCharacter(enemyLoaded).className || document.querySelector('#enemy-meta').textContent.split(' · ')[0];
     calculator.dispatchEvent(new Event('input', { bubbles: true }));
     const warning = document.querySelector('#import-warning');
     warning.hidden = false;
