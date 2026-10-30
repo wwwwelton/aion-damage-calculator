@@ -120,6 +120,7 @@ function extractCharacter(data) {
     itemLevel: Number(stats.find(stat => stat.type === 'ItemLevel')?.value) || null,
     titlesOwned: data?.info?.title?.ownedCount ?? null, titlesTotal: data?.info?.title?.totalCount ?? null,
     legion: profile.regionName || '', portrait: profile.profileImage || '',
+    ranking: data?.externalRanking || null,
     stats: stats.filter(stat => {
       const value = String(stat.value ?? '').trim();
       return stat.name && value !== ''
@@ -130,7 +131,7 @@ function extractCharacter(data) {
       .filter(item => String(item.slotPosName).startsWith('Arcana'))
       .map(item => ({ item, detail: data?.itemDetails?.[String(item.slotPos)] || {} })),
     skills: (data?.equipment?.skill?.skillList || [])
-      .filter(skill => skill.name && Number(skill.acquired) && Number(skill.skillLevel) > 0),
+      .filter(skill => skill.name),
     titles: (data?.info?.title?.titleList || []).filter(title => title.name),
     boards: data?.info?.daevanion?.boardList || [],
     pet: data?.equipment?.petwing?.pet || null,
@@ -327,9 +328,103 @@ if (typeof document !== 'undefined') {
   let loaded = null;
   let previousImport = {};
   let previousReferenceImport = {};
+  let loadedItem = null;
+  let savedProfiles = [];
+  let favorites = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem('aion2Favorites') || '[]');
+    if (Array.isArray(stored)) favorites = stored.filter(key => typeof key === 'string').slice(0, 20);
+  } catch { /* Invalid preference data must not prevent profile loading. */ }
+  const profileKey = item => `${item.queryGlobalRegion}|${item.serverId}|${item.characterId}`;
+  let recentSearches = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem('aion2RecentSearches') || '[]');
+    if (Array.isArray(stored)) recentSearches = stored.filter(value => typeof value === 'string' && value.length <= 20).slice(0, 10);
+  } catch { /* A broken history must not block searching. */ }
+  const recentNames = document.createElement('datalist');
+  recentNames.id = 'recent-character-searches';
+  document.querySelector('#character-name').setAttribute('list', recentNames.id);
+  searchForm.append(recentNames);
+  function renderRecentSearches() {
+    recentNames.replaceChildren(...recentSearches.map(name => new Option(name, name)));
+  }
+  renderRecentSearches();
+  const profileDate = value => new Date(Number(value) * 1000).toLocaleString(I18N.currentLang === 'pt' ? 'pt-BR' : 'en-US');
+  function updateProfileStatus(data) {
+    const fetchedAt = data?.cacheMeta?.fetchedAt;
+    profileStatus.textContent = `${ui(data.complete === false ? 'partialProfile' : 'profileLoaded')}${fetchedAt ? ` · ${formatUi(data.cacheMeta.cached ? 'cachedProfileDate' : 'profileDate', { date: profileDate(fetchedAt) })}` : ''}`;
+  }
+  function showProfile(data) {
+    loaded = data;
+    const view = extractCharacter(data);
+    document.querySelector('#profile-title').textContent = `${view.name} · ${view.server}`;
+    document.querySelector('#profile-meta').textContent = `${view.className} · ${ui('level')} ${view.level} · ${view.race} · CP ${view.combatPower || '—'}`;
+    setDisplayIcon(document.querySelector('#profile-class-icon'), 'class', view.className);
+    renderDossier(document.querySelector('#profile-dossier'), view);
+    importButton.disabled = !Object.keys(equipmentBonuses(data)).length
+      && !Object.keys(offensiveReferences(data)).length && characterHp(data) === null;
+    updateProfileStatus(data);
+  }
+  function renderSavedProfiles() {
+    const container = document.querySelector('#saved-profiles');
+    const entries = [...savedProfiles].sort((a, b) => {
+      const key = entry => `${entry.globalRegion}|${entry.serverId}|${entry.characterId}`;
+      return Number(favorites.includes(key(b))) - Number(favorites.includes(key(a))) || Number(b.fetchedAt) - Number(a.fetchedAt);
+    });
+    container.replaceChildren(...entries.map(entry => {
+      const view = extractCharacter(entry.profile);
+      const item = { serverId: entry.serverId, characterId: entry.characterId, name: view.name,
+        serverName: view.server, className: view.className, level: view.level, raceName: view.race,
+        queryRegion: 'ww', queryGlobalRegion: entry.globalRegion };
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = `${favorites.includes(profileKey(item)) ? '★ ' : ''}${view.name} · ${view.server} · ${profileDate(entry.fetchedAt)}`;
+      button.addEventListener('click', () => { results = [item]; void loadCharacter(0); });
+      return button;
+    }));
+  }
+  async function refreshSavedProfiles() {
+    if (!window.aion2Host) return;
+    try {
+      const entries = await request('saved_profiles', {});
+      savedProfiles = Array.isArray(entries) ? entries : [];
+      renderSavedProfiles();
+    } catch (error) { searchStatus.textContent = error.message; }
+  }
+  document.querySelector('#favorite-profile').addEventListener('click', () => {
+    if (!loadedItem) return;
+    const key = profileKey(loadedItem);
+    const next = favorites.includes(key) ? favorites.filter(value => value !== key) : [...favorites, key].slice(-20);
+    try {
+      localStorage.setItem('aion2Favorites', JSON.stringify(next));
+      favorites = next;
+      document.querySelector('#favorite-profile').setAttribute('aria-pressed', String(favorites.includes(key)));
+      renderSavedProfiles();
+    } catch (error) { profileStatus.textContent = formatUi('profileStorageFailed', { error: error.message }); }
+  });
+  document.querySelector('#refresh-profile').addEventListener('click', () => {
+    if (!loadedItem) return;
+    results = [loadedItem];
+    void loadCharacter(0, true);
+  });
 
   if (window.aion2Host) {
     window.aion2Host.onMessage(event => {
+      if (event.data?.type === 'profile_sync') {
+        const update = event.data;
+        if (loadedItem && update.serverId === loadedItem.serverId && update.characterId === loadedItem.characterId
+            && update.globalRegion === loadedItem.queryGlobalRegion) {
+          if (update.error) profileStatus.textContent = formatUi('profileSyncFailed', { error: update.error });
+          else if (update.data) showProfile(update.data);
+        }
+        if (enemyLoadedItem && update.serverId === enemyLoadedItem.serverId && update.characterId === enemyLoadedItem.characterId
+            && update.globalRegion === enemyLoadedItem.queryGlobalRegion) {
+          if (update.error) enemyProfileStatus.textContent = formatUi('profileSyncFailed', { error: update.error });
+          else if (update.data) showEnemyProfile(update.data);
+        }
+        void refreshSavedProfiles();
+        return;
+      }
       const { id, data, error } = event.data || {};
       const request = requests.get(id);
       if (!request) return;
@@ -352,6 +447,7 @@ if (typeof document !== 'undefined') {
     ++currentProfile;
     results = [];
     loaded = null;
+    loadedItem = null;
     choiceLabel.hidden = true;
     panel.hidden = true;
     searchStatus.textContent = ui('searchAgain');
@@ -369,6 +465,7 @@ if (typeof document !== 'undefined') {
     ++currentProfile;
     results = [];
     loaded = null;
+    loadedItem = null;
     choiceLabel.hidden = true;
     panel.hidden = true;
     importButton.disabled = true;
@@ -385,6 +482,10 @@ if (typeof document !== 'undefined') {
         searchStatus.textContent = data.complete === false ? ui('searchStillProcessing') : ui('noCharacters');
         return;
       }
+      recentSearches = [name, ...recentSearches.filter(value => value !== name)].slice(0, 10);
+      renderRecentSearches();
+      try { localStorage.setItem('aion2RecentSearches', JSON.stringify(recentSearches)); }
+      catch (error) { profileStatus.textContent = formatUi('profileStorageFailed', { error: error.message }); }
       searchStatus.textContent = formatUi('charactersFound', { count: results.length,
         extra: data.complete === false ? ui('moreMayAppear') : '' });
       choice.replaceChildren(new Option(ui('selectCharacter'), ''));
@@ -399,9 +500,11 @@ if (typeof document !== 'undefined') {
   choice.addEventListener('change', () => {
     if (choice.value !== '') void loadCharacter(Number(choice.value));
   });
-  async function loadCharacter(index) {
+  async function loadCharacter(index, force = false) {
     const item = results[index];
     if (!item) return;
+    loadedItem = item;
+    document.querySelector('#favorite-profile').setAttribute('aria-pressed', String(favorites.includes(profileKey(item))));
     const profileId = ++currentProfile;
     panel.hidden = false;
     loaded = null;
@@ -412,15 +515,11 @@ if (typeof document !== 'undefined') {
     profileStatus.textContent = ui('loadingProfile');
     document.querySelector('#profile-dossier').replaceChildren();
     try {
-      const data = await request('profile', { serverId: item.serverId, characterId: item.characterId,
+      const data = await request(force ? 'refresh_profile' : 'profile', { serverId: item.serverId, characterId: item.characterId,
         region: item.queryRegion, globalRegion: item.queryGlobalRegion });
       if (profileId !== currentProfile) return;
-      loaded = data;
-      const view = extractCharacter(data);
-      renderDossier(document.querySelector('#profile-dossier'), view);
-      importButton.disabled = !Object.keys(equipmentBonuses(data)).length
-        && !Object.keys(offensiveReferences(data)).length && characterHp(data) === null;
-      profileStatus.textContent = data.complete === false ? ui('partialProfile') : ui('profileLoaded');
+      showProfile(data);
+      void refreshSavedProfiles();
     } catch (error) {
       if (profileId === currentProfile) profileStatus.textContent = formatUi('profileFailed', { error: error.message });
     }
@@ -499,6 +598,7 @@ if (typeof document !== 'undefined') {
   const enemyImportButton = document.querySelector('#import-enemy');
   let enemyResults = [];
   let enemyLoaded = null;
+  let enemyLoadedItem = null;
   let enemySearchId = 0;
   let enemyProfileId = 0;
 
@@ -507,6 +607,7 @@ if (typeof document !== 'undefined') {
     ++enemyProfileId;
     enemyResults = [];
     enemyLoaded = null;
+    enemyLoadedItem = null;
     enemyChoiceLabel.hidden = true;
     enemyPanel.hidden = true;
     enemyImportButton.disabled = true;
@@ -525,6 +626,7 @@ if (typeof document !== 'undefined') {
     ++enemyProfileId;
     enemyResults = [];
     enemyLoaded = null;
+    enemyLoadedItem = null;
     enemyChoiceLabel.hidden = true;
     enemyPanel.hidden = true;
     enemyImportButton.disabled = true;
@@ -557,6 +659,7 @@ if (typeof document !== 'undefined') {
   async function loadEnemy(index) {
     const item = enemyResults[index];
     if (!item) return;
+    enemyLoadedItem = item;
     const profileId = ++enemyProfileId;
     enemyLoaded = null;
     enemyPanel.hidden = false;
@@ -571,27 +674,29 @@ if (typeof document !== 'undefined') {
       const data = await request('profile', { serverId: item.serverId, characterId: item.characterId },
         item.queryRegion, item.queryGlobalRegion);
       if (profileId !== enemyProfileId) return;
-      enemyLoaded = data;
-      renderDossier(document.querySelector('#enemy-dossier'), extractCharacter(data));
-      const defenses = enemyDefenses(data);
-      const sheet = enemySheetDefenses(data);
-      const entries = Object.entries(defenses);
-      const hp = characterHp(data);
-      if (hp !== null) entries.push(['enemyHp', hp]);
-      document.querySelector('#enemy-stats').replaceChildren(...(entries.length
-        ? entries.map(([field, value]) => `${field === 'enemyHp' ? 'HP' : enemyLabels[field]}: ${value} (${field === 'enemyHp' || field in sheet ? ui('characterSheetSource') : ui('equipmentPartialSource')})`)
-        : [ui('noDefenses')]).map(text => {
-        const row = document.createElement('li');
-        row.append(iconElement(attributeIcon(text.split(':')[0])), document.createTextNode(text));
-        return row;
-      }));
-      enemyImportButton.disabled = !entries.length;
-      enemyProfileStatus.textContent = data.complete === false
-        ? ui('enemyPartialProfile')
-        : ui('enemyProfileLoaded');
+      showEnemyProfile(data);
     } catch (error) {
       if (profileId === enemyProfileId) enemyProfileStatus.textContent = formatUi('profileFailed', { error: error.message });
     }
+  }
+  function showEnemyProfile(data) {
+    enemyLoaded = data;
+    renderDossier(document.querySelector('#enemy-dossier'), extractCharacter(data));
+    const defenses = enemyDefenses(data);
+    const sheet = enemySheetDefenses(data);
+    const entries = Object.entries(defenses);
+    const hp = characterHp(data);
+    if (hp !== null) entries.push(['enemyHp', hp]);
+    document.querySelector('#enemy-stats').replaceChildren(...(entries.length
+      ? entries.map(([field, value]) => `${field === 'enemyHp' ? 'HP' : enemyLabels[field]}: ${value} (${field === 'enemyHp' || field in sheet ? ui('characterSheetSource') : ui('equipmentPartialSource')})`)
+      : [ui('noDefenses')]).map(text => {
+      const row = document.createElement('li');
+      row.append(iconElement(attributeIcon(text.split(':')[0])), document.createTextNode(text));
+      return row;
+    }));
+    enemyImportButton.disabled = !entries.length;
+    const date = data.cacheMeta?.fetchedAt;
+    enemyProfileStatus.textContent = `${ui(data.complete === false ? 'enemyPartialProfile' : 'enemyProfileLoaded')}${date ? ` · ${formatUi(data.cacheMeta.cached ? 'cachedProfileDate' : 'profileDate', { date: profileDate(date) })}` : ''}`;
   }
   enemyImportButton.addEventListener('click', () => {
     if (!enemyLoaded) return;
@@ -622,7 +727,7 @@ if (typeof document !== 'undefined') {
   I18N.onLanguageChange(() => {
     if (loaded) {
       renderDossier(document.querySelector('#profile-dossier'), extractCharacter(loaded));
-      profileStatus.textContent = loaded.complete === false ? ui('partialProfile') : ui('profileLoaded');
+      updateProfileStatus(loaded);
     }
     if (enemyLoaded) {
       renderDossier(document.querySelector('#enemy-dossier'), extractCharacter(enemyLoaded));
@@ -630,4 +735,19 @@ if (typeof document !== 'undefined') {
         ? ui('enemyPartialProfile') : ui('enemyProfileLoaded');
     }
   });
+  async function syncSettings(save = false) {
+    if (!window.aion2Host) return;
+    const enabled = document.querySelector('#sync-enabled');
+    const interval = document.querySelector('#sync-interval');
+    if (save && !interval.reportValidity()) return;
+    try {
+      const settings = await request('sync_settings', save ? { enabled: enabled.checked, interval: Number(interval.value) } : {});
+      enabled.checked = settings.enabled;
+      interval.value = String(settings.interval);
+    } catch (error) { searchStatus.textContent = error.message; }
+  }
+  document.querySelector('#sync-enabled').addEventListener('change', () => { void syncSettings(true); });
+  document.querySelector('#sync-interval').addEventListener('change', () => { void syncSettings(true); });
+  void syncSettings();
+  void refreshSavedProfiles();
 }

@@ -86,13 +86,23 @@ impl OfficialClient {
     }
 
     pub async fn profile(&self, server_id: i64, character_id: &str, region: &str, global_region: &str) -> Result<Value, String> {
+        self.profile_request(server_id, character_id, region, global_region, false).await
+    }
+
+    pub async fn refresh(&self, server_id: i64, character_id: &str, region: &str, global_region: &str) -> Result<Value, String> {
+        self.profile_request(server_id, character_id, region, global_region, true).await
+    }
+
+    async fn profile_request(&self, server_id: i64, character_id: &str, region: &str, global_region: &str, force: bool) -> Result<Value, String> {
         if server_id <= 0 || character_id.trim().is_empty() || character_id.chars().count() > 128 {
             return Err("Select a valid search result.".into());
         }
         require_global_region(region, global_region)?;
         let key = format!("profile|{server_id}|{character_id}|{global_region}");
-        if let Some(cached) = self.cached(&key) {
-            return Ok(cached);
+        if !force {
+            if let Some(cached) = self.cached(&key) {
+                return Ok(cached);
+            }
         }
         // Search results already carry the encoded ID; decode once so it is encoded exactly once below.
         let id = percent_decode_str(character_id).decode_utf8_lossy().into_owned();
@@ -111,7 +121,10 @@ impl OfficialClient {
             .and_then(Value::as_array)
             .cloned()
             .unwrap_or_default();
-        let details = join_all(items.iter().map(|item| self.item_detail(item, &shared))).await;
+        let (details, external_ranking) = tokio::join!(
+            join_all(items.iter().map(|item| self.item_detail(item, &shared))),
+            self.community_ranking(&info, server_id),
+        );
 
         let mut item_details = Map::new();
         let mut complete = true;
@@ -127,12 +140,47 @@ impl OfficialClient {
             "info": info,
             "equipment": equipment,
             "itemDetails": item_details,
+            "externalRanking": external_ranking,
             "complete": complete,
         });
         if complete {
             self.store(key, &data, PROFILE_TTL);
         }
         Ok(data)
+    }
+
+    // Atool has the useful public combat-power ranking; its failure must not block official profile data.
+    async fn community_ranking(&self, info: &Value, server_id: i64) -> Option<Value> {
+        let profile = info.get("profile")?;
+        let name = text_field(profile, "characterName");
+        let server_name = text_field(profile, "serverName");
+        let region = server_region(server_id)?;
+        let race = match profile.get("raceId").and_then(Value::as_i64)? {
+            1 => "천족",
+            2 => "마족",
+            _ => return None,
+        };
+        if name.is_empty() || server_name.is_empty() {
+            return None;
+        }
+        let server = format!("{server_name} ({region})");
+        let url = Url::parse_with_params(
+            "https://aion2tool.com/global/api/character/combat-score-rankings",
+            &[("nickname", name), ("server", &server), ("race", race)],
+        )
+        .ok()?;
+        let response = self
+            .http
+            .get(url)
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await
+            .ok()?
+            .error_for_status()
+            .ok()?;
+        let bytes = response.bytes().await.ok()?;
+        let payload: Value = serde_json::from_slice(&bytes).ok()?;
+        community_ranking_data(payload)
     }
 
     // A failed item detail is reported as a partial profile instead of failing the whole lookup.
@@ -150,6 +198,7 @@ impl OfficialClient {
         let detail = self.get_json(url).await.ok()?;
         Some((slot.to_string(), detail))
     }
+
 
     async fn get_json(&self, url: Url) -> Result<Value, String> {
         let response = self.http.get(url).send().await.map_err(|error| error.to_string())?;
@@ -180,6 +229,23 @@ impl OfficialClient {
         }
         cache.insert(key, CacheEntry { expires_at: Instant::now() + lifetime, data: data.clone() });
     }
+}
+
+fn server_region(server_id: i64) -> Option<&'static str> {
+    match server_id / 100 {
+        11 | 21 => Some("NA-E"),
+        12 | 22 => Some("NA-W"),
+        13 | 23 => Some("EU"),
+        14 | 24 => Some("SA"),
+        15 | 25 => Some("AS"),
+        _ => None,
+    }
+}
+
+fn community_ranking_data(payload: Value) -> Option<Value> {
+    (payload.get("success").and_then(Value::as_bool) == Some(true))
+        .then(|| payload.get("data").cloned())
+        .flatten()
 }
 
 fn character_url(path: &str, shared: &[(&str, String)], extra: &[(&str, String)]) -> Result<Url, String> {
@@ -228,6 +294,21 @@ mod tests {
         assert!(require_global_region("ww", "la").is_ok());
         assert!(require_global_region("kr", "la").is_err());
         assert!(require_global_region("ww", "xx").is_err());
+    }
+
+    #[test]
+    fn maps_global_servers_and_accepts_only_successful_community_rankings() {
+        assert_eq!(server_region(1401), Some("SA"));
+        assert_eq!(server_region(1301), Some("EU"));
+        assert_eq!(server_region(1201), Some("NA-W"));
+        assert_eq!(server_region(9999), None);
+
+        let data = json!({ "overall_rank": 320 });
+        assert_eq!(
+            community_ranking_data(json!({ "success": true, "data": data.clone() })),
+            Some(data)
+        );
+        assert_eq!(community_ranking_data(json!({ "success": false })), None);
     }
 
     #[test]

@@ -15,6 +15,20 @@ const profile = {
     mainStats: [{ name: 'Attack', value: '323', minValue: '251', extra: '119' }] } }
 };
 
+test('extracts legion and optional overall, class and server rankings', () => {
+  const data = structuredClone(profile);
+  data.info.profile.regionName = 'PeraSociedad';
+  data.externalRanking = {
+    overall_rank: 320, overall_total: 5899, overall_percentile: 5.41,
+    job_rank: 66, job_total: 866, job_percentile: 7.51,
+    server_rank: 2, server_total: 55, server_percentile: 1.82
+  };
+  const view = extractCharacter(data);
+  assert.equal(view.legion, 'PeraSociedad');
+  assert.deepEqual(view.ranking, data.externalRanking);
+  assert.equal(extractCharacter(profile).ranking, null);
+});
+
 test('groups real gear options, learned abilities and progression without inventing missing bonuses', () => {
   const data = structuredClone(profile);
   data.info.profile.titleName = 'Treading on Black Wings';
@@ -41,7 +55,7 @@ test('groups real gear options, learned abilities and progression without invent
   assert.equal(view.gear[0].detail.subStats[0].value, '5.6%');
   assert.equal(view.gear[0].detail.subSkills[0].name, 'Bolt');
   assert.equal(view.gear[0].detail.magicStoneStat[0].value, '+100');
-  assert.deepEqual(view.skills.map(skill => skill.name), ['Bolt']);
+  assert.deepEqual(view.skills.map(skill => skill.name), ['Bolt', 'Locked']);
   assert.equal(view.titles[0].equipStatList[0].desc, 'PvP Attack +40');
   assert.equal(view.boards[0].openNodeCount, 12);
   assert.deepEqual(view.arcana, []);

@@ -12,8 +12,11 @@ use tokio::runtime::Runtime;
 use wry::http::{Request, Response, Uri};
 use wry::{WebContext, WebViewBuilder, WebViewBuilderExtWindows};
 
+use crate::aionlabs::AionLabsClient;
 use crate::guides::GuideClient;
 use crate::official::OfficialClient;
+use crate::profile_cache::ProfileCache;
+use crate::profile_sync::ProfileSync;
 use crate::{assets, protocol};
 
 const HOME: &str = "https://aion2.localhost/index.html";
@@ -32,6 +35,14 @@ pub fn run(runtime: Runtime) {
         Ok(client) => Arc::new(client),
         Err(error) => return show_error("Unable to open calculator", &error),
     };
+    let ai = match AionLabsClient::new() {
+        Ok(client) => Arc::new(client),
+        Err(error) => return show_error("Unable to open calculator", &error),
+    };
+    let profiles = match ProfileCache::open(data_folder().with_file_name("profiles.json")).and_then(|cache| ProfileSync::new(cache, Arc::clone(&official))) {
+        Ok(profiles) => Arc::new(profiles),
+        Err(error) => return show_error("Cannot open saved profiles", &error),
+    };
 
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
     let proxy = event_loop.create_proxy();
@@ -47,6 +58,22 @@ pub fn run(runtime: Runtime) {
 
     let mut web_context = WebContext::new(Some(data_folder()));
     let handle = runtime.handle().clone();
+    let background = Arc::clone(&profiles);
+    let background_proxy = proxy.clone();
+    handle.spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        let mut last_sync = None::<std::time::Instant>;
+        loop {
+            interval.tick().await;
+            let Ok(settings) = background.settings() else { continue };
+            let seconds = settings["interval"].as_u64().unwrap_or(600);
+            if settings["enabled"] == true && last_sync.is_none_or(|last| last.elapsed().as_secs() >= seconds) {
+                background.refresh_all(|reply| { let _ = background_proxy.send_event(UserEvent::Reply(reply)); }).await;
+                last_sync = Some(std::time::Instant::now());
+            }
+        }
+    });
     let webview = match WebViewBuilder::new_with_web_context(&mut web_context)
         .with_https_scheme(true)
         .with_initialization_script(HOST_BRIDGE)
@@ -59,9 +86,14 @@ pub fn run(runtime: Runtime) {
             let message = request.into_body();
             let official = Arc::clone(&official);
             let guides = Arc::clone(&guides);
+            let ai = Arc::clone(&ai);
+            let profiles = Arc::clone(&profiles);
             let proxy = proxy.clone();
             handle.spawn(async move {
-                if let Some(reply) = protocol::respond(&message, &official, &guides).await {
+                if profiles.respond(&message, |reply| { let _ = proxy.send_event(UserEvent::Reply(reply)); }).await {
+                    return;
+                }
+                if let Some(reply) = protocol::respond(&message, &official, &guides, &ai).await {
                     let _ = proxy.send_event(UserEvent::Reply(reply));
                 }
             });
